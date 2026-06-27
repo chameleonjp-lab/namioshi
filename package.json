@@ -1,1 +1,14 @@
-{"scripts":{"build":"node scripts/build.mjs","size":"node scripts/check-size.mjs","verify":"node scripts/verify-dist.mjs"},"dependencies":{},"devDependencies":{}}
+{
+  "scripts": {
+    "build": "vite build",
+    "size": "node scripts/check-size.mjs",
+    "verify": "node scripts/verify-dist.mjs"
+  },
+  "dependencies": {
+    "three": "0.165.0"
+  },
+  "devDependencies": {
+    "typescript": "5.5.4",
+    "vite": "5.4.19"
+  }
+}
