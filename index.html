@@ -24,6 +24,7 @@ const MAX_TAPS=3,PLAY_TIME=10,MAX_ECHOES=24,MAX_PARTICLES=80,MAX_REFLECT=2;
 // State
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
 let W=0,H=0,DPR=1,state='HOME',last=0,score=0,taps=0,timeLeft=PLAY_TIME,combo=0,player='',submitted=false,quality=1,frames=0,slow=0;
+let readyTimer=null;
 const echoes=[],beacons=[],obstacles=[],particles=[]; const dom={score:0,time:0,taps:0};
 const screens={HOME:$('home'),READY:$('ready'),RESULT:$('result'),ERROR:$('error')};
 // Utilities
@@ -40,8 +41,8 @@ function onDown(e){e.preventDefault();audio(); if(state==='PLAYING')tap(e.client
 canvas.addEventListener('pointerdown',onDown,{passive:false}); document.addEventListener('gesturestart',e=>e.preventDefault());
 // Game Flow
 function start(){player=$('nameInput').value.trim();if(!player){$('nameError').textContent='名前を入力してください';return}$('nameError').textContent='';audio();ready()}
-function ready(){setState('READY');let seq=['3','2','1','START'],i=0;$('readyText').textContent=seq[i];let id=setInterval(()=>{i++; if(i>=seq.length){clearInterval(id);newGame()} else $('readyText').textContent=seq[i]},760)}
-function newGame(){score=0;taps=0;timeLeft=PLAY_TIME;combo=0;submitted=false;echoes.length=particles.length=0;initWorld();setState('PLAYING');updateHud(true)}
+function ready(){if(readyTimer){clearInterval(readyTimer);readyTimer=null}setState('READY');$('startBtn').disabled=true;$('againBtn').disabled=true;let seq=['3','2','1','START'],i=0;$('readyText').textContent=seq[i];readyTimer=setInterval(()=>{i++; if(i>=seq.length){clearInterval(readyTimer);readyTimer=null;newGame()} else $('readyText').textContent=seq[i]},760)}
+function newGame(){if(readyTimer){clearInterval(readyTimer);readyTimer=null}$('startBtn').disabled=false;$('againBtn').disabled=false;score=0;taps=0;timeLeft=PLAY_TIME;combo=0;submitted=false;echoes.length=particles.length=0;initWorld();setState('PLAYING');updateHud(true)}
 function finish(){if(state!=='PLAYING')return;setState('RESULT');$('finalScore').textContent=score;storeResult();sfx.result();sendRanking()}
 // Physics
 function initWorld(){beacons.length=obstacles.length=0;for(let i=0;i<4;i++){let x=rnd(50,W-50),y=rnd(90,H-70),ang=rnd(-.8,.8),len=rnd(70,120);obstacles.push({x,y,len,w:rnd(8,14),a:ang,nx:-Math.sin(ang),ny:Math.cos(ang)})}for(let i=0;i<3;i++)beacons.push({id:i,x:(i+1)*W/4,y:rnd(H*.28,H*.72),vx:rnd(-22,22),vy:rnd(-18,18),radius:16,phase:rnd(0,6.28),hitFlash:0})}
