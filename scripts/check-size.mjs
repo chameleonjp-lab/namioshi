@@ -1,0 +1,1 @@
+import{readdirSync,statSync}from'node:fs';import{join}from'node:path';const limit=2900000;let total=0;function walk(d){for(const f of readdirSync(d)){const p=join(d,f),s=statSync(p);if(s.isDirectory())walk(p);else total+=s.size}}walk('dist');console.log(`dist total: ${total} bytes / ${limit}`);if(total>limit)process.exit(1);

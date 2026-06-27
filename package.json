@@ -1,0 +1,1 @@
+{"scripts":{"build":"node scripts/build.mjs","size":"node scripts/check-size.mjs","verify":"node scripts/verify-dist.mjs"},"dependencies":{},"devDependencies":{}}
