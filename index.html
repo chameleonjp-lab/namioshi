@@ -22,7 +22,8 @@
 const GAME_URL='https://chameleonjp.codeberg.page/namioshi/',GAME_SLUG='namioshi',SUPABASE_KEY='sb_publishable_drzcy0v97knU6FgjqSgBHw_0A9XPdFM';
 const MAX_TAPS=3,PLAY_TIME=10,MAX_ECHOES=24,MAX_PARTICLES=80,MAX_REFLECT=2;
 // State
-const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
+const $=id=>document.getElementById(id);
+let canvas=null,ctx=null;
 let W=0,H=0,DPR=1,state='HOME',last=0,score=0,taps=0,timeLeft=PLAY_TIME,combo=0,player='',submitted=false,quality=1,frames=0,slow=0;
 let readyTimer=null;
 const echoes=[],beacons=[],obstacles=[],particles=[]; const dom={score:0,time:0,taps:0};
@@ -38,7 +39,7 @@ function tone(f,d,type='sine',gain=.045){try{if(!ac)return;const o=ac.createOsci
 const sfx={tap(){tone(180,.08,'triangle',.035)},hit(){tone(520,.12,'sine',.055);setTimeout(()=>tone(780,.08,'sine',.035),35)},result(){tone(330,.14);setTimeout(()=>tone(495,.14),90)}};
 // Input
 function onDown(e){e.preventDefault();audio(); if(state==='PLAYING')tap(e.clientX,e.clientY)}
-canvas.addEventListener('pointerdown',onDown,{passive:false}); document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('gesturestart',e=>e.preventDefault());
 // Game Flow
 function start(){player=$('nameInput').value.trim();if(!player){$('nameError').textContent='名前を入力してください';return}$('nameError').textContent='';audio();ready()}
 function ready(){if(readyTimer){clearInterval(readyTimer);readyTimer=null}setState('READY');$('startBtn').disabled=true;$('againBtn').disabled=true;let seq=['3','2','1','START'],i=0;$('readyText').textContent=seq[i];readyTimer=setInterval(()=>{i++; if(i>=seq.length){clearInterval(readyTimer);readyTimer=null;newGame()} else $('readyText').textContent=seq[i]},760)}
@@ -62,7 +63,7 @@ async function sendRanking(){if(submitted)return;submitted=true;$('rankMsg').tex
 async function share(){let text=`namioshiで ${score}点！\n反射する波をビーコンに重ねた。\n${GAME_URL}`;try{if(navigator.share)await navigator.share({text});else{await navigator.clipboard.writeText(text);$('rankMsg').textContent='シェア文をコピーしました'}}catch(e){$('shareText').style.display='block';$('shareText').value=text;$('shareText').focus();$('shareText').select()}}
 // Boot
 function resize(){DPR=window.__lowDpr?1:Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=Math.floor(W*DPR);canvas.height=Math.floor(H*DPR);canvas.style.width=W+'px';canvas.style.height=H+'px'}
-try{resize();addEventListener('resize',resize);$('startBtn').onclick=start;$('againBtn').onclick=ready;$('shareBtn').onclick=share;requestAnimationFrame(loop)}catch(e){$('errorMsg').textContent='初期化に失敗しました: '+e.message;setState('ERROR')}
+try{canvas=$('game');if(!canvas)throw Error('Canvas not found');ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('Canvas 2D context unavailable');canvas.addEventListener('pointerdown',onDown,{passive:false});resize();addEventListener('resize',resize);$('startBtn').onclick=start;$('againBtn').onclick=ready;$('shareBtn').onclick=share;requestAnimationFrame(loop)}catch(e){$('errorMsg').textContent='初期化に失敗しました: '+e.message;setState('ERROR')}
 </script>
 <!--
 README / 最終検収コメント
