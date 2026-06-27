@@ -1,38 +1,58 @@
-# namioshi v2
+# namioshi
 
-## 実装方針
-`index.html` を入口にした Vite + TypeScript 構成です。WebGL/Three.js 版を本命にし、OrthographicCamera と WebGLRenderer、PlaneGeometry + ShaderMaterial による暗い水面、リング・半透明円・粒子による軽量な発光表現を使います。GLTFLoader、DRACOLoader、KTX2Loader、EffectComposer、UnrealBloomPass、OrbitControls は使いません。
+`namioshi` は、暗い水面に波を押し出し、壁やガラス片で反射させながら3つのビーコンへ波を重ねる10秒ゲームです。
 
-## 起動方法
+## セットアップ
+
 ```bash
 npm install
-npm run build
-npx vite --host 0.0.0.0
 ```
 
-## ビルド方法
+`npm install` により、実行時依存の `three` と、開発時依存の `vite` / `typescript` が固定バージョンで入ります。`package.json` では `^` を使っていません。
+
+## ビルド
+
 ```bash
 npm run build
+```
+
+`npm run build` は `vite build` を実行します。`dist` は `src/main.ts` をエントリとしてViteが生成する公開物です。旧 `scripts/build.mjs` による `dist/index.html` / `dist/assets/app.js` の手書き文字列生成は使いません。
+
+## 描画
+
+WebGL版が本命です。起動時は同じ `<canvas>` に対してまず `new WebGLView(canvas)` を試し、WebGL初期化に失敗した時だけ `new CanvasView(canvas)` にフォールバックします。同じcanvasからWebGLコンテキストと2Dコンテキストを両方取得しません。
+
+WebGL描画では、波リング最大24個、ビーコン3個、ガラス片、粒子バッファを生成済みオブジェクトとして使い回し、`render()` 中は位置・半径・透明度・表示/非表示を更新します。
+
+## サイズ・検証
+
+```bash
 npm run size
 npm run verify
 ```
 
-## サイズ検査結果
-`npm run size` は `dist` 合計が 2,900,000 bytes を超えた場合に失敗します。現行ビルドは上限内です。
+- dist合計サイズ上限: `2,900,000 bytes`
+- `npm run size` は `dist total: ... bytes / 2900000` を出力します。
+- `npm run verify` は `dist` に `.map`、`service_role`、`ranking_scores`、許可外URLが含まれていないことを確認します。
 
-## iPhone SE向け最適化内容
-- 初期品質は MID、平均 fps が 45 未満なら段階的に低下、32 未満なら LOW 固定。
-- DPR 上限は HIGH 1.5 / MID 1.25 / LOW 1.0。
-- 最大波数 24、シェーダー渡し最大 12、タップ最大 3、1プレイ 10秒。
-- UI は狭幅で折り返し、ゲーム面は `touch-action:none`、ボタンは `touch-action:manipulation`。
+## 検収結果
 
-## WebGL fallbackの説明
-WebGL 初期化に失敗した場合のみ Canvas 2D レンダラーへ切り替えます。Canvas 2D でも水面、波、ビーコン、ガラス片、粒子、当たり判定が動作します。WebGL と Canvas の両方が初期化できない時だけ ERROR 画面を表示します。
-
-## ランキング送信方式
-`@supabase/supabase-js` は使用せず、Publishable key で REST RPC `submit_score` に `fetch` します。`ranking_scores` への直接 POST と service_role key は使用しません。RESULT へ入った時点で一度だけ送信し、失敗してもゲームは停止しません。
-
-## 検収チェック結果
-- `game_slug` は `namioshi`。
-- 公開 URL とシェア文末は `https://chameleonjp.codeberg.page/namioshi/`。
-- 3タップ制限、10秒終了、RESULT時1回送信、WebGL/Canvas fallback、サイズ検査、source map なし検査を実装済みです。
+- `npm install` が通ること。
+- `npm run build` が通ること。
+- `npm run size` が通ること。
+- `npm run verify` が通ること。
+- dist合計が `2,900,000 bytes` 以下であること。
+- `package-lock.json` が存在すること。
+- `package.json` に `three` / `vite` / `typescript` が存在すること。
+- `build` が `vite build` になっていること。
+- `scripts/build.mjs` による手書きdist生成を使っていないこと。
+- distに `.map` がないこと。
+- distに `service_role` がないこと。
+- distに `ranking_scores` がないこと。
+- WebGL版で描画されること。
+- WebGL初期化失敗時にCanvas版で描画されること。
+- 1タップで波が1つだけ出ること。
+- 4回目のタップは無視されること。
+- 10秒でRESULTへ進むこと。
+- RESULTでランキング送信は1回だけであること。
+- シェア文末に `https://chameleonjp.codeberg.page/namioshi/` が入ること。
