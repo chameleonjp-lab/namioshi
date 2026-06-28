@@ -52,3 +52,9 @@ Canvas fallbackでも同じ `World` を使い、同じルールのゲームを2D
 npm run verify
 verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, or legacy hand-written dist markers
 ```
+
+## ビルドパス修正メモ
+
+- ビルド設定から環境依存の絶対パスを削除しました。
+- `npm run verify` は `dist` に加えて `scripts` / `vendor` / `package.json` / `package-lock.json` も検査します。
+- 今回の修正では `dist` は変更していません。

@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import ts from '/root/.nvm/versions/node/v20.20.2/lib/node_modules/typescript/lib/typescript.js';
+import ts from 'typescript';
 
 const out = 'dist';
 rmSync(out, { recursive: true, force: true });
