@@ -39,7 +39,7 @@ Canvas fallbackでも同じ `World` を使い、同じルールのゲームを2D
 
 ## 検証
 
-`npm run verify` は `dist` に `.map`、許可外URL、`service_role`、直接の `ranking_scores` 参照、CSS direct import、Three.js bare import が含まれないことを確認します。加えて、名前だけのThree.js代替実装が残っていないよう、`dist/assets/three-bundle.js` 等に以下の断片が含まれる場合は失敗します。
+`npm run verify` は `dist` に `.map`、許可外URL、`service_role`、直接の `ranking_scores` 参照、CSS direct import、Three.js bare import が含まれないことを確認します。加えて、名前だけのThree.js代替実装、legacy hand-written dist marker、禁止された絶対/ローカル TypeScript パス、vendored TypeScript shim の外部探索、dist asset JavaScript に残った TypeScript 型注釈も検査します。
 
 - `render(){const gl=this.gl;gl.viewport`
 - `export class Scene { constructor(){this.children=[]}`
@@ -50,11 +50,11 @@ Canvas fallbackでも同じ `World` を使い、同じルールのゲームを2D
 
 ```text
 npm run verify
-verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, or legacy hand-written dist markers
+verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, legacy hand-written dist markers, forbidden absolute/local TypeScript paths, vendored TypeScript external lookups, or TypeScript type annotations in dist asset JavaScript
 ```
 
 ## ビルドパス修正メモ
 
 - ビルド設定から環境依存の絶対パスを削除しました。
 - `npm run verify` は `dist` に加えて `scripts` / `vendor` / `package.json` / `package-lock.json` も検査し、vendored TypeScript shim が外部やグローバルの TypeScript を探索しないことも確認します。
-- 今回の修正では `dist` は変更していません。
+- `dist/assets/core/audio.js`、`dist/assets/core/ranking.js`、`dist/assets/core/share.js` に TypeScript 型注釈が残っていないことも確認します。
