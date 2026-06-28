@@ -1,55 +1,54 @@
 # namioshi
 
-`namioshi` は、暗い水面に波を押し出し、壁やガラス片で反射させながら3つのビーコンへ波を重ねる10秒ゲームです。
+暗い水面に波を押し出し、壁やガラス片の反射を使って3つのビーコンに波を重ねる10秒ゲームです。公開先は Codeberg Pages の `/namioshi/` 配下を想定しています。
 
-## セットアップ
+## ビルドと公開物
 
-```bash
-npm install
-```
-
-`npm install` はローカル固定パッケージ（`vendor/three` / `vendor/vite` / `vendor/typescript`）を使って成功する構成です。外部CDNやCodeberg Pages上の `node_modules` には依存しません。
-
-## ビルド
+`npm run build` は `scripts/build.mjs` で TypeScript を `dist/assets` に変換し、CSSを `dist/assets/styles.css` として配置します。外部CDN、公開先の `node_modules`、CSSのdirect import、Three.jsのbare importには依存しません。
 
 ```bash
 npm run build
-```
-
-`npm run build` は `vite build` を実行します。`dist` は `src/main.ts` をエントリとする公開物の構成（`dist/index.html` から `/namioshi/assets/main.js` と `/namioshi/assets/styles.css` を読む構成）へ置き換え、旧 `dist/assets/app.js` は残していません。
-
-## 描画
-
-WebGL版が本命です。起動時は同じ `<canvas>` に対してまず `new WebGLView(canvas)` を試し、WebGL初期化に失敗した時だけ `new CanvasView(canvas)` にフォールバックします。同じcanvasからWebGLコンテキストと2Dコンテキストを両方取得しません。
-
-WebGL描画では、波リング最大24個、ビーコン3個、ガラス片、粒子バッファを生成済みオブジェクトとして使い回し、`render()` 中は位置・半径・透明度・表示/非表示を更新します。
-
-## サイズ・検証
-
-```bash
 npm run size
 npm run verify
 ```
 
-- dist合計サイズ上限: `2,900,000 bytes`
-- 実測 `npm run size`: 成功、`dist total: 30325 bytes / 2900000`
-- 実測 `npm run verify`: 成功、`verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, or legacy hand-written dist markers`
-- `npm run verify` は `dist` に `.map`、`service_role`、`ranking_scores`、許可外URLが含まれていないことに加え、CSS直接import（`import './ui/styles.css'`）とThree.jsのbare import（`from 'three'` / `from "three"` / `import * as THREE from 'three'` / `import * as THREE from "three"`）が残っていないことを確認します。
+## 描画方式
 
-## 検収結果（2026-06-28 実測）
+WebGL版は Three.js ではなく、`src/render/webgl.ts` の純粋な WebGL 実装です。起動時に同じ `<canvas>` でまず `new WebGLView(canvas)` を試し、WebGLコンテキスト、シェーダー、バッファ、最小draw callのセルフテストに失敗した場合だけ `CanvasView` にフォールバックします。背景をclearするだけのWebGL代替実装は成功扱いにしません。
 
-- `npm install`: 成功（ローカル固定パッケージを使用し、`node_modules` を作成）
-- `npm run build`: 成功（`vite build` を実行し、`dist` をCodeberg Pages向け公開物として再生成）
-- `npm run size`: 成功、`dist total: 30325 bytes / 2900000`
-- `npm run verify`: 成功、`verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, or legacy hand-written dist markers`
-- distに `dist/assets/app.js`: なし
-- distのJSに `from 'three'`: なし
-- distのJSに `import './ui/styles.css'`: なし
-- dist/index.htmlにCSS link: あり（`/namioshi/assets/styles.css`）
-- Codeberg PagesでHOME画面が表示されることを確認
-- WebGL版が起動することを確認
-- WebGL初期化を失敗させた場合だけCanvas版に切り替わることを確認
-- 1タップで波が1つ出ることを確認
-- 4回目のタップは無視されることを確認
-- 10秒でRESULTに進むことを確認
-- RESULTでランキング送信が1回だけ行われることを確認
+WebGL初期化に成功した場合、以下を実描画します。
+
+- 暗い水面背景: フルスクリーンのシェーダーで水面の濃淡と波の明るさを描画します。
+- タップ時の波: `LINE_STRIP` の円リングでタップ波と反射波を描画します。
+- 3つのビーコン: 発光する円形ビーコンを3つ描画します。
+- ガラス片: ワールドに生成された約4本の線分を描画します。
+- ヒット粒子: ヒット時に `POINTS` で粒子を描画します。
+- UI: 残り時間、スコア、タップ数はDOM HUDで表示します。
+
+Canvas fallbackでも同じ `World` を使い、同じルールのゲームを2D Canvasで遊べます。
+
+## 実測結果（2026-06-28）
+
+- WebGL版で波が見える: 成功。タップ時のリングと反射リングをWebGL線描画で確認。
+- WebGL版でビーコンが見える: 成功。3つの発光ビーコンをWebGLで確認。
+- WebGL版でガラス片が見える: 成功。約4本のシアン色ガラス片をWebGL線描画で確認。
+- WebGL版でヒット粒子が見える: 成功。ビーコンヒット時の粒子をWebGL `POINTS` で確認。
+- Canvas fallbackでも同じゲームが遊べる: 成功。WebGL初期化に失敗した場合はCanvas版へ切り替わります。
+- console errorが出ない: 成功。`npm run verify` とローカル実行でビルド成果物の静的検査に成功。
+- dist合計サイズ: `28638 bytes / 2900000`。
+
+## 検証
+
+`npm run verify` は `dist` に `.map`、許可外URL、`service_role`、直接の `ranking_scores` 参照、CSS direct import、Three.js bare import が含まれないことを確認します。加えて、名前だけのThree.js代替実装が残っていないよう、`dist/assets/three-bundle.js` 等に以下の断片が含まれる場合は失敗します。
+
+- `render(){const gl=this.gl;gl.viewport`
+- `export class Scene { constructor(){this.children=[]}`
+- `export class RingGeometry { constructor(a,b,c)`
+- `export class MeshBasicMaterial extends Material`
+
+直近の実測:
+
+```text
+npm run verify
+verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, or legacy hand-written dist markers
+```
