@@ -1,16 +1,8 @@
-import { existsSync, mkdirSync, rmSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import ts from 'typescript';
+import ts from '../vendor/typescript/lib/typescript.js';
 
 const out = 'dist';
-const previousDist = new Map();
-function rememberBuiltFile(file) {
-  const p = join(out, 'assets', file.replace(/\.ts$/, '.js'));
-  if (existsSync(p)) previousDist.set(p, readFileSync(p, 'utf8'));
-}
-for (const file of [
-  'config.ts','core/audio.ts','game/world.ts','main.ts','render/canvas.ts','render/webgl.ts','services/ranking.ts','services/share.ts','types/index.ts'
-]) rememberBuiltFile(file);
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'assets'), { recursive: true });
 
@@ -24,7 +16,7 @@ for (const file of files) {
   let src = readFileSync(srcPath, 'utf8');
   src = src.replace(/import\s*['"]\.\/ui\/styles\.css['"];?/g, '');
   const result = ts.transpileModule(src, { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ES2020, useDefineForClassFields: true } });
-  let js = previousDist.get(jsPath) ?? result.outputText;
+  let js = result.outputText;
   js = js.replace(/from\s*['"]three['"]/g, "from '../three-bundle.js'");
   js = js.replace(/from\s*['"](\.\.?\/[^'"]+)['"]/g, (m, spec) => spec.endsWith('.js') ? m : `from '${spec}.js'`);
   js = js.replace(/import\s*['"](\.\.?\/[^'"]+)['"];?/g, (m, spec) => spec.endsWith('.js') ? m : `import '${spec}.js';`);
