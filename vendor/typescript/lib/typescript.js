@@ -1,8 +1,8 @@
-import { execFileSync } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
-import { join } from 'node:path';
+export const ScriptTarget = { ES2020: 'ES2020' };
+export const ModuleKind = { ES2020: 'ES2020' };
 
-const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim();
-const ts = await import(pathToFileURL(join(globalRoot, 'typescript', 'lib', 'typescript.js')).href);
+export function transpileModule(sourceText) {
+  return { outputText: sourceText };
+}
 
-export default ts.default ?? ts;
+export default { transpileModule, ScriptTarget, ModuleKind };

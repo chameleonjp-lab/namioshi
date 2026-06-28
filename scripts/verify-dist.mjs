@@ -18,6 +18,16 @@ const stale = [
   ['fake Three RingGeometry', /export class RingGeometry \{ constructor\(a,b,c\)/],
   ['fake Three MeshBasicMaterial', /export class MeshBasicMaterial extends Material/]
 ];
+const forbiddenVendorTypeScript = [
+  ['npm', 'root', '-g'],
+  ['global', 'Root'],
+  ['execFileSync', "('npm"],
+  ['child', '_process'],
+  ['pathToFileURL'],
+  ['createRequire'],
+  ['node_', 'modules/typescript'],
+  ['lib', '/typescript.js']
+];
 const forbiddenPaths = [
   ['/root/', '.nvm/'].join(''),
   ['/ho', 'me/'].join(''),
@@ -43,6 +53,14 @@ function scanForbiddenPathFile(p) {
   for (const needle of forbiddenPaths) if (txt.includes(needle)) bad.push(`forbidden path ${needle}: ${p}`);
 }
 
+function scanVendorTypeScriptFile(p) {
+  const txt = readFileSync(p, 'utf8');
+  for (const parts of forbiddenVendorTypeScript) {
+    const needle = parts.join('');
+    if (txt.includes(needle)) bad.push(`forbidden vendored TypeScript lookup ${needle}: ${p}`);
+  }
+}
+
 function walk(d, cb) {
   for (const f of readdirSync(d)) {
     const p = join(d, f);
@@ -54,10 +72,11 @@ function walk(d, cb) {
 
 for (const root of distRoots) walk(root, scanDistFile);
 for (const root of pathScanRoots) if (existsSync(root)) walk(root, scanForbiddenPathFile);
+if (existsSync('vendor/typescript/lib/typescript.js')) scanVendorTypeScriptFile('vendor/typescript/lib/typescript.js');
 for (const file of pathScanFiles) if (existsSync(file)) scanForbiddenPathFile(file);
 
 if (bad.length) {
   console.error(bad.join('\n'));
   process.exit(1);
 }
-console.log('verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, legacy hand-written dist markers, or forbidden absolute/local TypeScript paths in dist/scripts/vendor/package metadata');
+console.log('verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, legacy hand-written dist markers, or forbidden absolute/local TypeScript paths or vendored TypeScript external lookups in dist/scripts/vendor/package metadata');

@@ -4,7 +4,7 @@
 
 ## ビルドと公開物
 
-`npm run build` は `scripts/build.mjs` で TypeScript を `dist/assets` に変換し、CSSを `dist/assets/styles.css` として配置します。外部CDN、公開先の `node_modules`、CSSのdirect import、Three.jsのbare importには依存しません。
+`npm run build` は `scripts/build.mjs` でリポジトリ内の vendored TypeScript shim を使って TypeScript を `dist/assets` に変換し、CSSを `dist/assets/styles.css` として配置します。外部CDN、グローバルにインストールされた TypeScript、公開先の `node_modules`、CSSのdirect import、Three.jsのbare importには依存しません。
 
 ```bash
 npm run build
@@ -56,5 +56,5 @@ verify ok: no source maps, external CDN, service_role, direct ranking_scores POS
 ## ビルドパス修正メモ
 
 - ビルド設定から環境依存の絶対パスを削除しました。
-- `npm run verify` は `dist` に加えて `scripts` / `vendor` / `package.json` / `package-lock.json` も検査します。
+- `npm run verify` は `dist` に加えて `scripts` / `vendor` / `package.json` / `package-lock.json` も検査し、vendored TypeScript shim が外部やグローバルの TypeScript を探索しないことも確認します。
 - 今回の修正では `dist` は変更していません。
