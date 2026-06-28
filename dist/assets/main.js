@@ -1,4 +1,3 @@
-import './ui/styles.css';
 import { MAX_TAPS } from './config.js';
 import { World } from './game/world.js';
 import { WebGLView } from './render/webgl.js';

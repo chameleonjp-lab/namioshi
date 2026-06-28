@@ -5,10 +5,10 @@
     "verify": "node scripts/verify-dist.mjs"
   },
   "dependencies": {
-    "three": "0.165.0"
+    "three": "file:vendor/three"
   },
   "devDependencies": {
-    "typescript": "5.5.4",
-    "vite": "5.4.19"
+    "typescript": "file:vendor/typescript",
+    "vite": "file:vendor/vite"
   }
 }

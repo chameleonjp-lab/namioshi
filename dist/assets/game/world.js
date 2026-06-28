@@ -3,17 +3,72 @@ const rnd = (a, b) => a + Math.random() * (b - a), clamp = (v, a, b) => Math.max
 let wid = 1;
 export class World {
     constructor() {
-        this.w = 320;
-        this.h = 568;
-        this.score = 0;
-        this.taps = 0;
-        this.time = PLAY_SECONDS;
-        this.combo = 0;
-        this.waves = [];
-        this.beacons = [];
-        this.glass = [];
-        this.particles = [];
-        this.onHit = () => { };
+        Object.defineProperty(this, "w", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 320
+        });
+        Object.defineProperty(this, "h", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 568
+        });
+        Object.defineProperty(this, "score", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 0
+        });
+        Object.defineProperty(this, "taps", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 0
+        });
+        Object.defineProperty(this, "time", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: PLAY_SECONDS
+        });
+        Object.defineProperty(this, "combo", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 0
+        });
+        Object.defineProperty(this, "waves", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "beacons", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "glass", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "particles", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "onHit", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: () => { }
+        });
     }
     reset(w, h) { this.w = w; this.h = h; this.score = 0; this.taps = 0; this.time = PLAY_SECONDS; this.combo = 0; this.waves = []; this.particles = []; this.glass = []; this.beacons = []; for (let i = 0; i < 3; i++) {
         const y = [.3, .5, .7][i] * h + (.5 - Math.random()) * 36;

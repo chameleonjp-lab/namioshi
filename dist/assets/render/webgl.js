@@ -1,22 +1,117 @@
-import * as THREE from 'three';
+import * as THREE from '../three-bundle.js';
 import { QUALITY } from '../config.js';
 import { fragmentShader, vertexShader } from './shaders/water.js';
 const MAX_WAVES = 24, MAX_BEACONS = 3, MAX_GLASS = 8, MAX_PARTICLES = 90;
 export class WebGLView {
     constructor(canvas) {
-        this.canvas = canvas;
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.OrthographicCamera();
-        this.group = new THREE.Group();
-        this.rings = [];
-        this.beacons = [];
-        this.ringGeo = new THREE.RingGeometry(1, 2, 64);
-        this.ringMat = new THREE.MeshBasicMaterial({ color: 0x58e8ff, transparent: true, opacity: .45, side: THREE.DoubleSide, depthWrite: false });
-        this.beaconGeo = new THREE.CircleGeometry(1, 32);
-        this.beaconMat = new THREE.MeshBasicMaterial({ color: 0xffffe8, transparent: true, opacity: .95, depthWrite: false });
-        this.glassMat = new THREE.LineBasicMaterial({ color: 0xbff7ff, transparent: true, opacity: .35 });
-        this.particleMat = new THREE.PointsMaterial({ color: 0xb9fbff, transparent: true, opacity: .9, size: 3, sizeAttenuation: false, depthWrite: false });
-        this.lastGlassKey = '';
+        Object.defineProperty(this, "canvas", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: canvas
+        });
+        Object.defineProperty(this, "renderer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "scene", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.Scene()
+        });
+        Object.defineProperty(this, "camera", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.OrthographicCamera()
+        });
+        Object.defineProperty(this, "mat", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "bg", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "group", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.Group()
+        });
+        Object.defineProperty(this, "rings", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "beacons", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "glass", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "particles", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "ringGeo", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.RingGeometry(1, 2, 64)
+        });
+        Object.defineProperty(this, "ringMat", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.MeshBasicMaterial({ color: 0x58e8ff, transparent: true, opacity: .45, side: THREE.DoubleSide, depthWrite: false })
+        });
+        Object.defineProperty(this, "beaconGeo", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.CircleGeometry(1, 32)
+        });
+        Object.defineProperty(this, "beaconMat", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.MeshBasicMaterial({ color: 0xffffe8, transparent: true, opacity: .95, depthWrite: false })
+        });
+        Object.defineProperty(this, "glassMat", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.LineBasicMaterial({ color: 0xbff7ff, transparent: true, opacity: .35 })
+        });
+        Object.defineProperty(this, "particleMat", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new THREE.PointsMaterial({ color: 0xb9fbff, transparent: true, opacity: .9, size: 3, sizeAttenuation: false, depthWrite: false })
+        });
+        Object.defineProperty(this, "lastGlassKey", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
         this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
         this.mat = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms: { uTime: { value: 0 }, uResolution: { value: new THREE.Vector2(1, 1) }, uWaveCount: { value: 0 }, uWaves: { value: Array.from({ length: 12 }, () => new THREE.Vector4()) } } });
         this.bg = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.mat);
