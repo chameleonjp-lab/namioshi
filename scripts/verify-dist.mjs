@@ -28,6 +28,17 @@ const forbiddenVendorTypeScript = [
   ['node_', 'modules/typescript'],
   ['lib', '/typescript.js']
 ];
+const forbiddenDistJsTypeAnnotations = [
+  [':number', ':number'],
+  [':string', ':string'],
+  [':boolean', ':boolean'],
+  [':AudioContext', ':AudioContext'],
+  [':OscillatorType', ':OscillatorType'],
+  ['|null', '|null'],
+  ['playerName:string', 'playerName:string'],
+  ['score:number', 'score:number'],
+  ['f:number', 'f:number']
+];
 const forbiddenPaths = [
   ['/root/', '.nvm/'].join(''),
   ['/ho', 'me/'].join(''),
@@ -42,6 +53,11 @@ const pathScanFiles = ['package.json', 'package-lock.json'];
 function scanDistFile(p) {
   if (p.endsWith('.map')) bad.push('source map: ' + p);
   const txt = readFileSync(p, 'utf8');
+  if (p.endsWith('.js') && p.split('/').join('/').startsWith('dist/assets/')) {
+    for (const [label, needle] of forbiddenDistJsTypeAnnotations) {
+      if (txt.includes(needle)) bad.push(`TypeScript type annotation ${label}: ${p}`);
+    }
+  }
   if (/https?:\/\/(?!(?:chameleonjp\.codeberg\.page|chameleonjp-lab\.codeberg\.page)(?:[\/'"]|$)|chameleonjp\.supabase\.co(?:[\/'"]|$))/.test(txt)) bad.push('external CDN/url: ' + p);
   if (/service_role/i.test(txt)) bad.push('service_role string: ' + p);
   if (/ranking_scores/.test(txt)) bad.push('direct ranking_scores reference: ' + p);
@@ -79,4 +95,4 @@ if (bad.length) {
   console.error(bad.join('\n'));
   process.exit(1);
 }
-console.log('verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, legacy hand-written dist markers, or forbidden absolute/local TypeScript paths or vendored TypeScript external lookups in dist/scripts/vendor/package metadata');
+console.log('verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, legacy hand-written dist markers, forbidden absolute/local TypeScript paths, vendored TypeScript external lookups, or TypeScript type annotations in dist asset JavaScript');
