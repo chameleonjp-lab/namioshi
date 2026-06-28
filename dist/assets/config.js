@@ -1,5 +1,5 @@
 export const GAME_SLUG = 'namioshi';
-const G='https://chameleonjp.codeberg.page/namioshi/';export{G as GAME_URL};
+export const GAME_URL = 'https://chameleonjp.codeberg.page/namioshi/';
 export const CLIENT_VERSION = 'namioshi-v2.0.0';
 export const SCORE_UNIT = '点';
 export const PLAY_SECONDS = 10;

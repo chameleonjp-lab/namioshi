@@ -1,6 +1,17 @@
 export class CanvasView {
     constructor(canvas) {
-        this.canvas = canvas;
+        Object.defineProperty(this, "canvas", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: canvas
+        });
+        Object.defineProperty(this, "ctx", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         const c = canvas.getContext('2d', { alpha: false });
         if (!c)
             throw Error('Canvas unavailable');
