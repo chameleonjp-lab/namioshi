@@ -1,0 +1,20 @@
+let ac = null;
+export function wake() { try {
+    ac ?? (ac = new AudioContext());
+    if (ac.state === 'suspended')
+        void ac.resume();
+}
+catch { } }
+export function tone(f, d = .08, type = 'sine') { try {
+    if (!ac)
+        return;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.value = f;
+    g.gain.value = .045;
+    g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + d);
+    o.connect(g).connect(ac.destination);
+    o.start();
+    o.stop(ac.currentTime + d);
+}
+catch { } }
