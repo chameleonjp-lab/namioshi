@@ -1,1 +1,1 @@
-{"name":"typescript","version":"5.5.4","main":"/root/.nvm/versions/node/v20.20.2/lib/node_modules/typescript/lib/typescript.js","bin":{"tsc":"/root/.nvm/versions/node/v20.20.2/bin/tsc"}}
+{"name":"typescript","version":"5.5.4","type":"module","main":"lib/typescript.js"}
