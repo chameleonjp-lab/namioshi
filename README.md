@@ -57,4 +57,4 @@ verify ok: no source maps, external CDN, service_role, direct ranking_scores POS
 
 - ビルド設定から環境依存の絶対パスを削除しました。
 - `npm run verify` は `dist` に加えて `scripts` / `vendor` / `package.json` / `package-lock.json` も検査し、vendored TypeScript shim が外部やグローバルの TypeScript を探索しないことも確認します。
-- `dist/assets/core/audio.js`、`dist/assets/core/ranking.js`、`dist/assets/core/share.js` に TypeScript 型注釈が残っていないことも確認します。
+- `dist/assets/core/audio.js`、`dist/assets/services/ranking.js`、`dist/assets/services/share.js` に TypeScript 型注釈が残っていないことも確認します。
