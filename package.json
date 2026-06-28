@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "vite build",
+    "build": "node scripts/build.mjs",
     "size": "node scripts/check-size.mjs",
     "verify": "node scripts/verify-dist.mjs"
   },
