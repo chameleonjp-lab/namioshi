@@ -1,8 +1,8 @@
-# CURRENT_TASK: namioshi v3 Phase 1 現行UI・状態遷移の正しさ
+# CURRENT_TASK: namioshi v3 Phase 1.1 共有フォールバックと確認結果の正確化
 
 ## 今回の目的
 
-現行ゲームのUIと状態遷移にある明確な不具合だけを修正する。ゲーム物理、得点式、公式配置、ランキング契約、WebGL描画、Canvas描画、ビルド構成は変更しない。
+Phase 1で残った共有の手動コピー不具合を修正し、実機未確認項目の記録を正確にする。ゲーム物理、得点式、ランキング契約、WebGL描画、Canvas描画、ビルド構成は変更しない。
 
 ## 対象リポジトリ
 
@@ -12,73 +12,69 @@
 ## 基準ブランチ
 
 - 作業開始時ブランチ: `work`
-- 作業ブランチ: `codex/namioshi-v3-phase1-correctness`
+- 作業ブランチ: `codex/namioshi-v3-phase1-share-fallback`
 
 ## 基準コミット
 
-- `3191603 Merge pull request #16 from chameleonjp-lab/codex/namioshi-v3`
+- `ddc5da4 Merge pull request #17 from chameleonjp-lab/codex/fix-ui-and-state-transition-issues`
 
-## 開始時の未コミット差分
-
-`git status --short` の開始時出力:
+## 開始時の確認
 
 ```text
+$ git status --short
 ?? node_modules/
 ?? vendor/vite/node_modules/
+
+$ git branch --show-current
+work
+
+$ git log -5 --oneline
+ddc5da4 Merge pull request #17 from chameleonjp-lab/codex/fix-ui-and-state-transition-issues
+7b25d0f Fix v3 phase1 UI state correctness
+3191603 Merge pull request #16 from chameleonjp-lab/codex/namioshi-v3
+9f220be docs: define namioshi v3 contracts
+07de190 Merge pull request #15 from chameleonjp-lab/codex/fix-readme-path-errors
+
+$ git remote -v
 ```
 
-この2件は既存の未追跡依存ディレクトリとして扱い、削除・変更しない。
+`git remote -v` は出力なし。開始時の未追跡依存ディレクトリ `node_modules/` と `vendor/vite/node_modules/` は既存のものとして扱い、削除・変更しない。
 
-## 変更対象ファイル
+## 編集前に列挙した変更予定ファイル
 
 - `src/main.ts`
 - `src/services/share.ts`
-- `src/ui/styles.css`
-- `CURRENT_TASK.md`
 - `docs/REVIEW_CHECKLIST_v3.md`
-- `dist/**`
+- `CURRENT_TASK.md`
+- `dist/**`（ビルド生成物）
 
-## 今回変更しないファイル
+## 変更内容
 
-- `src/game/world.ts`
-- `src/render/**`
-- `src/config.ts`
-- `src/services/ranking.ts`
-- `scripts/**`
-- `vendor/**`
-- `package.json`
-- `package-lock.json`
-- Supabase関連SQL
-- 画像、音声
+- 共有失敗時の手動コピー欄へ、例外メッセージではなく常に `shareText(score)` を入れる。
+- 共有キャンセル（`AbortError`）時は「共有をキャンセルしました」を返し、クリップボードコピーや手動コピー欄表示へ進まない。
+- `navigator.share` が使えない場合、または `AbortError` 以外で失敗した場合は、クリップボードコピーを試す。
+- クリップボードコピー成功時は「シェア文をコピーしました」を表示し、手動コピー欄は開かない。
+- クリップボードコピー失敗時だけ手動コピー欄を開き、「共有できないため、手動でコピーしてください」を表示する。
+- 共有状態は `homeShareStatus` または `resultShareStatus` に表示し、ランキング状態 `rank` には書かない。
+- レビュー・公開チェックリストで、実装上の `blur()` 実行と iPhone Safari 実機確認を分離する。
 
-## 完了条件
+## ブラウザ確認と実機確認の範囲
 
-- 固定時間の見せかけLOADINGを削除し、状態を `HOME` / `RULES` / `COUNTDOWN` / `PLAYING` / `RESULT` / `ERROR` に整理する。
-- `id="readyText"` を削除し、カウントダウン表示を `id="countdownText"` に統一する。
-- RULES画面をHOMEから開き、閉じるとHOMEへ戻せるようにする。
-- カウントダウンを 3:600ms、2:600ms、1:600ms、START:400ms にし、二重起動を防ぐ。
-- 名前未入力では開始せず、正しい名前入力後はエラーを消し、開始時に入力欄を `blur()` する。
-- ランキング送信失敗時に、端末へ保存していないのに保存済みと表示しない。
-- 共有キャンセルと共有失敗を分け、共有状態をランキング状態へ書かない。
-- `npm run build`、`npm run verify`、`npm run size` を実行する。
+この作業ではローカルのブラウザ操作確認、iPhone Safari実機確認、Codeberg Pages公開環境確認、実Supabase通信確認は行っていない。該当項目は未確認として扱う。
 
-## 現行問題候補のコード読解結果
+## 検証予定
 
-今回確認した範囲は静的読解であり、実行確認を伴わないものは `[実行確認が必要]` とする。
+- `npm run build`
+- `npm run verify`
+- `npm run size`
+- 生成された `dist` の静的確認
 
-| # | 問題候補 | 分類 | 根拠 |
-|---:|---|---|---|
-| 1 | LOADINGとREADYで同じidを使用している | [確認済み] | 変更前の `src/main.ts` のHTML文字列で `LOADING` と `READY` の両方に `id="readyText"` があった。 |
-| 2 | ルールボタンに処理がない | [確認済み] | 変更前の `src/main.ts` で `rule` 要素は作成されるが、クリック処理が設定されていなかった。 |
-| 3 | 固定時間の見せかけLOADINGがある | [確認済み] | 変更前の `start()` が `LOADING` に遷移して `setTimeout(ready,180)` を実行していた。 |
-| 4 | ゲーム座標が端末ピクセルへ直接依存している | [確認済み] | 現行コードでは `play()` が `world.reset(innerWidth, innerHeight)` を呼び、pointerdownの`clientX`/`clientY`を`World.tap()`へ渡している。 |
-| 5 | 公式ランキングでも毎回ランダム配置になっている可能性 | [確認済み] | `World.reset()` がビーコンとガラスに `Math.random()` を使い、ランキング送信前に公式/練習の分岐がない。 |
-| 6 | 壁反射波が反射元で即座に再反射する可能性 | [実行確認が必要] | 波ごとに `edges`/`glass` はあるが、親子間の反射元抑止や移動距離消費の仕組みは静的読解だけでは挙動確定できない。 |
-| 7 | 同じタップ由来の複数波が同じビーコンへ重複加点する可能性 | [確認済み] | 現行波は `rootTapId` を持たず、波単位の `hit` Setで判定している。 |
-| 8 | 全体コンボ倍率により入力順で得点が変わる可能性 | [確認済み] | `World.step()` で `combo` を使った倍率を加点に使っている。 |
-| 9 | 「保存されました」と表示するが実際には保存していない | [確認済み] | ランキング送信失敗時の文言に対し、現行コードに結果保存処理はない。 |
-| 10 | 共有キャンセル時にも手動コピー欄が開く可能性 | [確認済み] | 変更前の共有ボタン処理は `share()` の例外をすべて手動コピー表示へ送っていた。 |
+## 実行した検証
 
-## 実機未確認の範囲
-
-この作業では実機確認を行わない。iPhone SE級、iPhone 11 Pro、iPhone 17 Pro、iPad Pro 2018縦、iPad Pro 2018横、Safari、Codeberg Pages公開環境、実Supabase通信はいずれも未確認とする。
+- `npm run build`: 成功。
+- `npm run verify`: 成功。
+- `npm run size`: 成功。`dist total: 21846 bytes / 2900000`。
+- `node --check dist/assets/main.js`: 成功。
+- `node --check dist/assets/services/share.js`: 成功。
+- `node --input-type=module ...`: 共有機能の差し替え確認6ケースに成功。ただしNode上の関数単体確認であり、ブラウザ実機確認ではない。
+- `rg` による生成済み `dist` の静的確認で、手動コピー欄が `shareText(score)` を使うこと、`AbortError` 分岐、clipboard分岐、共有状態要素とランキング状態要素が分離していることを確認した。
