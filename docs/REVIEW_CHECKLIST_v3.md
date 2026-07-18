@@ -13,6 +13,8 @@
 
 ## 自動確認: 開発・ビルド
 
+### Phase 2A 静的確認
+
 - [済] `src`の実行コードを`.js`へ統一した
 - [済] `src`に`.ts`と`.tsx`を残していない
 - [済] 相対JavaScript importへ`.js`拡張子を付けた
@@ -25,11 +27,31 @@
 - [済] 不要な`src/types` placeholderと旧shaderファイルを削除した
 - [済] コミット済み`src`と`dist/assets`の対応ファイルを同一内容にした
 - [済] verifyにJavaScript構文、import解決、src/dist一致、HTML参照の検査を実装した
-- [未確認] `npm run build`が実行環境で成功する
-- [未確認] `npm run verify`が実行環境で成功する
-- [未確認] `npm run size`が実行環境で成功する
+
+### Phase 2B 静的確認
+
+- [済] `package.json`のdependenciesとdevDependenciesを削除した
+- [済] `vendor/three`、`vendor/vite`、`vendor/typescript`を削除した
+- [済] `vite.config.js`と`tsconfig.json`を削除した
+- [済] 依存を記録していた`package-lock.json`を削除した
+- [済] 旧`scripts/check-size.mjs`を削除した
+- [済] `scripts/report-size.mjs`を追加した
+- [済] `npm run size`から固定2.9MB失敗条件を削除した
+- [済] 容量、ファイル数、大きいファイル、重複内容を報告する
+- [済] `.gitignore`で`node_modules`、一時ファイル、`.env`系を除外する
+- [済] verifyが不要依存と旧設定の再混入を拒否する
+- [済] verifyが入口から参照されない公開ファイルを拒否する
+- [済] 禁止パス検査が検査ファイル自身を誤検出しない
+
+### 実行確認
+
+- [未確認] `npm run build`が外部パッケージなしで成功する
+- [未確認] `npm run verify`が外部パッケージなしで成功する
+- [未確認] `npm run size`が固定上限なしで成功する
+- [未確認] build後に`git diff --exit-code -- dist`が成功する
 - [未確認] root `index.html`をローカルHTTPサーバーで起動できる
 - [未確認] `dist/index.html`を静的HTTPサーバーで起動できる
+- [未確認] G2「開発構成」を通過できる
 
 ## 自動確認: ゲーム
 
@@ -92,7 +114,7 @@
 - [未確認] WebGLコンテキスト消失対応
 - [未確認] reduced motion
 - [未確認] HIGH / MID / LOW
-- [未確認] 総容量は報告するが固定上限で落とさない
+- [済] 総容量は報告するが固定上限で落とさない実装になっている
 
 ## 実機確認: 継続試験
 
