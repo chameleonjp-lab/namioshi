@@ -1,103 +1,68 @@
-# CURRENT_TASK: namioshi v3 G2 開発構成の実行確認
+# CURRENT_TASK: namioshi v3 G2完了記録の同期
 
 ## 今回の目的
 
-Phase 2AとPhase 2Bで整えたJavaScript正本、依存0件、一方向build、容量報告専用化を、GitHub上の独立した実行環境で検証する。ゲームコード、得点、配置、画面、共有、ランキング通信、描画結果は変更しない。
+Pull Request #22で完了したG2「開発構成」の最終実行結果を、main上の検証報告とレビュー表へ正確に同期する。ゲームコード、公開物、build、得点、配置、画面、共有、ランキング通信、描画結果は変更しない。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `cf37cb040c5f1570ff489819b921b337843262fb`（Pull Request #21のマージ）
-- 作業ブランチ: `codex/namioshi-v3-g2-build-verification`
-- 対象Pull Request: `#22`
+- 基準コミット: `5ddd92274eb61ba110f05bbd59d8fa15787533c8`（Pull Request #22のマージ）
+- 作業ブランチ: `docs/namioshi-g2-final-sync`
 - 対象ゲート: G2「開発構成」
-- 前提: Phase 2AとPhase 2Bはmainへ反映済み
+- G2判定: 通過済み
 - 実機確認: 未完了
 
-## 追加した自動検査
+## 確認済みの最終結果
 
-`.github/workflows/g2-build-verification.yml`を追加した。
+Pull Request #22の最終headは`e3fdc069f9892faa5ee5b89c6f487aa0611ec586`である。
 
-Node.js 18、20、22で、それぞれ次を実行する。
+このheadに対する`G2 Build Verification` Run #6、Run ID `29635330869`は成功した。
+
+Node.js 18、20、22の各ジョブで、次がすべて成功した。
 
 ```text
-node --version
 npm run build
 npm run verify
 npm run size
 git diff --exit-code -- dist
 ```
 
-`npm install`と`npm ci`は実行しない。外部パッケージなしで成立する構成を、そのまま検証する。
+外部パッケージをインストールする`npm install`と`npm ci`はworkflowに含めていない。
 
-失敗時は`g2-build.log`を1日だけArtifactへ保存する。成功時は診断Artifactを作らない。
+## G2で修正した問題
 
-## 実行結果
+### GitHub ActionsのNode.js設定
 
-初回全成功Run:
+初回は`actions/setup-node`へ無効な`cache: false`を渡して失敗した。`package-manager-cache: false`へ修正した。
 
-```text
-workflow: G2 Build Verification
-run number: 4
-run id: 29635225175
-commit: f6f0ab01f8715653ac5962bbe05d511a60fd688d
-```
+### TypeScript残存
 
-結果:
+buildが`src/vite-env.d.ts`を検出して停止した。このファイルは現在のJavaScript正本とHTMLからのCSS読込では使わないため、同じPull Request内で削除した。
 
-| 実行環境 | build | verify | size | dist再現性 |
-|---|---|---|---|---|
-| Node.js 18 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 20 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 22 | 成功 | 成功 | 成功 | 成功 |
+検査を弱めたり、失敗を成功扱いにしたりせず、原因を修正した後に再実行した。
 
-詳細は`docs/G2_BUILD_VERIFICATION_REPORT.md`へ記録した。
+## 今回変更する文書
 
-## 失敗と修正
+- `CURRENT_TASK.md`
+- `docs/G2_BUILD_VERIFICATION_REPORT.md`
+- `docs/REVIEW_CHECKLIST_v3.md`
 
-### Run #1
+## 今回変更しないもの
 
-`actions/setup-node`へ`cache: false`を渡していたため失敗した。現在の入力契約に合わせ、`package-manager-cache: false`へ修正した。
-
-### Run #2・#3
-
-`npm run build`が`src/vite-env.d.ts`の残存を検出して停止した。診断Artifactで原因を確認し、現在のJavaScript構成で使っていない型宣言を削除した。
-
-検査を弱めたり、失敗を成功扱いにしたりせず、同じブランチとPull Requestで原因を修正した。
-
-## G2判定
-
-G2「開発構成」は通過と判定する。
-
-- Node.js 18、20、22の3ジョブが成功した。
-- `npm run build`が成功した。
-- `npm run verify`が成功した。
-- `npm run size`が固定容量上限なしで成功した。
-- build後の`dist`差分がなかった。
-- package install処理を使っていない。
-- Phase 2AのJavaScript正本とPhase 2Bの依存0件を維持した。
-
-この文書更新後のPull Request最新headでも、同じworkflowが成功していることをマージ前に確認する。
-
-## 変更しなかった重要部分
-
-- ゲームの`src/**/*.js`
+- `.github/workflows/g2-build-verification.yml`
+- `src/**`
 - `dist/**`
 - root `index.html`
-- `scripts/build.mjs`
-- `scripts/verify-dist.mjs`
-- `scripts/report-size.mjs`
 - `package.json`
+- `scripts/**`
 - 10秒、最大3タップ
-- 波速度、寿命、反射、得点、コンボ
-- ビーコンとガラス片のランダム配置
+- 波、反射、得点、コンボ、配置
 - HOME / RULES / COUNTDOWN / PLAYING / RESULT / ERROR
 - 共有文と共有フォールバック
-- Supabase URL、Publishable key、Authorizationヘッダー、送信本文
-- WebGLとCanvas 2Dの描画処理
-
-例外として、buildを阻止していた未使用の`src/vite-env.d.ts`だけを削除した。これは実行コードではない。
+- Supabase URL、Publishable key、送信ヘッダー、送信本文
+- WebGLとCanvas 2D
 
 ## 未確認の範囲
 
@@ -111,12 +76,21 @@ G2「開発構成」は通過と判定する。
 
 これらをG2の成功として扱わない。
 
+## 完了条件
+
+- Pull Request #22最終headのRun #6成功を文書へ記録する。
+- Node.js 18、20、22の各検査を`[済]`へ更新する。
+- G2を通過済みとして記録する。
+- 実機と本番環境の未確認項目を残す。
+- 文書以外を変更しない。
+- この同期Pull Requestの最新headでもG2 workflowが成功する。
+
 ## 戻し方
 
-この作業を取り消す場合は、Pull Request #22をrevertする。追加対象は自動検査、G2文書、未使用型宣言の削除だけであり、ゲーム仕様、公開スコア、Supabaseデータの戻し作業は不要。
+この同期だけを取り消す場合は、この文書同期Pull Requestをrevertする。ゲームコード、公開物、Supabaseデータの戻し作業は不要。
 
 ## 次の作業
 
-Pull Request #22がmainへマージされた後、Phase 3A「360×640固定論理座標」を開始する。
+この同期Pull Requestがmainへマージされた後、Phase 3A「360×640固定論理座標」を開始する。
 
 Phase 3Aでは固定座標、画面への拡大縮小、入力座標変換だけを扱う。得点式、公式配置、ランキング送信、WebGLの高品質化は同じPull Requestで変更しない。
