@@ -69,10 +69,45 @@
 - [済] `docs/G2_BUILD_VERIFICATION_REPORT.md`へ最終Run結果を反映した
 - [済] G2「開発構成」を通過した
 
-### ローカルHTTP確認
+### Phase 3A 固定論理座標 静的確認
+
+- [済] `LOGICAL_WIDTH=360`と`LOGICAL_HEIGHT=640`を一元定義した
+- [済] `src/game/viewport.js`へ表示倍率、余白、座標変換をまとめた
+- [済] `World.w / World.h`を常に360×640へ固定した
+- [済] `World.reset()`から画面サイズ引数を削除した
+- [済] resizeと画面回転相当の処理でWorldを作り直さない
+- [済] `clientX / clientY`を論理座標へ変換してから`World.tap()`へ渡す
+- [済] 論理領域外と余白上の入力を拒否する
+- [済] `pointercancel`を処理する
+- [済] WebGLとCanvas 2Dへ同じviewportを渡す
+- [済] Device Pixel Ratioを描画解像度だけへ使う
+- [済] `src`と`dist/assets`へ同じ固定座標実装を反映した
+- [済] `tests/viewport.test.mjs`へ5件の自動試験を追加した
+- [済] GitHub ActionsのNode.js 18、20、22で`npm test`を実行する定義を追加した
+
+### Phase 3A 実行確認
+
+- [済] Node.js 18でviewport試験5件が成功する
+- [済] Node.js 20でviewport試験5件が成功する
+- [済] Node.js 22でviewport試験5件が成功する
+- [済] 320×568、375×812、390×844、1024×1366で同じ論理入力が同じ結果になる
+- [済] 左上、中央、右下の変換誤差が0.25論理ピクセル以内である
+- [済] 縦長画面の上下余白と横長画面の左右余白を拒否する
+- [済] viewport変更で進行中Worldの状態が変わらない
+- [済] `npm run build`、`npm run verify`、`npm run size`が成功する
+- [済] build後の`dist`差分がない
+- [済] `docs/PHASE3A_VIEWPORT_REPORT.md`へRun #10の結果を記録した
+- [未確認] Pull Request #24の最終文書更新後の最新headで全ジョブが成功する
+
+### ブラウザ・実機確認
 
 - [未確認] root `index.html`をローカルHTTPサーバーで起動できる
 - [未確認] `dist/index.html`を静的HTTPサーバーで起動できる
+- [未確認] iPhone SE級320×568で360×640全体を視認できる
+- [未確認] iPhone Safariで余白タップが拒否される
+- [未確認] 画面回転前後で進行中の見た目と操作が壊れない
+- [未確認] WebGLで固定ゲーム領域と余白背景が正しく描かれる
+- [未確認] Canvas 2Dで固定ゲーム領域と余白背景が正しく描かれる
 
 ## 自動確認: ゲーム
 
