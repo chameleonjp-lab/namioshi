@@ -1,80 +1,112 @@
-# CURRENT_TASK: namioshi v3 Phase 1.1 共有フォールバックと確認結果の正確化
+# CURRENT_TASK: namioshi v3 Phase 2A JavaScript正本への統一
 
 ## 今回の目的
 
-Phase 1で残った共有の手動コピー不具合を修正し、実機未確認項目の記録を正確にする。ゲーム物理、得点式、ランキング契約、WebGL描画、Canvas描画、ビルド構成は変更しない。
+実質JavaScriptだった`src/**/*.ts`と疑似TypeScript変換を廃止し、ブラウザがそのまま読める`src/**/*.js`を正本にする。ゲーム物理、得点、配置、画面状態、共有、ランキング契約、WebGL描画結果、Canvas 2D描画結果は変更しない。
 
-## 対象リポジトリ
+## 基準
 
-- `https://github.com/chameleonjp-lab/namioshi`
-- 作業ディレクトリ: `/workspace/namioshi`
+- 対象: `chameleonjp-lab/namioshi`
+- 基準ブランチ: `main`
+- 基準コミット: `0dc1991ebdfc9b76442a6e2afea4fcb2ca9134e0`（Pull Request #19のマージ）
+- 作業ブランチ: `codex/namioshi-v3-phase2a-js-source`
+- 前提ゲート: G1完了、実機確認は未完了
 
-## 基準ブランチ
+## 変更範囲
 
-- 作業開始時ブランチ: `work`
-- 作業ブランチ: `codex/namioshi-v3-phase1-share-fallback`
+### JavaScriptへ移行
 
-## 基準コミット
+- `src/main.ts` → `src/main.js`
+- `src/config.ts` → `src/config.js`
+- `src/core/audio.ts` → `src/core/audio.js`
+- `src/game/world.ts` → `src/game/world.js`
+- `src/render/canvas.ts` → `src/render/canvas.js`
+- `src/render/webgl.ts` → `src/render/webgl.js`
+- `src/services/ranking.ts` → `src/services/ranking.js`
+- `src/services/share.ts` → `src/services/share.js`
 
-- `ddc5da4 Merge pull request #17 from chameleonjp-lab/codex/fix-ui-and-state-transition-issues`
+### 不要ファイルを削除
 
-## 開始時の確認
+- `src/types/index.ts`
+- `src/render/shaders/water.ts`
+- 対応する古い`dist`生成物
 
-```text
-$ git status --short
-?? node_modules/
-?? vendor/vite/node_modules/
+両ファイルは現行実行コードから参照されていないことを確認したうえで削除する。
 
-$ git branch --show-current
-work
+### 開発入口と公開入口
 
-$ git log -5 --oneline
-ddc5da4 Merge pull request #17 from chameleonjp-lab/codex/fix-ui-and-state-transition-issues
-7b25d0f Fix v3 phase1 UI state correctness
-3191603 Merge pull request #16 from chameleonjp-lab/codex/namioshi-v3
-9f220be docs: define namioshi v3 contracts
-07de190 Merge pull request #15 from chameleonjp-lab/codex/fix-readme-path-errors
+- root `index.html`は`./src/ui/styles.css`と`./src/main.js`を読む。
+- `dist/index.html`は`./assets/ui/styles.css`と`./assets/main.js`を読む。
+- URLのサブパスをHTMLへ固定せず、相対パスでローカルHTTP配信とCodeberg Pagesの両方へ対応する。
 
-$ git remote -v
-```
+### build
 
-`git remote -v` は出力なし。開始時の未追跡依存ディレクトリ `node_modules/` と `vendor/vite/node_modules/` は既存のものとして扱い、削除・変更しない。
+`scripts/build.mjs`は次だけを行う。
 
-## 編集前に列挙した変更予定ファイル
+1. `src`内に`.ts`または`.tsx`があれば失敗する。
+2. 既存`dist`を削除する。
+3. `src`を加工せず`dist/assets`へ再帰コピーする。
+4. 公開用`dist/index.html`を生成する。
 
-- `src/main.ts`
-- `src/services/share.ts`
-- `docs/REVIEW_CHECKLIST_v3.md`
-- `CURRENT_TASK.md`
-- `dist/**`（ビルド生成物）
+TypeScript shim、疑似変換、正規表現によるコード書き換え、ハードコードしたソース一覧、既存`dist`の再利用は行わない。
 
-## 変更内容
+### verify
 
-- 共有失敗時の手動コピー欄へ、例外メッセージではなく常に `shareText(score)` を入れる。
-- 共有キャンセル（`AbortError`）時は「共有をキャンセルしました」を返し、クリップボードコピーや手動コピー欄表示へ進まない。
-- `navigator.share` が使えない場合、または `AbortError` 以外で失敗した場合は、クリップボードコピーを試す。
-- クリップボードコピー成功時は「シェア文をコピーしました」を表示し、手動コピー欄は開かない。
-- クリップボードコピー失敗時だけ手動コピー欄を開き、「共有できないため、手動でコピーしてください」を表示する。
-- 共有状態は `homeShareStatus` または `resultShareStatus` に表示し、ランキング状態 `rank` には書かない。
-- レビュー・公開チェックリストで、実装上の `blur()` 実行と iPhone Safari 実機確認を分離する。
+`scripts/verify-dist.mjs`は最低限、次を検査する。
 
-## ブラウザ確認と実機確認の範囲
+- `.ts`と`.tsx`の残存
+- JavaScriptのモジュール構文
+- 相対importの`.js`拡張子と参照先
+- bare importと外部依存の混入
+- `src`と`dist/assets`のファイル一覧および内容一致
+- rootとdistのHTML参照
+- source map、secret、service_role、直接ランキング書き込み、古い生成物の混入
+- 環境依存の絶対パス
 
-この作業ではローカルのブラウザ操作確認、iPhone Safari実機確認、Codeberg Pages公開環境確認、実Supabase通信確認は行っていない。該当項目は未確認として扱う。
+## 変更しない重要部分
 
-## 検証予定
+- 10秒、最大3タップ
+- 波速度、寿命、反射、得点、コンボ
+- ビーコンとガラス片のランダム配置
+- HOME / RULES / COUNTDOWN / PLAYING / RESULT / ERROR
+- カウントダウン時間
+- 共有文と共有フォールバック
+- Supabase URL、Publishable key、送信ヘッダー、送信本文
+- WebGLシェーダーと描画処理
+- Canvas 2D描画処理
+- `package.json`、`package-lock.json`、`vendor/**`、Vite設定、TypeScript設定
+- 旧2.9MB失敗条件
+
+不要依存と旧容量制限はPhase 2Bで別に変更する。
+
+## 検証状態
+
+GitHub連携を通した静的確認では、JavaScript正本、`.js`付き相対import、再帰コピー式build、相対HTML参照、旧`.ts`削除を確認する。コマンド実行環境による次の確認は、Draft Pull Request上のCIまたはレビュー環境で実施するまで未確認とする。
 
 - `npm run build`
 - `npm run verify`
 - `npm run size`
-- 生成された `dist` の静的確認
+- ローカルHTTPサーバーでの起動
+- iPhone/iPad実機
+- Codeberg Pages
+- 実Supabase通信
 
-## 実行した検証
+## 完了条件
 
-- `npm run build`: 成功。
-- `npm run verify`: 成功。
-- `npm run size`: 成功。`dist total: 21846 bytes / 2900000`。
-- `node --check dist/assets/main.js`: 成功。
-- `node --check dist/assets/services/share.js`: 成功。
-- `node --input-type=module ...`: 共有機能の差し替え確認6ケースに成功。ただしNode上の関数単体確認であり、ブラウザ実機確認ではない。
-- `rg` による生成済み `dist` の静的確認で、手動コピー欄が `shareText(score)` を使うこと、`AbortError` 分岐、clipboard分岐、共有状態要素とランキング状態要素が分離していることを確認した。
+- `src`に`.ts`と`.tsx`がない。
+- root `index.html`が`src/main.js`とCSSを直接参照する。
+- buildが疑似TypeScript変換を使わない。
+- buildが`src`を加工せず再帰コピーする。
+- `src`と`dist/assets`の対応内容が一致する。
+- 相対importがすべて解決する。
+- G1の画面と共有処理を維持する。
+- ゲームの数値、条件式、表示文、関数呼び出し順を変更していない。
+- 実施できない検証を成功扱いにしない。
+
+## 戻し方
+
+このPhaseだけを取り消す場合は、Phase 2AのPull Requestをrevertする。ゲーム仕様やランキングデータの移行は含まないため、データベースの戻し作業は不要。
+
+## 次の作業
+
+Phase 2B「不要依存と旧容量制限の削除」。Phase 2Aがレビューされ、buildとverifyが通るまで開始しない。
