@@ -17,8 +17,8 @@ if(process.argv.includes('--write')){
   writeFileSync(snapshotPath,serialized);
   console.log(`wrote ${snapshotPath}`);
 }else{
-  const expected=readFileSync(snapshotPath,'utf8');
-  if(expected!==serialized){
+  const expected=JSON.parse(readFileSync(snapshotPath,'utf8'));
+  if(JSON.stringify(expected)!==JSON.stringify(result)){
     console.error('layout analysis snapshot is stale; run npm run analyze:layouts:write and review the changed metrics');
     process.exit(1);
   }
