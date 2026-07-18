@@ -1,150 +1,194 @@
-# CURRENT_TASK: namioshi v3 Phase 3A 360×640固定論理座標
+# CURRENT_TASK: namioshi v3 Phase 3B 公式配置比較ラボ
 
 ## 今回の目的
 
-端末の画面サイズが波の距離、速度、反射時刻、得点へ影響しないようにする。ゲーム内部を360×640へ固定し、画面への拡大縮小とPointer入力の座標変換だけを導入する。
+公式モードへ配置を組み込む前に、3つ以上の候補を同じ条件で比較し、人が採用候補を判断できる資料と道具を作る。
 
-得点式、公式配置、練習モード、ランキング送信、WebGLの高品質化は変更しない。
+今回は本番ゲームの配置、得点、ランキング送信、公式モード、練習モードを変更しない。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `7dd230211195f855743f14411092a80b9ac1e253`（Pull Request #23のマージ）
-- 作業ブランチ: `codex/namioshi-v3-phase3a-logical-viewport`
-- 対象Pull Request: `#24`
-- 前提ゲート: G2「開発構成」通過済み
-- 対象ゲート: G3「公平な盤面」のうち固定論理座標
+- 基準コミット: `15aed890aedd03399b0bc474ebf2c4bc7cd3c858`（Pull Request #24のマージ）
+- 作業ブランチ: `codex/namioshi-v3-phase3b-layout-lab`
+- 前提: Phase 3Aの360×640固定論理座標がmainへ反映済み
+- 対象ゲート: G3「公平な盤面」のうち公式配置候補の比較
+- 採用状態: `human-decision-pending`
 - 実機確認: 未完了
 
-## 実装契約
+## 追加する候補
+
+同じルール版`namioshi-v3-layout-study-001`で、次の3候補を作る。
+
+- 候補A・交差流: `candidate-a-cross-current`
+- 候補B・段流路: `candidate-b-stair-channel`
+- 候補C・開港型: `candidate-c-open-harbor`
+
+各候補は次を持つ。
+
+- ビーコン3個の初期位置
+- ビーコン3個の固定速度
+- ガラス片4個の端点
+- 候補ID
+- ルール版
+- 説明文
+
+候補データに`selected`または`official`を入れない。
+
+## 比較条件
+
+### 調査範囲
+
+- 360×640論理座標
+- 121タップ地点
+- 0.25秒から3.00秒までの56到達時刻
+- 画面4辺とガラス片4個
+- 直接波、壁反射、ガラス反射、2回反射
+
+### 共通3タップ地点
 
 ```text
-論理幅: 360
-論理高: 640
-表示倍率: min(viewWidth / 360, viewHeight / 640)
-表示幅: 360 × 表示倍率
-表示高: 640 × 表示倍率
-左右余白: (viewWidth - 表示幅) / 2
-上下余白: (viewHeight - 表示高) / 2
+(90, 140)
+(180, 340)
+(270, 490)
 ```
 
-入力変換:
+すべての候補へ同じ3地点を使う。
+
+### 比較する値
+
+- 直接、壁、ガラス、2回反射の経路数
+- 各経路種類が届くビーコン数
+- 共通3タップの比較用参考得点
+- 直接経路の割合
+- 反射経路を持つタップ地点数
+- 一つの地点へ経路が集中する割合
+- ビーコン同士の最小間隔
+- ビーコンとガラスの最小間隔
+- 近接警告の組数
+- ガラス端点と画面端の最小余白
+- 候補データの指紋
+
+## 追加するファイル
+
+### 候補と分析
+
+- `tools/layout-candidates.js`
+- `tools/layout-analysis.js`
+- `tools/analyze-layouts.mjs`
+- `tools/layout-analysis.snapshot.json`
+
+候補データが変わり、保存済み分析結果と一致しなくなった場合は検査を失敗させる。
+
+### 比較画面
+
+- `tools/layout-lab.html`
+- `tools/layout-lab.js`
+
+比較画面では、候補を切り替えながら次を確認できるようにする。
+
+- 360×640上のビーコンとガラス片
+- 10秒間のビーコン移動
+- 共通3タップ地点
+- 主要な分析値
+- 候補IDと指紋
+- 採用が人の判断待ちであること
+
+比較画面は本番`src`と`dist`へ入れない。
+
+### 試験と文書
+
+- `tests/layouts.test.mjs`
+- `docs/OFFICIAL_LAYOUT_STUDY_v3.md`
+
+## 自動検査
+
+`npm test`で次を確認する。
+
+1. 候補が3件以上ある。
+2. 各候補がビーコン3個とガラス片4個を持つ。
+3. 候補IDと要素IDが重複しない。
+4. 候補が`selected`または`official`を持たない。
+5. 候補の指紋が一意で、保存結果と一致する。
+6. 保存済み分析結果が現在の候補データと一致する。
+7. すべての候補で、直接、壁、ガラス、2回反射が3つのビーコンへ届く候補を持つ。
+8. 同じ3タップ地点を使い、参考得点がv3候補上限3240以下である。
+
+`npm run analyze:layouts`で分析結果の再計算と保存結果の一致を確認する。
+
+GitHub ActionsのNode.js 18、20、22で次を実行する。
 
 ```text
-logicalX = (clientX - canvasRect.left - offsetX) / scale
-logicalY = (clientY - canvasRect.top  - offsetY) / scale
+npm run build
+npm test
+npm run analyze:layouts
+npm run verify
+npm run size
+git diff --exit-code -- dist
 ```
 
-論理領域外の入力は拒否する。
+## 変更しない重要部分
 
-## 実装内容
-
-### 設定と共通変換
-
-- `src/config.js`へ`LOGICAL_WIDTH=360`と`LOGICAL_HEIGHT=640`を追加した。
-- `src/game/viewport.js`を追加した。
-- 表示倍率、表示範囲、余白、座標変換を一か所へまとめた。
-
-### World
-
-- `World.w / World.h`を360×640へ固定した。
-- `World.reset()`へ画面サイズを渡さない。
-- resizeと画面回転相当の処理でWorldを作り直さない。
-- 現在のランダム配置、波、反射、得点を維持した。
-
-### 入力
-
-- `clientX / clientY`を直接`World.tap()`へ渡さない。
-- Canvasの`getBoundingClientRect()`を基準に論理座標へ変換する。
-- 余白とゲーム領域外の入力をタップ数へ加えない。
-- `PLAYING`中の主Pointerだけを受ける。
-- `pointercancel`を処理する。
-
-### 描画
-
-- WebGLとCanvas 2Dへ同じviewportを渡す。
-- ゲーム領域を切り取らず中央へ配置する。
-- 余白を暗い水面背景で埋める。
-- Device Pixel Ratioは描画解像度だけへ使う。
-- resizeでは表示変換と描画解像度だけを更新する。
-
-### 自動試験
-
-`tests/viewport.test.mjs`へ5件の試験を追加した。
-
-対象画面サイズ:
-
-- 320×568
-- 375×812
-- 390×844
-- 1024×1366
-
-確認内容:
-
-- 左上、中央、右下の変換誤差0.25以内
-- 余白入力の拒否
-- viewport変更でWorld状態が不変
-- 同じ乱数列と論理タップなら画面サイズが違っても同じ得点とWorld状態
-- ゲーム領域全体が切り取られない
-
-## GitHub Actions結果
-
-Pull Request #24のhead `1e860545a18c6cbf9b99549ecbdc477fed55afe1`に対するRun #10、Run ID `29638102137`は成功した。
-
-| 実行環境 | build | viewport試験5件 | verify | size | dist再現性 |
-|---|---|---|---|---|---|
-| Node.js 18 | 成功 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 20 | 成功 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 22 | 成功 | 成功 | 成功 | 成功 | 成功 |
-
-詳細は`docs/PHASE3A_VIEWPORT_REPORT.md`へ記録した。
-
-この文書更新後のPull Request最新headでも同じworkflowを実行し、失敗している状態ではマージしない。
-
-## 変更しなかった重要部分
-
+- `src/**`
+- `dist/**`
+- root `index.html`
 - 10秒、最大3タップ
-- ビーコンとガラス片の現在のランダム配置
-- 波速度、寿命、反射回数
-- 現在の得点式、コンボ、ランキング上限
-- Supabase URL、Publishable key、Authorizationヘッダー、送信本文
+- 現在のランダム配置を使う本番World
+- 波速度、寿命、反射処理
+- 現在の得点式とコンボ
+- Supabase URL、Publishable key、ランキング送信
 - 共有文と共有処理
-- HOME / RULES / COUNTDOWN / PLAYING / RESULT / ERROR
-- 公式配置
+- WebGLとCanvas 2D
 - 公式モードと練習モード
-- WebGLの帯状波、高品質な光、音
+
+候補を比較するための波速度と参考得点は分析内で使うが、本番コードは変更しない。
+
+## 現在の比較結果
+
+| 指標 | 候補A | 候補B | 候補C |
+|---|---:|---:|---:|
+| ガラス反射経路 | 359 | 146 | 330 |
+| 2回反射経路 | 652 | 546 | 516 |
+| 共通3タップの最良参考得点 | 2747 | 2192 | 2650 |
+| ビーコン最小間隔 | 44.18 | 50.12 | 118.12 |
+| ビーコン・ガラス近接警告 | 2 | 1 | 1 |
+
+この表は採用順位ではない。詳細と分析上の制約は`docs/OFFICIAL_LAYOUT_STUDY_v3.md`へ記録する。
 
 ## 未確認の範囲
 
-- rootとdistのブラウザ操作
-- iPhoneとiPad実機
-- iPhone Safariで余白タップが拒否されること
-- 画面回転中の見た目と操作
-- WebGL実表示
-- Canvas 2Dへの実切り替え
+- 比較画面の実ブラウザ表示
+- iPhone SE級での候補A、B、Cの見やすさ
+- 実際に3タップして感じる難しさ
+- 反射の分かりやすさ
+- ビーコンとガラスの重なりが許容できるか
+- 採用する公式配置
 - Codeberg Pages
 - Supabase実通信
 
-自動試験の成功を、実機確認済みという意味にはしない。
+## 完了条件
 
-## 自動検査の判定
-
-Phase 3Aの自動検査は合格と判定する。
-
-- Worldは常に360×640である。
-- resizeはWorld状態を変更しない。
-- WebGLとCanvas 2Dが同じviewportを使う。
-- 余白上の入力を拒否する。
-- 4つの画面サイズで同じ論理入力が同じ結果になる。
-- 5件の自動試験がNode.js 18、20、22ですべて成功した。
-- build、verify、size、dist再現性が成功した。
-- 得点式、公式配置、ランキング送信を変更していない。
+- 3候補を同じ形式で定義している。
+- 3候補を同じ分析条件で比較している。
+- 分析結果を保存し、候補変更時に差を検出できる。
+- 比較画面で候補を切り替えられる。
+- 本番`src`と`dist`を変更していない。
+- 候補を自動採用していない。
+- Node.js 18、20、22の検査が成功する。
+- 人が確認する項目と分析の限界を文書化している。
 
 ## 戻し方
 
-このPhaseを取り消す場合は、Phase 3AのPull Requestをrevertする。Supabaseデータや旧ランキングの変更は含まないため、データベースの戻し作業は不要。
+このPhaseを取り消す場合は、Phase 3BのPull Requestをrevertする。本番ゲーム、公開物、Supabaseデータは変更しないため、ランキングやデータベースの戻し作業は不要。
 
 ## 次の作業
 
-Pull Request #24のレビューとマージ後、Phase 3B「公式配置比較ラボ」を開始する。
+Phase 3Bの自動検査と比較資料のレビュー後、ユーザーが次のいずれかを明示する。
+
+- 候補Aを採用
+- 候補Bを採用
+- 候補Cを採用
+- 候補Dを追加して再比較
+
+採用判断を記録した後に、Phase 3C「公式モードと練習モードの分離」へ進む。
