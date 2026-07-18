@@ -28,24 +28,33 @@ v3では3MBを受け入れ上限にしません。容量は報告値として扱
 
 ```bash
 npm run build
+npm test
 npm run verify
 npm run size
 ```
 
 `npm run build`は`dist`を削除した後、`src`を加工せず`dist/assets`へ再帰コピーし、公開用`dist/index.html`を生成します。TypeScript変換、正規表現によるコード変換、既存`dist`の再利用は行いません。
 
+`npm test`は、360×640の固定論理座標、画面との往復変換、余白入力の拒否、画面サイズ変更によるWorld状態の不変、端末サイズが違っても同じ論理入力から同じ結果になることを確認します。
+
 `npm run verify`は、JavaScript構文、相対importの解決、`src`と`dist/assets`の一致、公開ファイルが入口から参照されていること、HTMLの参照先、不要依存の再混入、公開物へのsecret・service_role・直接ランキング書き込みの混入を検査します。
 
 `npm run size`は、公開物の総量、ファイル数、大きいファイル、同じ内容の重複ファイルを報告します。固定容量を超えたことだけを理由に失敗しません。
+
+## 固定ゲーム座標
+
+Phase 3Aでは、ゲーム内部を360×640へ固定します。端末画面は縦横比を保ってゲーム領域を拡大縮小し、余白は暗い水面背景で埋めます。
+
+Pointer入力は画面座標から360×640の座標へ変換し、余白上の入力を拒否します。画面回転やresizeでは描画範囲だけを更新し、進行中のWorld状態を作り直しません。
 
 ## 描画方式
 
 本命描画は`src/render/webgl.js`の純粋WebGLです。WebGLの初期化、シェーダー作成、プログラム接続、バッファ作成、最小描画確認のいずれかが失敗した場合は、`src/render/canvas.js`のCanvas 2Dへ切り替えます。
 
-現在のWebGL版は、水面背景、波、ビーコン、ガラス片、命中粒子を描画します。Canvas 2D版も同じ`World`を使い、同じゲームルールを維持します。
+WebGL版とCanvas 2D版は同じ`World`と同じviewport変換を使います。現在の描画は、水面背景、波、ビーコン、ガラス片、命中粒子です。
 
 ## 確認状態
 
-Phase 1とPhase 1.1で画面状態と共有処理を修正し、Phase 2AでJavaScript正本と一方向ビルドへ移行しました。Phase 2Bでは不要依存と旧2.9MB失敗条件を削除しています。
+Phase 1とPhase 1.1で画面状態と共有処理を修正し、Phase 2AでJavaScript正本と一方向ビルドへ移行しました。Phase 2Bで不要依存と旧2.9MB失敗条件を削除し、G2のNode.js 18・20・22検査を通過しています。Phase 3Aでは固定論理座標を実装中です。
 
 iPhone、iPad、Codeberg Pages、実Supabase通信は未確認です。実機で確認していない項目は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で`[未確認]`のまま管理します。
