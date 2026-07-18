@@ -8,8 +8,12 @@
 - 対象ゲート: G2「開発構成」
 - 判定: **通過**
 - 初回全成功Run: `G2 Build Verification #4`
-- Run ID: `29635225175`
-- 成功対象コミット: `f6f0ab01f8715653ac5962bbe05d511a60fd688d`
+- 初回成功Run ID: `29635225175`
+- 初回成功コミット: `f6f0ab01f8715653ac5962bbe05d511a60fd688d`
+- Pull Request最終head成功Run: `G2 Build Verification #6`
+- 最終head成功Run ID: `29635330869`
+- Pull Request最終head: `e3fdc069f9892faa5ee5b89c6f487aa0611ec586`
+- mainへのマージコミット: `5ddd92274eb61ba110f05bbd59d8fa15787533c8`
 
 ## 1. 目的
 
@@ -58,10 +62,14 @@ git diff --exit-code -- dist
 | #2 | `29635064991` | 失敗 | Node.js設定は通過したが、`npm run build`で停止した。診断ログを追加した。 |
 | #3 | `29635184708` | 失敗 | 診断Artifactから`src/vite-env.d.ts`の残存を確認した。不要なVite用型宣言を削除した。 |
 | #4 | `29635225175` | 成功 | Node.js 18、20、22の全ジョブが全検査を通過した。 |
+| #5 | Pull Request更新中 | 中間実行 | 文書更新中の一時的なheadに対する実行。最終判定には使用しない。 |
+| #6 | `29635330869` | 成功 | Pull Request #22の最終headで、Node.js 18、20、22の全ジョブが全検査を通過した。 |
 
 失敗時に検査を削除、無効化、成功扱いへ変更していない。原因を同じブランチとPull Requestで修正した。
 
-## 5. 実行結果
+## 5. 最終実行結果
+
+対象はPull Request #22の最終head `e3fdc069f9892faa5ee5b89c6f487aa0611ec586`、Run #6である。
 
 | 実行環境 | build | verify | size | dist再現性 | 判定 |
 |---|---|---|---|---|---|
@@ -69,7 +77,7 @@ git diff --exit-code -- dist
 | Node.js 20 | 成功 | 成功 | 成功 | 成功 | 合格 |
 | Node.js 22 | 成功 | 成功 | 成功 | 成功 | 合格 |
 
-成功Runでは、失敗時だけ保存する診断Artifactの処理はスキップされた。
+すべてのジョブで、失敗時だけ保存する診断Artifactの処理はスキップされた。
 
 ## 6. G2判定
 
@@ -77,14 +85,14 @@ G2「開発構成」は通過と判定する。
 
 根拠は次のとおり。
 
-- Node.js 18、20、22の全ジョブが成功した。
+- Pull Request #22の最終headでNode.js 18、20、22の全ジョブが成功した。
+- `npm run build`、`npm run verify`、`npm run size`がすべて成功した。
 - build後の`dist`差分がなかった。
 - Phase 2AのJavaScript正本と一方向buildが維持された。
 - Phase 2Bの依存0件と容量報告専用化が維持された。
 - package installを行わずに検査できた。
 - ゲームコード、得点、ランキング通信、描画結果を変更していない。
-
-この報告更新後の最新Pull Request headにも同じworkflowを実行し、失敗している状態ではマージしない。
+- 成功した最終headがmainへマージされた。
 
 ## 7. 今回追加で判明した残存物
 
@@ -108,6 +116,6 @@ G2では次を確認していない。
 
 ## 9. 次の作業
 
-Pull Request #22がmainへマージされた後、Phase 3A「360×640固定論理座標」を開始できる。
+G2はmain上で通過済みである。次はPhase 3A「360×640固定論理座標」を開始できる。
 
 Phase 3Aでは端末画面のピクセル数を物理座標へ使わず、入力と描画だけを360×640の論理領域へ変換する。得点式、公式配置、ランキング送信は同じPull Requestで変更しない。
