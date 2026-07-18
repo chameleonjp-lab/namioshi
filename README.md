@@ -12,6 +12,7 @@
 - 要件の正本: [`docs/REQUIREMENTS_v3.md`](docs/REQUIREMENTS_v3.md)
 - ゲーム仕様の正本: [`docs/SPEC_v3.md`](docs/SPEC_v3.md)
 - 実装順: [`docs/IMPLEMENTATION_PLAN_v3.md`](docs/IMPLEMENTATION_PLAN_v3.md)
+- 完成までの統合計画: [`docs/MASTER_COMPLETION_PLAN_v3.md`](docs/MASTER_COMPLETION_PLAN_v3.md)
 - 公開確認: [`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)
 
 v3では、3MB上限は受け入れ条件ではありません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を重視します。複数ファイル構成とES Modulesを正式に許可します。現在の基準描画方式は純粋WebGLで、Canvas 2Dフォールバックを正式に維持します。
