@@ -80,13 +80,24 @@
 
 ## GitHub Actions結果
 
+### 初回成功
+
 Pull Request #25のhead `b4d6591f9136d301f02d350d81382628685ea0ac`に対する`G2 Build Verification` Run #15、Run ID `29650585832`は成功した。
 
-| 実行環境 | build | 全単体試験 | 配置分析 | verify | size | dist再現性 |
-|---|---|---|---|---|---|---|
-| Node.js 18 | 成功 | 成功 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 20 | 成功 | 成功 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 22 | 成功 | 成功 | 成功 | 成功 | 成功 | 成功 |
+### 文書更新後の成功
+
+head `b490329a58fbeece17acab526b53b666095acafe`に対するRun #18、Run ID `29650717139`も成功した。
+
+Node.js 18、20、22のすべてで次が成功した。
+
+```text
+npm run build
+npm test
+npm run analyze:layouts
+npm run verify
+npm run size
+git diff --exit-code -- dist
+```
 
 自動試験では次を確認した。
 
@@ -98,7 +109,7 @@ Pull Request #25のhead `b4d6591f9136d301f02d350d81382628685ea0ac`に対する`G
 - 共通3タップの参考得点がv3候補上限3240以下である。
 - build後の`dist`に差分がなく、本番公開物を変更していない。
 
-この文書更新後の最新headでも同じ検査を再実行し、失敗している状態ではマージしない。
+この最終記録更新後に起動するworkflow結果は、ファイルを再更新せずPull Request #25のコメントへ記録する。
 
 ## 変更しなかった重要部分
 
