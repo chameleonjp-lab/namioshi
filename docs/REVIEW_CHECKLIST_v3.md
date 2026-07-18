@@ -87,15 +87,17 @@
 
 ### Phase 3A 実行確認
 
-- [未確認] Node.js 18でviewport試験5件が成功する
-- [未確認] Node.js 20でviewport試験5件が成功する
-- [未確認] Node.js 22でviewport試験5件が成功する
-- [未確認] 320×568、375×812、390×844、1024×1366で同じ論理入力が同じ結果になる
-- [未確認] 左上、中央、右下の変換誤差が0.25論理ピクセル以内である
-- [未確認] 縦長画面の上下余白と横長画面の左右余白を拒否する
-- [未確認] viewport変更で進行中Worldの状態が変わらない
-- [未確認] `npm run build`、`npm run verify`、`npm run size`が成功する
-- [未確認] build後の`dist`差分がない
+- [済] Node.js 18でviewport試験5件が成功する
+- [済] Node.js 20でviewport試験5件が成功する
+- [済] Node.js 22でviewport試験5件が成功する
+- [済] 320×568、375×812、390×844、1024×1366で同じ論理入力が同じ結果になる
+- [済] 左上、中央、右下の変換誤差が0.25論理ピクセル以内である
+- [済] 縦長画面の上下余白と横長画面の左右余白を拒否する
+- [済] viewport変更で進行中Worldの状態が変わらない
+- [済] `npm run build`、`npm run verify`、`npm run size`が成功する
+- [済] build後の`dist`差分がない
+- [済] `docs/PHASE3A_VIEWPORT_REPORT.md`へRun #10の結果を記録した
+- [未確認] Pull Request #24の最終文書更新後の最新headで全ジョブが成功する
 
 ### ブラウザ・実機確認
 
