@@ -1,14 +1,12 @@
 {
+  "name": "namioshi",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "size": "node scripts/check-size.mjs",
-    "verify": "node scripts/verify-dist.mjs"
-  },
-  "dependencies": {
-    "three": "file:vendor/three"
-  },
-  "devDependencies": {
-    "typescript": "file:vendor/typescript",
-    "vite": "file:vendor/vite"
+    "verify": "node scripts/verify-dist.mjs",
+    "size": "node scripts/report-size.mjs"
   }
 }
