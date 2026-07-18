@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "ruleVersion": "namioshi-v3-layout-study-001",
+  "selectionStatus": "human-decision-pending",
+  "referenceTaps": [
+    {"x": 90, "y": 140},
+    {"x": 180, "y": 340},
+    {"x": 270, "y": 490}
+  ],
+  "results": [
+    {
+      "id": "candidate-a-cross-current",
+      "label": "候補A・交差流",
+      "ruleVersion": "namioshi-v3-layout-study-001",
+      "fingerprint": "fnv1a-00392ef1",
+      "samples": {"tapPoints": 121, "arrivalTimes": 56, "surfaces": 8},
+      "routes": {"direct": 360, "wall": 771, "glass": 359, "double": 652},
+      "totalRoutes": 2142,
+      "referenceTaps": [
+        {"x": 90, "y": 140},
+        {"x": 180, "y": 340},
+        {"x": 270, "y": 490}
+      ],
+      "referenceTapRoutes": {"direct": 9, "wall": 20, "glass": 11, "double": 19},
+      "referenceDirectScore": 211,
+      "referenceBestScore": 2747,
+      "directDominance": 0.1681,
+      "reflectedTapDiversity": 121,
+      "maxReflectedRoutesFromOneTap": 28,
+      "reflectedRouteConcentration": 0.0157,
+      "beaconCoverage": {
+        "direct": ["beacon-a", "beacon-b", "beacon-c"],
+        "wall": ["beacon-a", "beacon-b", "beacon-c"],
+        "glass": ["beacon-a", "beacon-b", "beacon-c"],
+        "double": ["beacon-a", "beacon-b", "beacon-c"]
+      },
+      "doubleReflectionPossible": true,
+      "doubleReflectionBeaconCount": 3,
+      "minBeaconDistance": 44.18,
+      "minBeaconGlassDistance": 0.08,
+      "beaconGlassRiskPairs": ["beacon-a/glass-a1", "beacon-c/glass-a3"],
+      "glassEndpointEdgeMargin": 60,
+      "bestMatchedRoute": {"tap": "180,240", "beaconId": "beacon-a", "surfaces": ["glass-a4"], "kind": "glass", "error": 0.001, "time": 2.95, "length": 486.75}
+    },
+    {
+      "id": "candidate-b-stair-channel",
+      "label": "候補B・段流路",
+      "ruleVersion": "namioshi-v3-layout-study-001",
+      "fingerprint": "fnv1a-5dfd84e0",
+      "samples": {"tapPoints": 121, "arrivalTimes": 56, "surfaces": 8},
+      "routes": {"direct": 360, "wall": 779, "glass": 146, "double": 546},
+      "totalRoutes": 1831,
+      "referenceTaps": [
+        {"x": 90, "y": 140},
+        {"x": 180, "y": 340},
+        {"x": 270, "y": 490}
+      ],
+      "referenceTapRoutes": {"direct": 9, "wall": 20, "glass": 3, "double": 13},
+      "referenceDirectScore": 204,
+      "referenceBestScore": 2192,
+      "directDominance": 0.1966,
+      "reflectedTapDiversity": 121,
+      "maxReflectedRoutesFromOneTap": 18,
+      "reflectedRouteConcentration": 0.0122,
+      "beaconCoverage": {
+        "direct": ["beacon-a", "beacon-b", "beacon-c"],
+        "wall": ["beacon-a", "beacon-b", "beacon-c"],
+        "glass": ["beacon-a", "beacon-b", "beacon-c"],
+        "double": ["beacon-a", "beacon-b", "beacon-c"]
+      },
+      "doubleReflectionPossible": true,
+      "doubleReflectionBeaconCount": 3,
+      "minBeaconDistance": 50.12,
+      "minBeaconGlassDistance": 19.95,
+      "beaconGlassRiskPairs": ["beacon-a/glass-b2"],
+      "glassEndpointEdgeMargin": 54,
+      "bestMatchedRoute": {"tap": "210,490", "beaconId": "beacon-c", "surfaces": ["wall-left"], "kind": "wall", "error": 0.008, "time": 2.3, "length": 379.49}
+    },
+    {
+      "id": "candidate-c-open-harbor",
+      "label": "候補C・開港型",
+      "ruleVersion": "namioshi-v3-layout-study-001",
+      "fingerprint": "fnv1a-fc71e804",
+      "samples": {"tapPoints": 121, "arrivalTimes": 56, "surfaces": 8},
+      "routes": {"direct": 358, "wall": 774, "glass": 330, "double": 516},
+      "totalRoutes": 1978,
+      "referenceTaps": [
+        {"x": 90, "y": 140},
+        {"x": 180, "y": 340},
+        {"x": 270, "y": 490}
+      ],
+      "referenceTapRoutes": {"direct": 9, "wall": 20, "glass": 10, "double": 13},
+      "referenceDirectScore": 208,
+      "referenceBestScore": 2650,
+      "directDominance": 0.181,
+      "reflectedTapDiversity": 121,
+      "maxReflectedRoutesFromOneTap": 21,
+      "reflectedRouteConcentration": 0.013,
+      "beaconCoverage": {
+        "direct": ["beacon-a", "beacon-b", "beacon-c"],
+        "wall": ["beacon-a", "beacon-b", "beacon-c"],
+        "glass": ["beacon-a", "beacon-b", "beacon-c"],
+        "double": ["beacon-a", "beacon-b", "beacon-c"]
+      },
+      "doubleReflectionPossible": true,
+      "doubleReflectionBeaconCount": 3,
+      "minBeaconDistance": 118.12,
+      "minBeaconGlassDistance": 20.08,
+      "beaconGlassRiskPairs": ["beacon-b/glass-c2"],
+      "glassEndpointEdgeMargin": 42,
+      "bestMatchedRoute": {"tap": "210,240", "beaconId": "beacon-b", "surfaces": ["glass-c2"], "kind": "glass", "error": 0.001, "time": 0.6, "length": 99}
+    }
+  ]
+}
