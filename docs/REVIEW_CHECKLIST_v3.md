@@ -4,12 +4,32 @@
 
 ## 自動確認: 文書
 
-- [未確認] 正本が明記されている
-- [未確認] 現行実装とv3予定を区別している
-- [未確認] 3MB上限が残っていない
-- [未確認] index.html 1ファイル強制が残っていない
-- [未確認] 実機未確認を確認済みにしていない
-- [未確認] 不明なSupabase情報を推測していない
+- [済] 正本が明記されている
+- [済] 現行実装とv3予定を区別している
+- [済] 3MB上限をv3の受け入れ条件にしていない
+- [済] index.html 1ファイル構成を強制していない
+- [済] 実機未確認を確認済みにしていない
+- [済] 不明なSupabase情報を推測していない
+
+## 自動確認: 開発・ビルド
+
+- [済] `src`の実行コードを`.js`へ統一した
+- [済] `src`に`.ts`と`.tsx`を残していない
+- [済] 相対JavaScript importへ`.js`拡張子を付けた
+- [済] CSSをJavaScriptからimportしていない
+- [済] root `index.html`が`./src/ui/styles.css`と`./src/main.js`を参照する
+- [済] `dist/index.html`が`./assets/ui/styles.css`と`./assets/main.js`を参照する
+- [済] build前に`dist`を削除する
+- [済] buildが`src`を加工せず`dist/assets`へ再帰コピーする
+- [済] 疑似TypeScript変換と既存`dist`再利用をbuildから削除した
+- [済] 不要な`src/types` placeholderと旧shaderファイルを削除した
+- [済] コミット済み`src`と`dist/assets`の対応ファイルを同一内容にした
+- [済] verifyにJavaScript構文、import解決、src/dist一致、HTML参照の検査を実装した
+- [未確認] `npm run build`が実行環境で成功する
+- [未確認] `npm run verify`が実行環境で成功する
+- [未確認] `npm run size`が実行環境で成功する
+- [未確認] root `index.html`をローカルHTTPサーバーで起動できる
+- [未確認] `dist/index.html`を静的HTTPサーバーで起動できる
 
 ## 自動確認: ゲーム
 
