@@ -1,76 +1,48 @@
-# CURRENT_TASK: namioshi v3 Phase 2B 不要依存と旧容量制限の削除
+# CURRENT_TASK: namioshi v3 G2 開発構成の実行確認
 
 ## 今回の目的
 
-Phase 2Aで確立したJavaScript正本と一方向ビルドを維持したまま、実行に使っていないTypeScript・Vite・Three.js代替登録、古い設定、固定2.9MB失敗条件を削除する。ゲーム物理、得点、配置、画面、共有、ランキング通信、描画結果は変更しない。
+Phase 2AとPhase 2Bで整えたJavaScript正本、依存0件、一方向build、容量報告専用化を、GitHub上の独立した実行環境で検証する。ゲームコード、得点、配置、画面、共有、ランキング通信、描画結果は変更しない。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `f7a7c0069241f1fe01117a53103a050e4e321470`（Pull Request #20のマージ）
-- 作業ブランチ: `codex/namioshi-v3-phase2b-build-cleanup`
-- 前提ゲート: G1完了、Phase 2Aはmainへ反映済み
+- 基準コミット: `cf37cb040c5f1570ff489819b921b337843262fb`（Pull Request #21のマージ）
+- 作業ブランチ: `codex/namioshi-v3-g2-build-verification`
+- 対象ゲート: G2「開発構成」
+- 前提: Phase 2AとPhase 2Bはmainへ反映済み
 - 実機確認: 未完了
 
-## 調査結果
+## 今回追加するもの
 
-Phase 2A後の実行コードとbuildは、`vendor`、Vite、TypeScript、Three.jsを参照していない。一方、次の不要物が残っていた。
+### GitHub Actions
 
-- `package.json`の`three`、`typescript`、`vite`登録
-- それらを記録した`package-lock.json`
-- `vendor/three/**`
-- `vendor/typescript/**`
-- `vendor/vite/**`
-- `vite.config.js`
-- `tsconfig.json`
-- 2,900,000バイト超過時に失敗する`scripts/check-size.mjs`
-- `node_modules`や秘密設定を除外する`.gitignore`の不足
+`.github/workflows/g2-build-verification.yml`を追加する。
 
-## 変更内容
+Node.js 18、20、22で、それぞれ次を実行する。
 
-### 依存と旧設定
+```text
+node --version
+npm run build
+npm run verify
+npm run size
+git diff --exit-code -- dist
+```
 
-- `package.json`から`dependencies`と`devDependencies`を削除する。
-- Node.js 18以上で、外部パッケージをインストールせずbuild・verify・sizeを実行できる構成にする。
-- `package-lock.json`を削除する。依存を追加する将来の変更では、同じPull Requestで再作成する。
-- `vendor/three`、`vendor/typescript`、`vendor/vite`を削除する。
-- `vite.config.js`と`tsconfig.json`を削除する。
+`npm install`と`npm ci`は実行しない。外部パッケージなしで成立する構成を、そのまま検証する。
 
-### 容量報告
+### 検証報告
 
-- `scripts/check-size.mjs`を削除する。
-- `scripts/report-size.mjs`を追加する。
-- `npm run size`は次を報告する。
-  - `dist`全体のバイト数とKiB
-  - ファイル数
-  - 容量が大きい上位10ファイル
-  - 同じ内容を持つ重複ファイル群
-- 固定容量を超えたことだけを理由に失敗しない。
-- `dist`が存在しない場合は、先にbuildが必要なため失敗する。
+`docs/G2_BUILD_VERIFICATION_REPORT.md`を追加し、次を記録する。
 
-### 検査
-
-`scripts/verify-dist.mjs`へ次を追加・維持する。
-
-- `vendor`、Vite設定、TypeScript設定、旧容量スクリプトの再混入を拒否する。
-- `package.json`へ未使用依存が戻った場合に拒否する。
-- package scriptsが正式なbuild・verify・sizeを指すことを確認する。
-- 固定2.9MB失敗条件が戻っていないことを確認する。
-- `dist/index.html`からJavaScript importとCSS参照を追跡し、参照されない公開ファイルを拒否する。
-- source map、古い生成物、環境依存パス、secret、service_role、スコア表への直接参照を拒否する。
-- 禁止パス検査が検査ファイル自身を誤検出しないよう、禁止文字列は分割して組み立てる。
-
-### ローカル不要物
-
-`.gitignore`を追加し、次を追跡対象外にする。
-
-- `node_modules/`
-- OSの一時ファイル
-- ログ
-- coverageとcache
-- 一時ディレクトリ
-- `.env`系の秘密設定
+- 対象コミット
+- 実行内容
+- Node.js 18、20、22の結果
+- build、verify、size、dist再現性
+- G2の合否
+- 未確認範囲
+- 次のPhase開始条件
 
 ## 変更しない重要部分
 
@@ -78,49 +50,50 @@ Phase 2A後の実行コードとbuildは、`vendor`、Vite、TypeScript、Three.
 - `dist/**`
 - root `index.html`
 - `scripts/build.mjs`
+- `scripts/verify-dist.mjs`
+- `scripts/report-size.mjs`
+- `package.json`
 - 10秒、最大3タップ
 - 波速度、寿命、反射、得点、コンボ
 - ビーコンとガラス片のランダム配置
 - HOME / RULES / COUNTDOWN / PLAYING / RESULT / ERROR
-- カウントダウン時間
 - 共有文と共有フォールバック
 - Supabase URL、Publishable key、Authorizationヘッダー、送信本文
-- WebGLシェーダーと描画処理
-- Canvas 2D描画処理
+- WebGLとCanvas 2Dの描画処理
 
-## 検証状態
+自動検査が既存コードの問題を検出した場合は、G2未通過として停止する。検査を通すためにゲームコードや別Phaseの仕様を先回りして変更しない。
 
-GitHub連携による静的確認では、不要依存と旧設定の削除、package scripts、容量報告化、`.gitignore`、検査コードの更新を確認する。
+## 自動検査の合格条件
 
-この実行環境ではGitHubのローカルcloneがDNS制限で失敗したため、次はDraft Pull Request上の別実行環境で確認するまで`[未確認]`とする。
+- Node.js 18、20、22の3ジョブがすべて成功する。
+- `npm run build`が成功する。
+- `npm run verify`が成功する。
+- `npm run size`が固定容量上限なしで成功する。
+- build後の`git diff --exit-code -- dist`が成功する。
+- package install処理がない。
+- 実行結果を検証報告とレビュー表へ反映する。
 
-- `npm run build`
-- `npm run verify`
-- `npm run size`
-- build後に`git diff --exit-code -- dist`が成功すること
-- Node.js 18、20、22の少なくとも1つでbuildとverifyが成功すること
-- root `index.html`のローカルHTTP起動
-- `dist/index.html`の静的HTTP起動
-- iPhone/iPad実機
-- Codeberg Pages
-- 実Supabase通信
+## 現在の検証状態
 
-## 完了条件
+- GitHub Actions定義: 追加済み
+- 検証報告のひな型: 追加済み
+- Node.js 18: 実行結果待ち
+- Node.js 20: 実行結果待ち
+- Node.js 22: 実行結果待ち
+- G2判定: 未確定
 
-- package依存が0件である。
-- `vendor`、`vite.config.js`、`tsconfig.json`がない。
-- 旧`package-lock.json`と旧`scripts/check-size.mjs`がない。
-- `npm run size`が報告専用で、固定上限によって失敗しない。
-- buildとverifyが外部パッケージなしで実行できる。
-- 同一コミットから同じ`dist`を生成できる。
-- Phase 2AのJavaScript正本と`src`・`dist`一致契約を維持する。
-- ゲームコードと公開ゲームの挙動を変更していない。
-- 実施していない確認を成功扱いにしない。
+初回のGitHub Actionsが完了するまで、実行項目を`[済]`へ変更しない。
+
+## 失敗時の対応
+
+検査が失敗した場合は、同じ作業ブランチと同じPull Requestで原因を修正する。新しいPull Requestへ作り直さない。
+
+原因がPhase 2AまたはPhase 2Bの構成にある場合だけ、必要最小限のbuild・verify・size・文書を修正する。ゲームコード、ランキング、描画、固定座標には進まない。
 
 ## 戻し方
 
-このPhaseだけを取り消す場合は、Phase 2BのPull Requestをrevertする。ゲーム仕様、公開スコア、Supabaseデータの変更は含まないため、データベースの戻し作業は不要。
+この作業を取り消す場合は、G2検証用Pull Requestをrevertする。追加対象は自動検査と文書だけであり、ゲーム仕様、公開スコア、Supabaseデータの戻し作業は不要。
 
 ## 次の作業
 
-Phase 2Aと2Bのbuild・verifyを別実行環境で確認し、G2「開発構成」を通過させる。その後、Phase 3A「360×640固定論理座標」を開始する。G2確認前にPhase 3Aへ進まない。
+G2通過後、Phase 3A「360×640固定論理座標」を開始する。G2の検査が失敗または未完了の間はPhase 3Aへ進まない。
