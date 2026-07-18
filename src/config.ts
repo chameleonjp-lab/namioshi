@@ -1,9 +1,0 @@
-export const GAME_SLUG='namioshi';
-export const GAME_URL='https://chameleonjp.codeberg.page/namioshi/';
-export const CLIENT_VERSION='namioshi-v2.0.0';
-export const SCORE_UNIT='点';
-export const PLAY_SECONDS=10;
-export const MAX_TAPS=3;
-export const SUPABASE_URL='https://chameleonjp.supabase.co';
-export const SUPABASE_PUBLISHABLE_KEY='sb_publishable_drzcy0v97knU6FgjqSgBHw_0A9XPdFM';
-export const QUALITY={HIGH:{dpr:1.5,waves:12,particles:90},MID:{dpr:1.25,waves:10,particles:70},LOW:{dpr:1,waves:7,particles:45}};
