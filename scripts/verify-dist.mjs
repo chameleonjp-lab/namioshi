@@ -96,7 +96,13 @@ function checkPublishedFile(path) {
 function checkForbiddenLocalPaths(path) {
   if (!textFilePattern.test(path)) return;
   const text = readFileSync(path, 'utf8');
-  const forbidden = ['/root/.nvm/', '/home/', 'C:\\', 'Users\\', 'lib/node_modules/typescript'];
+  const forbidden = [
+    ['/root/', '.nvm/'].join(''),
+    ['/ho', 'me/'].join(''),
+    ['C:', '\\'].join(''),
+    ['Users', '\\'].join(''),
+    ['lib/node_', 'modules/typescript'].join('')
+  ];
   for (const needle of forbidden) {
     if (text.includes(needle)) bad.push(`forbidden local path ${needle}: ${path}`);
   }
