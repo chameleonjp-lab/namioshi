@@ -1,0 +1,53 @@
+name: G2 Build Verification
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: g2-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 18
+          - 20
+          - 22
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: false
+
+      - name: Show runtime
+        run: node --version
+
+      - name: Rebuild dist
+        run: npm run build
+
+      - name: Verify source and dist contracts
+        run: npm run verify
+
+      - name: Report dist size
+        run: npm run size
+
+      - name: Confirm committed dist is reproducible
+        run: git diff --exit-code -- dist
