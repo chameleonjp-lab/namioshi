@@ -1,11 +1,13 @@
 {
   "name": "namioshi",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
     "verify": "node scripts/verify-dist.mjs",
     "size": "node scripts/report-size.mjs"
   }
