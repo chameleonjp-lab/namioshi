@@ -43,15 +43,36 @@
 - [済] verifyが入口から参照されない公開ファイルを拒否する
 - [済] 禁止パス検査が検査ファイル自身を誤検出しない
 
-### 実行確認
+### G2 GitHub Actions定義
 
-- [未確認] `npm run build`が外部パッケージなしで成功する
-- [未確認] `npm run verify`が外部パッケージなしで成功する
-- [未確認] `npm run size`が固定上限なしで成功する
-- [未確認] build後に`git diff --exit-code -- dist`が成功する
+- [済] `.github/workflows/g2-build-verification.yml`を追加した
+- [済] Pull Request、mainへのpush、手動実行で検査を起動する
+- [済] Node.js 18、20、22を別ジョブで確認する
+- [済] `npm install`と`npm ci`を実行しない
+- [済] `npm run build`を実行する
+- [済] `npm run verify`を実行する
+- [済] `npm run size`を実行する
+- [済] build後に`git diff --exit-code -- dist`を実行する
+- [済] workflow権限を`contents: read`へ限定する
+- [済] 検証結果を`docs/G2_BUILD_VERIFICATION_REPORT.md`へ記録する契約がある
+
+### G2 実行確認
+
+- [未確認] Node.js 18のbuildが成功する
+- [未確認] Node.js 18のverifyが成功する
+- [未確認] Node.js 18のsizeが成功する
+- [未確認] Node.js 18のdist再現性確認が成功する
+- [未確認] Node.js 20の全検査が成功する
+- [未確認] Node.js 22の全検査が成功する
+- [未確認] 3ジョブすべてが同じPull Requestの最新headで成功する
+- [未確認] build後の`dist`差分がない
+- [未確認] `docs/G2_BUILD_VERIFICATION_REPORT.md`へRun結果を反映した
+- [未確認] G2「開発構成」を通過できる
+
+### ローカルHTTP確認
+
 - [未確認] root `index.html`をローカルHTTPサーバーで起動できる
 - [未確認] `dist/index.html`を静的HTTPサーバーで起動できる
-- [未確認] G2「開発構成」を通過できる
 
 ## 自動確認: ゲーム
 
