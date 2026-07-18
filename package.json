@@ -8,6 +8,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
+    "analyze:layouts": "node tools/analyze-layouts.mjs --check",
+    "analyze:layouts:write": "node tools/analyze-layouts.mjs --write",
     "verify": "node scripts/verify-dist.mjs",
     "size": "node scripts/report-size.mjs"
   }
