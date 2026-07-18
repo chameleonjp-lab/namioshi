@@ -1,75 +1,49 @@
 # namioshi
 
-暗い水面に波を押し出し、壁やガラス片の反射を使って3つのビーコンに波を重ねる10秒ゲームです。公開先は Codeberg Pages の `/namioshi/` 配下を想定しています。
+暗い水面に波を押し出し、壁やガラス片の反射を使って3つのビーコンに波を重ねる10秒ゲームです。公開先はCodeberg Pagesの`/namioshi/`配下を想定しています。
 
+## v3仕様文書
 
-## v3仕様文書（未実装）
-
-現在の実装はv2相当の現行版です。v3はまだ未実装であり、このREADMEや旧文書をv3実装済みの証拠として扱わないでください。
-
-今後のv3改修では、次の文書を正本として扱います。
+現在のゲームルールはv2相当です。v3のゲーム仕様は段階的に実装しており、文書があることだけをv3完成の証拠として扱いません。
 
 - 要件の正本: [`docs/REQUIREMENTS_v3.md`](docs/REQUIREMENTS_v3.md)
 - ゲーム仕様の正本: [`docs/SPEC_v3.md`](docs/SPEC_v3.md)
-- 実装順: [`docs/IMPLEMENTATION_PLAN_v3.md`](docs/IMPLEMENTATION_PLAN_v3.md)
+- 段階別の実装順: [`docs/IMPLEMENTATION_PLAN_v3.md`](docs/IMPLEMENTATION_PLAN_v3.md)
 - 完成までの統合計画: [`docs/MASTER_COMPLETION_PLAN_v3.md`](docs/MASTER_COMPLETION_PLAN_v3.md)
-- 公開確認: [`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)
+- レビュー・公開確認: [`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)
 
-v3では、3MB上限は受け入れ条件ではありません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を重視します。複数ファイル構成とES Modulesを正式に許可します。現在の基準描画方式は純粋WebGLで、Canvas 2Dフォールバックを正式に維持します。
+v3では3MBを受け入れ上限にしません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を優先します。複数ファイルとES Modulesを正式に使用します。
 
-## ビルドと公開物
+## ソースと公開物
 
-`npm run build` は `scripts/build.mjs` でリポジトリ内の vendored TypeScript shim を使って TypeScript を `dist/assets` に変換し、CSSを `dist/assets/styles.css` として配置します。外部CDN、グローバルにインストールされた TypeScript、公開先の `node_modules`、CSSのdirect import、Three.jsのbare importには依存しません。
+`src`が正本です。実行コードはブラウザがそのまま読めるJavaScriptで、相対importには`.js`拡張子を明記しています。
+
+- 開発用入口: `index.html`
+- 開発用JavaScript: `src/main.js`
+- 開発用CSS: `src/ui/styles.css`
+- 公開用入口: `dist/index.html`
+- 公開用ファイル: `dist/assets/**`
+
+`npm run build`は`dist`を削除した後、`src`を加工せず`dist/assets`へ再帰コピーし、公開用`dist/index.html`を生成します。TypeScript変換、正規表現によるコード変換、既存`dist`の再利用は行いません。同じ相対パスの`src`と`dist/assets`はバイト単位で一致することを検査します。
 
 ```bash
 npm run build
-npm run size
 npm run verify
+npm run size
 ```
+
+`npm run verify`は、JavaScript構文、相対importの解決、`.ts`とTypeScript専用構文の残存、`src`と`dist/assets`の一致、HTMLの参照先、公開物へのsecret/service_role/直接ランキング書き込みの混入を検査します。
+
+Phase 2Bでは、不要になったvendored TypeScript・Vite・Three.js登録と旧2.9MB失敗条件を別Pull Requestで整理します。
 
 ## 描画方式
 
-WebGL版は Three.js ではなく、`src/render/webgl.ts` の純粋な WebGL 実装です。起動時に同じ `<canvas>` でまず `new WebGLView(canvas)` を試し、WebGLコンテキスト、シェーダー、バッファ、最小draw callのセルフテストに失敗した場合だけ `CanvasView` にフォールバックします。背景をclearするだけのWebGL代替実装は成功扱いにしません。
+本命描画は`src/render/webgl.js`の純粋WebGLです。WebGLの初期化、シェーダー作成、プログラム接続、バッファ作成、最小描画確認のいずれかが失敗した場合は、`src/render/canvas.js`のCanvas 2Dへ切り替えます。
 
-WebGL初期化に成功した場合、以下を実描画します。
+現在のWebGL版は、水面背景、波、ビーコン、ガラス片、命中粒子を描画します。Canvas 2D版も同じ`World`を使い、同じゲームルールを維持します。
 
-- 暗い水面背景: フルスクリーンのシェーダーで水面の濃淡と波の明るさを描画します。
-- タップ時の波: `LINE_STRIP` の円リングでタップ波と反射波を描画します。
-- 3つのビーコン: 発光する円形ビーコンを3つ描画します。
-- ガラス片: ワールドに生成された約4本の線分を描画します。
-- ヒット粒子: ヒット時に `POINTS` で粒子を描画します。
-- UI: 残り時間、スコア、タップ数はDOM HUDで表示します。
+## 確認状態
 
-Canvas fallbackでも同じ `World` を使い、同じルールのゲームを2D Canvasで遊べます。
+Phase 1とPhase 1.1で、画面状態、重複ID、ルール画面、カウントダウン多重起動、名前入力の`blur()`、ランキング状態と共有状態の分離、共有キャンセルと共有失敗の分離を修正しました。
 
-## 実測結果（2026-06-28）
-
-- WebGL版で波が見える: 成功。タップ時のリングと反射リングをWebGL線描画で確認。
-- WebGL版でビーコンが見える: 成功。3つの発光ビーコンをWebGLで確認。
-- WebGL版でガラス片が見える: 成功。約4本のシアン色ガラス片をWebGL線描画で確認。
-- WebGL版でヒット粒子が見える: 成功。ビーコンヒット時の粒子をWebGL `POINTS` で確認。
-- Canvas fallbackでも同じゲームが遊べる: 成功。WebGL初期化に失敗した場合はCanvas版へ切り替わります。
-- console errorが出ない: 成功。`npm run verify` とローカル実行でビルド成果物の静的検査に成功。
-- dist合計サイズ: `28638 bytes / 2900000`。
-
-## 検証
-
-`npm run verify` は `dist` に `.map`、許可外URL、`service_role`、直接の `ranking_scores` 参照、CSS direct import、Three.js bare import が含まれないことを確認します。加えて、名前だけのThree.js代替実装、legacy hand-written dist marker、禁止された絶対/ローカル TypeScript パス、vendored TypeScript shim の外部探索、dist asset JavaScript に残った TypeScript 型注釈も検査します。
-
-- `render(){const gl=this.gl;gl.viewport`
-- `export class Scene { constructor(){this.children=[]}`
-- `export class RingGeometry { constructor(a,b,c)`
-- `export class MeshBasicMaterial extends Material`
-
-直近の実測:
-
-```text
-npm run verify
-verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, legacy hand-written dist markers, forbidden absolute/local TypeScript paths, vendored TypeScript external lookups, or TypeScript type annotations in dist asset JavaScript
-```
-
-## ビルドパス修正メモ
-
-- ビルド設定から環境依存の絶対パスを削除しました。
-- `npm run verify` は `dist` に加えて `scripts` / `vendor` / `package.json` / `package-lock.json` も検査し、vendored TypeScript shim が外部やグローバルの TypeScript を探索しないことも確認します。
-- `dist/assets/core/audio.js`、`dist/assets/services/ranking.js`、`dist/assets/services/share.js` に TypeScript 型注釈が残っていないことも確認します。
+iPhone、iPad、Codeberg Pages、実Supabase通信は未確認です。実機で確認していない項目は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で`[未確認]`のまま管理します。
