@@ -126,7 +126,7 @@
 - [済] `npm run build`、`npm run verify`、`npm run size`が成功する
 - [済] build後の`dist`差分がなく、本番公開物を変更していない
 - [済] `G2 Build Verification` Run #15が成功した
-- [未確認] Pull Request #25の最終文書更新後の最新headで全ジョブが成功する
+- [済] 文書更新後のhead `b490329a58fbeece17acab526b53b666095acafe`でRun #18が成功した
 
 ### Phase 3B 人の確認
 
