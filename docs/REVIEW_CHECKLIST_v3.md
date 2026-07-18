@@ -54,20 +54,20 @@
 - [済] `npm run size`を実行する
 - [済] build後に`git diff --exit-code -- dist`を実行する
 - [済] workflow権限を`contents: read`へ限定する
-- [済] 検証結果を`docs/G2_BUILD_VERIFICATION_REPORT.md`へ記録する契約がある
+- [済] 検証結果を`docs/G2_BUILD_VERIFICATION_REPORT.md`へ記録する
 
 ### G2 実行確認
 
-- [未確認] Node.js 18のbuildが成功する
-- [未確認] Node.js 18のverifyが成功する
-- [未確認] Node.js 18のsizeが成功する
-- [未確認] Node.js 18のdist再現性確認が成功する
-- [未確認] Node.js 20の全検査が成功する
-- [未確認] Node.js 22の全検査が成功する
-- [未確認] 3ジョブすべてが同じPull Requestの最新headで成功する
-- [未確認] build後の`dist`差分がない
-- [未確認] `docs/G2_BUILD_VERIFICATION_REPORT.md`へRun結果を反映した
-- [未確認] G2「開発構成」を通過できる
+- [済] Node.js 18のbuildが成功する
+- [済] Node.js 18のverifyが成功する
+- [済] Node.js 18のsizeが成功する
+- [済] Node.js 18のdist再現性確認が成功する
+- [済] Node.js 20の全検査が成功する
+- [済] Node.js 22の全検査が成功する
+- [済] Pull Request #22の最終headで3ジョブすべてが成功する
+- [済] build後の`dist`差分がない
+- [済] `docs/G2_BUILD_VERIFICATION_REPORT.md`へ最終Run結果を反映した
+- [済] G2「開発構成」を通過した
 
 ### ローカルHTTP確認
 
