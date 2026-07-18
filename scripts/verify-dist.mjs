@@ -1,98 +1,160 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const bad = [];
-const stale = [
-  ['legacy app lookup', /const\s+app\s*=\s*document\.getElementById\(['"]app['"]\)/],
-  ['legacy draw function', /function\s+draw\s*\(\s*t\s*\)/],
-  ['legacy shared-canvas WebGL context', /gl\s*=\s*cv\.getContext\(['"]webgl['"]\)/],
-  ['legacy shared-canvas 2D context', /ctx\s*=\s*cv\.getContext\(['"]2d['"]\)/],
-  ['legacy hand-written build script reference', /scripts\/build\.mjs/],
-  ['CSS direct import', /import\s*['"]\.\/ui\/styles\.css['"]/],
-  ['three bare import single quote', /from\s*'three'/],
-  ['three bare import double quote', /from\s*"three"/],
-  ['three namespace bare import single quote', /import\s*\*\s*as\s*THREE\s*from\s*'three'/],
-  ['three namespace bare import double quote', /import\s*\*\s*as\s*THREE\s*from\s*"three"/],
-  ['fake Three renderer clear-only', /render\(\)\{const gl=this\.gl;gl\.viewport/],
-  ['fake Three Scene', /export class Scene \{ constructor\(\)\{this\.children=\[\]\}/],
-  ['fake Three RingGeometry', /export class RingGeometry \{ constructor\(a,b,c\)/],
-  ['fake Three MeshBasicMaterial', /export class MeshBasicMaterial extends Material/]
-];
-const forbiddenVendorTypeScript = [
-  ['npm', 'root', '-g'],
-  ['global', 'Root'],
-  ['execFileSync', "('npm"],
-  ['child', '_process'],
-  ['pathToFileURL'],
-  ['createRequire'],
-  ['node_', 'modules/typescript'],
-  ['lib', '/typescript.js']
-];
-const forbiddenDistJsTypeAnnotations = [
-  [':number', ':number'],
-  [':string', ':string'],
-  [':boolean', ':boolean'],
-  [':AudioContext', ':AudioContext'],
-  [':OscillatorType', ':OscillatorType'],
-  ['|null', '|null'],
-  ['playerName:string', 'playerName:string'],
-  ['score:number', 'score:number'],
-  ['f:number', 'f:number']
-];
-const forbiddenPaths = [
-  ['/root/', '.nvm/'].join(''),
-  ['/ho', 'me/'].join(''),
-  ['C:', '\\'].join(''),
-  ['Users', '\\'].join(''),
-  ['lib/node_', 'modules/typescript'].join('')
-];
-const distRoots = ['dist'];
-const pathScanRoots = ['dist', 'scripts', 'vendor'];
-const pathScanFiles = ['package.json', 'package-lock.json'];
+const sourceRoot = 'src';
+const distRoot = 'dist';
+const assetsRoot = join(distRoot, 'assets');
 
-function scanDistFile(p) {
-  if (p.endsWith('.map')) bad.push('source map: ' + p);
-  const txt = readFileSync(p, 'utf8');
-  if (p.endsWith('.js') && p.split('/').join('/').startsWith('dist/assets/')) {
-    for (const [label, needle] of forbiddenDistJsTypeAnnotations) {
-      if (txt.includes(needle)) bad.push(`TypeScript type annotation ${label}: ${p}`);
+function toPosix(path) {
+  return path.split('\\').join('/');
+}
+
+function walk(directory, visit) {
+  for (const name of readdirSync(directory)) {
+    const path = join(directory, name);
+    const stat = statSync(path);
+    if (stat.isDirectory()) walk(path, visit);
+    else visit(path);
+  }
+}
+
+function filesUnder(root) {
+  const files = [];
+  if (!existsSync(root)) return files;
+  walk(root, path => files.push(toPosix(relative(root, path))));
+  return files.sort();
+}
+
+function checkModuleSyntax(path, text) {
+  const result = spawnSync(process.execPath, ['--input-type=module', '--check'], {
+    input: text,
+    encoding: 'utf8'
+  });
+  if (result.status !== 0) {
+    bad.push(`JavaScript syntax error: ${path}\n${result.stderr || result.stdout}`);
+  }
+}
+
+function importSpecifiers(text) {
+  const values = [];
+  const staticImport = /(?:^|[;\n])\s*(?:import|export)(?:[^'";]*?\bfrom)?\s*['"]([^'"]+)['"]/g;
+  const dynamicImport = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  for (const expression of [staticImport, dynamicImport]) {
+    let match;
+    while ((match = expression.exec(text))) values.push(match[1]);
+  }
+  return values;
+}
+
+function checkImports(path, text) {
+  for (const specifier of importSpecifiers(text)) {
+    if (!specifier.startsWith('.')) {
+      bad.push(`bare or absolute import ${specifier}: ${path}`);
+      continue;
     }
-  }
-  if (/https?:\/\/(?!(?:chameleonjp\.codeberg\.page|chameleonjp-lab\.codeberg\.page)(?:[\/'"]|$)|chameleonjp\.supabase\.co(?:[\/'"]|$))/.test(txt)) bad.push('external CDN/url: ' + p);
-  if (/service_role/i.test(txt)) bad.push('service_role string: ' + p);
-  if (/ranking_scores/.test(txt)) bad.push('direct ranking_scores reference: ' + p);
-  for (const [label, re] of stale) if (re.test(txt)) bad.push(label + ': ' + p);
-}
-
-function scanForbiddenPathFile(p) {
-  const txt = readFileSync(p, 'utf8');
-  for (const needle of forbiddenPaths) if (txt.includes(needle)) bad.push(`forbidden path ${needle}: ${p}`);
-}
-
-function scanVendorTypeScriptFile(p) {
-  const txt = readFileSync(p, 'utf8');
-  for (const parts of forbiddenVendorTypeScript) {
-    const needle = parts.join('');
-    if (txt.includes(needle)) bad.push(`forbidden vendored TypeScript lookup ${needle}: ${p}`);
+    if (!specifier.endsWith('.js')) {
+      bad.push(`relative import without .js extension ${specifier}: ${path}`);
+      continue;
+    }
+    const target = resolve(dirname(path), specifier);
+    if (!existsSync(target)) bad.push(`missing relative import ${specifier}: ${path}`);
   }
 }
 
-function walk(d, cb) {
-  for (const f of readdirSync(d)) {
-    const p = join(d, f);
-    const s = statSync(p);
-    if (s.isDirectory()) walk(p, cb);
-    else cb(p);
+function checkJavaScript(path) {
+  const text = readFileSync(path, 'utf8');
+  checkModuleSyntax(path, text);
+  checkImports(path, text);
+
+  if (/\bimport\s+type\b/.test(text)) bad.push(`import type remains: ${path}`);
+  if (/\bexport\s+type\b/.test(text)) bad.push(`export type remains: ${path}`);
+  if (/:\s*(?:number|string|boolean|AudioContext|OscillatorType)(?:\b|\|)/.test(text)) {
+    bad.push(`TypeScript type annotation remains: ${path}`);
+  }
+  if (/\|\s*null\b/.test(text)) bad.push(`TypeScript null union remains: ${path}`);
+  if (/\bfrom\s*['"](?:three|vite|typescript)['"]/.test(text)) bad.push(`forbidden bare dependency import: ${path}`);
+}
+
+function checkPublishedFile(path) {
+  const text = readFileSync(path, 'utf8');
+  if (path.endsWith('.map')) bad.push(`source map: ${path}`);
+  if (/https?:\/\/(?!(?:chameleonjp\.codeberg\.page|chameleonjp-lab\.codeberg\.page)(?:[\/'"]|$)|chameleonjp\.supabase\.co(?:[\/'"]|$))/.test(text)) {
+    bad.push(`external CDN/url: ${path}`);
+  }
+  if (/service_role/i.test(text)) bad.push(`service_role string: ${path}`);
+  if (/ranking_scores/.test(text)) bad.push(`direct ranking_scores reference: ${path}`);
+  if (/gl\s*=\s*cv\.getContext\(['"]webgl['"]/.test(text) && /ctx\s*=\s*cv\.getContext\(['"]2d['"]/.test(text)) {
+    bad.push(`legacy shared-canvas renderer initialization: ${path}`);
   }
 }
 
-for (const root of distRoots) walk(root, scanDistFile);
-for (const root of pathScanRoots) if (existsSync(root)) walk(root, scanForbiddenPathFile);
-if (existsSync('vendor/typescript/lib/typescript.js')) scanVendorTypeScriptFile('vendor/typescript/lib/typescript.js');
-for (const file of pathScanFiles) if (existsSync(file)) scanForbiddenPathFile(file);
+function checkForbiddenLocalPaths(path) {
+  const text = readFileSync(path, 'utf8');
+  const forbidden = ['/root/.nvm/', '/home/', 'C:\\', 'Users\\', 'lib/node_modules/typescript'];
+  for (const needle of forbidden) {
+    if (text.includes(needle)) bad.push(`forbidden local path ${needle}: ${path}`);
+  }
+}
+
+if (!existsSync(sourceRoot)) bad.push('missing src directory');
+if (!existsSync(assetsRoot)) bad.push('missing dist/assets directory');
+
+for (const root of [sourceRoot, distRoot]) {
+  if (!existsSync(root)) continue;
+  walk(root, path => {
+    if (/\.tsx?$/i.test(path)) bad.push(`TypeScript file remains: ${path}`);
+    if (path.endsWith('.js')) checkJavaScript(path);
+    if (root === distRoot) checkPublishedFile(path);
+  });
+}
+
+const sourceFiles = filesUnder(sourceRoot);
+const distFiles = filesUnder(assetsRoot);
+const sourceSet = new Set(sourceFiles);
+const distSet = new Set(distFiles);
+
+for (const file of sourceFiles) {
+  if (!distSet.has(file)) {
+    bad.push(`dist file missing for source: ${file}`);
+    continue;
+  }
+  const source = readFileSync(join(sourceRoot, file));
+  const built = readFileSync(join(assetsRoot, file));
+  if (!source.equals(built)) bad.push(`src/dist content mismatch: ${file}`);
+}
+for (const file of distFiles) {
+  if (!sourceSet.has(file)) bad.push(`stale or extra dist asset: ${file}`);
+}
+
+const rootHtml = existsSync('index.html') ? readFileSync('index.html', 'utf8') : '';
+const distHtml = existsSync(join(distRoot, 'index.html')) ? readFileSync(join(distRoot, 'index.html'), 'utf8') : '';
+
+if (!rootHtml.includes('href="./src/ui/styles.css"')) bad.push('root index.html does not load ./src/ui/styles.css');
+if (!rootHtml.includes('src="./src/main.js"')) bad.push('root index.html does not load ./src/main.js');
+if (/\.tsx?\b|node_modules|https?:\/\//.test(rootHtml.replace('https://', ''))) {
+  if (/\.tsx?\b|node_modules/.test(rootHtml)) bad.push('root index.html has a forbidden source reference');
+}
+if (!distHtml.includes('href="./assets/ui/styles.css"')) bad.push('dist/index.html does not load ./assets/ui/styles.css');
+if (!distHtml.includes('src="./assets/main.js"')) bad.push('dist/index.html does not load ./assets/main.js');
+if (/\.tsx?\b|node_modules|https?:\/\//.test(distHtml)) bad.push('dist/index.html has a forbidden reference');
+
+const buildText = existsSync('scripts/build.mjs') ? readFileSync('scripts/build.mjs', 'utf8') : '';
+for (const needle of ['transpileModule', 'vendor/typescript', 'previousDist']) {
+  if (buildText.includes(needle)) bad.push(`pseudo transpilation remains in build: ${needle}`);
+}
+
+for (const root of ['scripts', 'vendor']) {
+  if (existsSync(root)) walk(root, checkForbiddenLocalPaths);
+}
+for (const file of ['package.json', 'package-lock.json']) {
+  if (existsSync(file)) checkForbiddenLocalPaths(file);
+}
 
 if (bad.length) {
   console.error(bad.join('\n'));
   process.exit(1);
 }
-console.log('verify ok: no source maps, external CDN, service_role, direct ranking_scores POST, CSS direct import, three bare import, fake Three substitute, legacy hand-written dist markers, forbidden absolute/local TypeScript paths, vendored TypeScript external lookups, or TypeScript type annotations in dist asset JavaScript');
+
+console.log('verify ok: plain JavaScript sources, resolved imports, valid module syntax, matching src/dist assets, safe HTML references, and no forbidden published secrets or legacy artifacts');
