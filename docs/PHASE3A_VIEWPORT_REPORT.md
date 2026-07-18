@@ -3,8 +3,12 @@
 - 対象: `chameleonjp-lab/namioshi`
 - 基準main: `7dd230211195f855743f14411092a80b9ac1e253`
 - 作業ブランチ: `codex/namioshi-v3-phase3a-logical-viewport`
+- 対象Pull Request: `#24`
 - 対象Phase: 3A「360×640固定論理座標」
-- 現在の状態: 実装済み、自動検査実行待ち
+- 判定: **自動検査合格**
+- 初回成功Run: `G2 Build Verification #10`
+- Run ID: `29638102137`
+- 成功対象コミット: `1e860545a18c6cbf9b99549ecbdc477fed55afe1`
 
 ## 1. 目的
 
@@ -69,7 +73,7 @@ WebGLとCanvas 2Dの両方へ同じ表示変換を適用した。
 
 ## 4. 自動試験
 
-`tests/viewport.test.mjs`を追加した。
+`tests/viewport.test.mjs`へ5件の試験を追加した。
 
 対象画面サイズ:
 
@@ -88,21 +92,34 @@ WebGLとCanvas 2Dの両方へ同じ表示変換を適用した。
 4. viewportを作り直してもWorld状態が変化しない。
 5. 同じ乱数列と同じ論理タップなら、画面サイズが違っても同じWorld状態と得点になる。
 
-GitHub ActionsではNode.js 18、20、22の各環境で`npm test`を実行する。
+## 5. GitHub Actions結果
 
-## 5. 合格条件
+Pull Request #24のhead `1e860545a18c6cbf9b99549ecbdc477fed55afe1`に対するRun #10で確認した。
 
-- 5件のviewport試験がすべて成功する。
-- `npm run build`が成功する。
-- `npm run verify`が成功する。
-- `npm run size`が成功する。
-- build後の`dist`差分がない。
-- Node.js 18、20、22で同じ結果になる。
-- `src`と`dist/assets`の内容が一致する。
-- ゲーム領域を切り取らない。
-- 余白上の入力を拒否する。
+| 実行環境 | build | viewport試験5件 | verify | size | dist再現性 | 判定 |
+|---|---|---|---|---|---|---|
+| Node.js 18 | 成功 | 成功 | 成功 | 成功 | 成功 | 合格 |
+| Node.js 20 | 成功 | 成功 | 成功 | 成功 | 成功 | 合格 |
+| Node.js 22 | 成功 | 成功 | 成功 | 成功 | 成功 | 合格 |
 
-## 6. 未確認
+全ジョブで、失敗時だけ保存する診断Artifactの処理はスキップされた。
+
+## 6. 自動検査の判定
+
+Phase 3Aの自動検査は合格と判定する。
+
+- Worldは360×640へ固定された。
+- 4つの画面サイズで、同じ論理タップから同じWorld状態と得点になった。
+- 余白入力を拒否した。
+- 座標の往復変換誤差は0.25論理ピクセル以内だった。
+- viewport変更でWorld状態が変わらなかった。
+- `src`と`dist/assets`は一致した。
+- build、verify、size、dist再現性が成功した。
+- 得点式、公式配置、ランキング送信は変更していない。
+
+この報告更新後のPull Request最新headでも同じworkflowを実行し、失敗している状態ではマージしない。
+
+## 7. 未確認
 
 次は実機またはブラウザで確認するまで未確認とする。
 
@@ -114,8 +131,10 @@ GitHub ActionsではNode.js 18、20、22の各環境で`npm test`を実行する
 - Codeberg Pages。
 - Supabase実通信。
 
-## 7. 次の作業
+自動試験の成功を、これらの実機確認済みという意味にはしない。
 
-Phase 3Aの自動検査とレビュー完了後、Phase 3B「公式配置比較ラボ」へ進む。
+## 8. 次の作業
+
+Pull Request #24のレビューとマージ後、Phase 3B「公式配置比較ラボ」へ進む。
 
 Phase 3Bでは本番の公式配置を勝手に確定せず、3候補以上を同じ条件で比較し、人が採用候補を選ぶ。
