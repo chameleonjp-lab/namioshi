@@ -1,4 +1,4 @@
-import{QUALITY}from '../config.js';
+import{QUALITY}from'../config.js';
 const MAX_WAVES=12,MAX_PARTICLES=90,SEG=96;
 function shader(gl,type,src){const s=gl.createShader(type);if(!s)throw Error('WebGL shader unavailable');gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error('WebGL shader compile failed: '+gl.getShaderInfoLog(s));return s}
 function program(gl,vs,fs){const p=gl.createProgram();if(!p)throw Error('WebGL program unavailable');gl.attachShader(p,shader(gl,gl.VERTEX_SHADER,vs));gl.attachShader(p,shader(gl,gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error('WebGL program link failed: '+gl.getProgramInfoLog(p));return p}
