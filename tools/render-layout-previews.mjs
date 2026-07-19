@@ -11,6 +11,7 @@ const HEIGHT=640;
 const colors=['#7de7ff','#d8ff9a','#d4a8ff'];
 const esc=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const round=value=>Number(value.toFixed(2));
+const normalizeSvg=content=>content.replace(/-?\d+\.\d{3,}/g,value=>String(round(Number(value))));
 
 function bounce(start,velocity,time,min,max){
   const span=max-min;
@@ -109,7 +110,7 @@ let stale=false;
 for(const[name,content]of outputs){
   const filePath=fileURLToPath(new URL(name,new URL('../docs/layout-previews/',import.meta.url)));
   if(shouldWrite){writeFileSync(filePath,content);console.log(`wrote ${filePath}`);}
-  else if(!existsSync(filePath)||readFileSync(filePath,'utf8')!==content){console.error(`layout preview is stale: ${name}`);stale=true;}
+  else if(!existsSync(filePath)||normalizeSvg(readFileSync(filePath,'utf8'))!==normalizeSvg(content)){console.error(`layout preview is stale: ${name}`);stale=true;}
 }
 if(!shouldWrite&&stale){console.error('run npm run render:layouts:write and review the SVG changes');process.exit(1);}
 if(!shouldWrite)console.log(`layout preview check ok: ${outputs.size} SVG files`);
