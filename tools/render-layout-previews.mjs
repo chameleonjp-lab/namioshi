@@ -26,8 +26,8 @@ function beaconPosition(beacon,time){
 function board(layout,metrics,x,y,scale){
   const sx=value=>round(x+value*scale);
   const sy=value=>round(y+value*scale);
-  const width=WIDTH*scale;
-  const height=HEIGHT*scale;
+  const width=round(WIDTH*scale);
+  const height=round(HEIGHT*scale);
   const warningGlass=new Set(metrics.beaconGlassRiskPairs.map(pair=>pair.split('/')[1]));
   const out=['<g>'];
   out.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="12" fill="url(#water)" stroke="#57839a" stroke-width="2"/>`);
@@ -35,21 +35,21 @@ function board(layout,metrics,x,y,scale){
   layout.beacons.forEach((beacon,index)=>{
     const points=[];
     for(let time=0;time<=10;time+=1){const point=beaconPosition(beacon,time);points.push(`${sx(point.x)},${sy(point.y)}`);}
-    out.push(`<polyline points="${points.join(' ')}" fill="none" stroke="${colors[index]}" stroke-opacity=".42" stroke-width="${Math.max(1.4,2*scale)}" stroke-dasharray="6 5"/>`);
+    out.push(`<polyline points="${points.join(' ')}" fill="none" stroke="${colors[index]}" stroke-opacity=".42" stroke-width="${round(Math.max(1.4,2*scale))}" stroke-dasharray="6 5"/>`);
   });
   layout.glass.forEach(glass=>{
     const warning=warningGlass.has(glass.id);
-    out.push(`<line x1="${sx(glass.x1)}" y1="${sy(glass.y1)}" x2="${sx(glass.x2)}" y2="${sy(glass.y2)}" stroke="${warning?'#ff8aa8':'#7cecff'}" stroke-opacity=".24" stroke-width="${10*scale}" stroke-linecap="round"/>`);
-    out.push(`<line x1="${sx(glass.x1)}" y1="${sy(glass.y1)}" x2="${sx(glass.x2)}" y2="${sy(glass.y2)}" stroke="${warning?'#ffc0cf':'#c2f6ff'}" stroke-width="${3*scale}" stroke-linecap="round"/>`);
+    out.push(`<line x1="${sx(glass.x1)}" y1="${sy(glass.y1)}" x2="${sx(glass.x2)}" y2="${sy(glass.y2)}" stroke="${warning?'#ff8aa8':'#7cecff'}" stroke-opacity=".24" stroke-width="${round(10*scale)}" stroke-linecap="round"/>`);
+    out.push(`<line x1="${sx(glass.x1)}" y1="${sy(glass.y1)}" x2="${sx(glass.x2)}" y2="${sy(glass.y2)}" stroke="${warning?'#ffc0cf':'#c2f6ff'}" stroke-width="${round(3*scale)}" stroke-linecap="round"/>`);
   });
   snapshot.referenceTaps.forEach((tap,index)=>{
-    out.push(`<circle cx="${sx(tap.x)}" cy="${sy(tap.y)}" r="${13*scale}" fill="#ffb45b" fill-opacity=".12" stroke="#ffbe73" stroke-width="${2*scale}"/>`);
-    out.push(`<text x="${sx(tap.x)}" y="${sy(tap.y)+4*scale}" text-anchor="middle" font-size="${12*scale}" font-weight="700" fill="#ffe4bd">${index+1}</text>`);
+    out.push(`<circle cx="${sx(tap.x)}" cy="${sy(tap.y)}" r="${round(13*scale)}" fill="#ffb45b" fill-opacity=".12" stroke="#ffbe73" stroke-width="${round(2*scale)}"/>`);
+    out.push(`<text x="${sx(tap.x)}" y="${round(sy(tap.y)+4*scale)}" text-anchor="middle" font-size="${round(12*scale)}" font-weight="700" fill="#ffe4bd">${index+1}</text>`);
   });
   layout.beacons.forEach((beacon,index)=>{
-    out.push(`<circle cx="${sx(beacon.x)}" cy="${sy(beacon.y)}" r="${28*scale}" fill="${colors[index]}" fill-opacity=".13"/>`);
-    out.push(`<circle cx="${sx(beacon.x)}" cy="${sy(beacon.y)}" r="${beacon.radius*scale}" fill="${colors[index]}" stroke="#fff" stroke-width="${2*scale}"/>`);
-    out.push(`<text x="${sx(beacon.x)}" y="${sy(beacon.y)+4*scale}" text-anchor="middle" font-size="${12*scale}" font-weight="800" fill="#07111f">${String.fromCharCode(65+index)}</text>`);
+    out.push(`<circle cx="${sx(beacon.x)}" cy="${sy(beacon.y)}" r="${round(28*scale)}" fill="${colors[index]}" fill-opacity=".13"/>`);
+    out.push(`<circle cx="${sx(beacon.x)}" cy="${sy(beacon.y)}" r="${round(beacon.radius*scale)}" fill="${colors[index]}" stroke="#fff" stroke-width="${round(2*scale)}"/>`);
+    out.push(`<text x="${sx(beacon.x)}" y="${round(sy(beacon.y)+4*scale)}" text-anchor="middle" font-size="${round(12*scale)}" font-weight="800" fill="#07111f">${String.fromCharCode(65+index)}</text>`);
   });
   out.push('</g>');
   return out.join('');
