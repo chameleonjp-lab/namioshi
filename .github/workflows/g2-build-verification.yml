@@ -66,6 +66,9 @@ jobs:
       - name: Check layout analysis snapshot
         run: npm run analyze:layouts
 
+      - name: Check layout decision previews
+        run: npm run render:layouts
+
       - name: Verify source and dist contracts
         run: npm run verify
 
