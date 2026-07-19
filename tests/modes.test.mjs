@@ -9,6 +9,7 @@ import {
 import {OFFICIAL_LAYOUT,createPracticeLayout} from '../src/game/layouts.js';
 import {GAME_MODE,rankingPolicy} from '../src/game/modes.js';
 import {World} from '../src/game/world.js';
+import {RANKING_SERVICE_STATE} from '../src/services/ranking.js';
 import {LAYOUT_CANDIDATES} from '../tools/layout-candidates.js';
 
 function seededRandom(seed){
@@ -99,6 +100,10 @@ test('practice mode is reproducible with injected random and changes with anothe
 });
 
 test('practice can never submit and official remains disabled until ranking Phase 5',()=>{
+  assert.deepEqual(RANKING_SERVICE_STATE,{
+    enabled:false,
+    activationPhase:'Phase 5'
+  });
   assert.deepEqual(rankingPolicy(GAME_MODE.PRACTICE),{
     mode:GAME_MODE.PRACTICE,
     rankingCandidate:false,
