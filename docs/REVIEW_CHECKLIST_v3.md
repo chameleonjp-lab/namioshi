@@ -128,9 +128,37 @@
 - [済] `G2 Build Verification` Run #15が成功した
 - [済] 文書更新後のhead `b490329a58fbeece17acab526b53b666095acafe`でRun #18が成功した
 
+### Phase 3B.1 選定資料 静的確認
+
+- [済] 横並び比較SVGを追加した
+- [済] スマートフォン向け縦並び比較SVGを追加した
+- [済] 両SVGを候補データと保存済み分析結果から生成する
+- [済] ビーコンの初期位置と10秒移動経路を表示する
+- [済] ガラス片、共通3タップ、主要な比較値を表示する
+- [済] 近接警告対象のガラス片を別の色で示す
+- [済] `docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md`へ事実、意見、注意点、選定後の手順を記録した
+- [済] 候補Cを初回実機確認の優先候補として推薦した
+- [済] 候補Cの推薦を採用決定と表現していない
+- [済] 採用状態を`human-decision-pending`のまま維持した
+- [済] `npm run render:layouts`と生成用コマンドを追加した
+- [済] GitHub ActionsへSVG生成一致検査を追加した
+- [済] 選定ガイドとSVGの内容を単体試験へ追加した
+- [済] 本番`src`と`dist`を変更していない
+
+### Phase 3B.1 実行確認
+
+- [未確認] Node.js 18で`npm run render:layouts`が成功する
+- [未確認] Node.js 20で`npm run render:layouts`が成功する
+- [未確認] Node.js 22で`npm run render:layouts`が成功する
+- [未確認] 選定ガイドと比較SVGの単体試験が成功する
+- [未確認] build後の`dist`差分がなく、本番公開物を変更していない
+- [未確認] Phase 3B.1のPull Request最新headで全ジョブが成功する
+
 ### Phase 3B 人の確認
 
 - [未確認] `tools/layout-lab.html`を実ブラウザで開ける
+- [未確認] GitHub上で横並び比較SVGを開ける
+- [未確認] iPhoneでスマートフォン向け縦比較SVGを読める
 - [未確認] iPhone SE級で候補Aのビーコンとガラス片を区別できる
 - [未確認] iPhone SE級で候補Bのビーコンとガラス片を区別できる
 - [未確認] iPhone SE級で候補Cのビーコンとガラス片を区別できる
