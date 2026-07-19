@@ -12,11 +12,12 @@ Phase 3Bで比較した候補A・B・Cを、iPhoneからGitHub上で見比べら
 - 基準ブランチ: `main`
 - 基準コミット: `dd49724d236c2573e38baf8d7ecf99475983a060`（Pull Request #25のマージ）
 - 作業ブランチ: `codex/namioshi-v3-phase3b1-decision-pack`
+- 対象Pull Request: `#26`
 - 前提: Phase 3Bの候補A・B・Cと分析結果がmainへ反映済み
 - 採用状態: `human-decision-pending`
 - 実機確認: 未完了
 
-## 追加する判断資料
+## 追加した判断資料
 
 ### 静止プレビュー
 
@@ -44,7 +45,7 @@ Phase 3Bで比較した候補A・B・Cを、iPhoneからGitHub上で見比べら
 
 ### 生成と検査
 
-`tools/render-layout-previews.mjs`を追加する。
+`tools/render-layout-previews.mjs`を追加した。
 
 ```text
 npm run render:layouts
@@ -59,9 +60,9 @@ npm run render:layouts:write
 
 ### 選定ガイド
 
-`docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md`を追加する。
+`docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md`を追加した。
 
-この文書では次を分けて記載する。
+この文書では次を分けて記載した。
 
 - 自動分析で確認した事実
 - 各候補の注意点
@@ -82,9 +83,11 @@ npm run render:layouts:write
 
 注意点は、ガラス端点と画面端の最小余白が42pxで最も狭いことである。iPhone SE級で見づらい場合は、候補Cをそのまま採用せず、ガラス片を内側へ寄せた候補Dを別Pull Requestで作る。
 
-## GitHub Actions
+## GitHub Actions結果
 
-Node.js 18、20、22の各環境で次を実行する。
+Pull Request #26のhead `6fe2163ff508a7f7c1a2602cdbebc349f19e92c7`に対する`G2 Build Verification` Run #22、Run ID `29703486545`は成功した。
+
+Node.js 18、20、22のすべてで次が成功した。
 
 ```text
 npm run build
@@ -96,9 +99,18 @@ npm run size
 git diff --exit-code -- dist
 ```
 
-`npm run render:layouts`が失敗した場合は、候補データ、分析結果、生成処理、コミット済みSVGのどこが一致していないかを確認する。検査を削除して通さない。
+自動検査では次を確認した。
 
-## 変更しない重要部分
+- 選定ガイドが`human-decision-pending`を維持している。
+- 候補Cを実機確認の優先候補として推薦し、採用決定とは書いていない。
+- 候補A、B、C、Dの返答選択肢がある。
+- 横・縦の比較SVGが候補A・B・Cを含む。
+- 両SVGが画像としての説明を持つ。
+- 候補データと分析結果から再生成したSVGがコミット済み内容と一致する。
+- 既存の配置分析結果が変わっていない。
+- build後の`dist`に差分がなく、本番公開物を変更していない。
+
+## 変更しなかった重要部分
 
 - `src/**`
 - `dist/**`
@@ -127,6 +139,12 @@ git diff --exit-code -- dist
 - Supabase実通信
 
 自動検査の成功を、候補採用済みまたは実機確認済みという意味にはしない。
+
+## 自動検査の判定
+
+Phase 3B.1の自動検査は合格と判定する。
+
+ただし、公式配置の採用は未決定である。採用状態は引き続き`human-decision-pending`とする。
 
 ## 完了条件
 
