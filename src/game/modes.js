@@ -1,3 +1,5 @@
+import {RANKING_SERVICE_STATE} from '../services/ranking.js';
+
 export const GAME_MODE=Object.freeze({
   OFFICIAL:'official',
   PRACTICE:'practice'
@@ -8,7 +10,7 @@ export const MODE_PRESENTATION=Object.freeze({
     label:'公式',
     resultTitle:'公式結果',
     description:'候補C・開港型の固定配置で遊びます。',
-    rankingText:'公式モードです。ランキング送信はPhase 5で開始します。'
+    rankingText:`公式モードです。ランキング送信は${RANKING_SERVICE_STATE.activationPhase}で開始します。`
   }),
   [GAME_MODE.PRACTICE]:Object.freeze({
     label:'練習',
@@ -35,7 +37,7 @@ export function rankingPolicy(value){
   return Object.freeze({
     mode,
     rankingCandidate:mode===GAME_MODE.OFFICIAL,
-    submitNow:false,
+    submitNow:RANKING_SERVICE_STATE.enabled&&mode===GAME_MODE.OFFICIAL,
     statusText:MODE_PRESENTATION[mode].rankingText
   });
 }
