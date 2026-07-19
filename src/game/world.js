@@ -1,3 +1,172 @@
 import {LOGICAL_HEIGHT,LOGICAL_WIDTH,MAX_TAPS,PLAY_SECONDS} from '../config.js';
-const rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-let wid=1;export class World{w=LOGICAL_WIDTH;h=LOGICAL_HEIGHT;score=0;taps=0;time=PLAY_SECONDS;combo=0;waves=[];beacons=[];glass=[];particles=[];onHit=()=>{};reset(){this.w=LOGICAL_WIDTH;this.h=LOGICAL_HEIGHT;const w=this.w,h=this.h;this.score=0;this.taps=0;this.time=PLAY_SECONDS;this.combo=0;this.waves=[];this.particles=[];this.glass=[];this.beacons=[];for(let i=0;i<3;i++){const y=[.3,.5,.7][i]*h+(.5-Math.random())*36;this.beacons.push({id:i,x:(i+1)*w/4,y,baseX:(i+1)*w/4,baseY:y,vx:rnd(-8,8),vy:rnd(-8,8),radius:Math.max(13,Math.min(18,w*.045)),flash:0})}for(let i=0;i<4;i++){const x1=rnd(w*.12,w*.88),y1=rnd(h*.2,h*.8);const len=rnd(64,110),a=rnd(-.9,.9),x2=x1+Math.cos(a)*len,y2=y1+Math.sin(a)*len;const nx=-Math.sin(a),ny=Math.cos(a);this.glass.push({id:i,x1,y1,x2,y2,nx,ny})}}tap(x,y){if(this.taps>=MAX_TAPS)return false;this.taps++;this.addWave(x,y,0,'direct');return true}addWave(x,y,ref,kind){this.waves.push({id:wid++,originX:x,originY:y,radius:1,width:9,speed:165,age:0,life:3,reflections:ref,kind,hit:new Set,edges:new Set,glass:new Set});while(this.waves.length>24)this.waves.shift()}step(dt){this.time-=dt;for(const b of this.beacons){b.flash=Math.max(0,b.flash-dt*3);b.x=clamp(b.x+b.vx*dt,b.radius,this.w-b.radius);b.y=clamp(b.y+b.vy*dt,70,this.h-b.radius);if(b.x<=b.radius||b.x>=this.w-b.radius)b.vx*=-1;if(b.y<=70||b.y>=this.h-b.radius)b.vy*=-1}for(let i=this.waves.length-1;i>=0;i--){const e=this.waves[i];e.age+=dt;e.radius+=e.speed*dt;this.reflect(e);for(const b of this.beacons){if(e.hit.has(b.id))continue;const d=Math.hypot(e.originX-b.x,e.originY-b.y);const error=Math.abs(d-e.radius);const band=e.width+b.radius*.35;if(error<=band){e.hit.add(b.id);const base=e.reflections>=2?260:e.kind==='glass'?200:e.kind==='wall'?160:100;const acc=1+Math.max(0,1-error/band)*.45;const mult=acc*(1+Math.min(this.combo,5)*.12);this.combo++;this.score+=Math.round(base*mult);b.flash=1;b.vx+=(b.x-e.originX)/(d||1)*22;b.vy+=(b.y-e.originY)/(d||1)*22;this.burst(b.x,b.y);this.onHit()}}if(e.age>e.life)this.waves.splice(i,1)}for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.age+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.age>p.life)this.particles.splice(i,1)}}reflect(e){if(e.reflections>=2)return;const sides=[['l',-e.originX,e.originY],['r',2*this.w-e.originX,e.originY],['t',e.originX,-e.originY],['b',e.originX,2*this.h-e.originY]];for(const[s,x,y]of sides){const d=s==='l'?e.originX:s==='r'?this.w-e.originX:s==='t'?e.originY:this.h-e.originY;if(e.radius>d&&!e.edges.has(s)){e.edges.add(s);this.addWave(x,y,e.reflections+1,'wall')}}for(const g of this.glass){if(e.glass.has(g.id))continue;const vx=g.x2-g.x1,vy=g.y2-g.y1,len2=vx*vx+vy*vy;const t=clamp(((e.originX-g.x1)*vx+(e.originY-g.y1)*vy)/len2,0,1);const px=g.x1+vx*t,py=g.y1+vy*t,perp=(e.originX-px)*g.nx+(e.originY-py)*g.ny;if(Math.abs(Math.abs(perp)-e.radius)<9){e.glass.add(g.id);this.addWave(e.originX-2*perp*g.nx,e.originY-2*perp*g.ny,e.reflections+1,'glass')}}}burst(x,y){for(let i=0;i<14;i++)this.particles.push({x,y,vx:rnd(-70,70),vy:rnd(-70,70),age:0,life:rnd(.3,.8)});while(this.particles.length>90)this.particles.shift()}}
+import {createOfficialLayout,createPracticeLayout} from './layouts.js';
+import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
+
+const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+let waveSequence=1;
+
+export class World{
+  w=LOGICAL_WIDTH;
+  h=LOGICAL_HEIGHT;
+  mode=GAME_MODE.OFFICIAL;
+  layoutId=null;
+  ruleVersion=null;
+  layoutFingerprint=null;
+  rankingCandidate=true;
+  score=0;
+  taps=0;
+  time=PLAY_SECONDS;
+  combo=0;
+  waves=[];
+  beacons=[];
+  glass=[];
+  particles=[];
+  onHit=()=>{};
+
+  constructor({random=Math.random}={}){
+    if(typeof random!=='function')throw new TypeError('random source must be a function');
+    this.random=random;
+  }
+
+  reset({mode=GAME_MODE.OFFICIAL,random=this.random}={}){
+    this.w=LOGICAL_WIDTH;
+    this.h=LOGICAL_HEIGHT;
+    this.mode=normalizeGameMode(mode);
+    const layout=isOfficialMode(this.mode)?createOfficialLayout():createPracticeLayout(random);
+    this.layoutId=layout.id;
+    this.ruleVersion=layout.ruleVersion;
+    this.layoutFingerprint=layout.fingerprint;
+    this.rankingCandidate=isOfficialMode(this.mode);
+    this.score=0;
+    this.taps=0;
+    this.time=PLAY_SECONDS;
+    this.combo=0;
+    this.waves=[];
+    this.particles=[];
+    this.beacons=layout.beacons;
+    this.glass=layout.glass;
+  }
+
+  tap(x,y){
+    if(this.taps>=MAX_TAPS)return false;
+    this.taps++;
+    this.addWave(x,y,0,'direct');
+    return true;
+  }
+
+  addWave(x,y,reflections,kind){
+    this.waves.push({
+      id:waveSequence++,
+      originX:x,
+      originY:y,
+      radius:1,
+      width:9,
+      speed:165,
+      age:0,
+      life:3,
+      reflections,
+      kind,
+      hit:new Set(),
+      edges:new Set(),
+      glass:new Set()
+    });
+    while(this.waves.length>24)this.waves.shift();
+  }
+
+  step(dt){
+    this.time-=dt;
+    for(const beacon of this.beacons){
+      beacon.flash=Math.max(0,beacon.flash-dt*3);
+      beacon.x=clamp(beacon.x+beacon.vx*dt,beacon.radius,this.w-beacon.radius);
+      beacon.y=clamp(beacon.y+beacon.vy*dt,70,this.h-beacon.radius);
+      if(beacon.x<=beacon.radius||beacon.x>=this.w-beacon.radius)beacon.vx*=-1;
+      if(beacon.y<=70||beacon.y>=this.h-beacon.radius)beacon.vy*=-1;
+    }
+
+    for(let index=this.waves.length-1;index>=0;index--){
+      const wave=this.waves[index];
+      wave.age+=dt;
+      wave.radius+=wave.speed*dt;
+      this.reflect(wave);
+      for(const beacon of this.beacons){
+        if(wave.hit.has(beacon.id))continue;
+        const distance=Math.hypot(wave.originX-beacon.x,wave.originY-beacon.y);
+        const error=Math.abs(distance-wave.radius);
+        const band=wave.width+beacon.radius*.35;
+        if(error<=band){
+          wave.hit.add(beacon.id);
+          const base=wave.reflections>=2?260:wave.kind==='glass'?200:wave.kind==='wall'?160:100;
+          const accuracy=1+Math.max(0,1-error/band)*.45;
+          const multiplier=accuracy*(1+Math.min(this.combo,5)*.12);
+          this.combo++;
+          this.score+=Math.round(base*multiplier);
+          beacon.flash=1;
+          beacon.vx+=(beacon.x-wave.originX)/(distance||1)*22;
+          beacon.vy+=(beacon.y-wave.originY)/(distance||1)*22;
+          this.burst(beacon.x,beacon.y);
+          this.onHit();
+        }
+      }
+      if(wave.age>wave.life)this.waves.splice(index,1);
+    }
+
+    for(let index=this.particles.length-1;index>=0;index--){
+      const particle=this.particles[index];
+      particle.age+=dt;
+      particle.x+=particle.vx*dt;
+      particle.y+=particle.vy*dt;
+      if(particle.age>particle.life)this.particles.splice(index,1);
+    }
+  }
+
+  reflect(wave){
+    if(wave.reflections>=2)return;
+    const sides=[
+      ['l',-wave.originX,wave.originY],
+      ['r',2*this.w-wave.originX,wave.originY],
+      ['t',wave.originX,-wave.originY],
+      ['b',wave.originX,2*this.h-wave.originY]
+    ];
+    for(const[side,x,y]of sides){
+      const distance=side==='l'?wave.originX:side==='r'?this.w-wave.originX:side==='t'?wave.originY:this.h-wave.originY;
+      if(wave.radius>distance&&!wave.edges.has(side)){
+        wave.edges.add(side);
+        this.addWave(x,y,wave.reflections+1,'wall');
+      }
+    }
+
+    for(const piece of this.glass){
+      if(wave.glass.has(piece.id))continue;
+      const vx=piece.x2-piece.x1;
+      const vy=piece.y2-piece.y1;
+      const lengthSquared=vx*vx+vy*vy;
+      const position=clamp(((wave.originX-piece.x1)*vx+(wave.originY-piece.y1)*vy)/lengthSquared,0,1);
+      const pointX=piece.x1+vx*position;
+      const pointY=piece.y1+vy*position;
+      const perpendicular=(wave.originX-pointX)*piece.nx+(wave.originY-pointY)*piece.ny;
+      if(Math.abs(Math.abs(perpendicular)-wave.radius)<9){
+        wave.glass.add(piece.id);
+        this.addWave(
+          wave.originX-2*perpendicular*piece.nx,
+          wave.originY-2*perpendicular*piece.ny,
+          wave.reflections+1,
+          'glass'
+        );
+      }
+    }
+  }
+
+  burst(x,y){
+    for(let index=0;index<14;index++){
+      this.particles.push({
+        x,
+        y,
+        vx:-70+this.random()*140,
+        vy:-70+this.random()*140,
+        age:0,
+        life:.3+this.random()*.5
+      });
+    }
+    while(this.particles.length>90)this.particles.shift();
+  }
+}
