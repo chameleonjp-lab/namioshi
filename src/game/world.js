@@ -3,7 +3,16 @@ import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+const OFFICIAL_RANDOM_SEED=0xfc71e804;
 let waveSequence=1;
+
+function seededRandom(seed){
+  let state=seed>>>0;
+  return()=>{
+    state=(Math.imul(state,1664525)+1013904223)>>>0;
+    return state/0x100000000;
+  };
+}
 
 export class World{
   w=LOGICAL_WIDTH;
@@ -32,11 +41,13 @@ export class World{
     this.w=LOGICAL_WIDTH;
     this.h=LOGICAL_HEIGHT;
     this.mode=normalizeGameMode(mode);
-    const layout=isOfficialMode(this.mode)?createOfficialLayout():createPracticeLayout(random);
+    const official=isOfficialMode(this.mode);
+    this.random=official?seededRandom(OFFICIAL_RANDOM_SEED):random;
+    const layout=official?createOfficialLayout():createPracticeLayout(this.random);
     this.layoutId=layout.id;
     this.ruleVersion=layout.ruleVersion;
     this.layoutFingerprint=layout.fingerprint;
-    this.rankingCandidate=isOfficialMode(this.mode);
+    this.rankingCandidate=official;
     this.score=0;
     this.taps=0;
     this.time=PLAY_SECONDS;
