@@ -147,12 +147,13 @@
 
 ### Phase 3B.1 実行確認
 
-- [未確認] Node.js 18で`npm run render:layouts`が成功する
-- [未確認] Node.js 20で`npm run render:layouts`が成功する
-- [未確認] Node.js 22で`npm run render:layouts`が成功する
-- [未確認] 選定ガイドと比較SVGの単体試験が成功する
-- [未確認] build後の`dist`差分がなく、本番公開物を変更していない
-- [未確認] Phase 3B.1のPull Request最新headで全ジョブが成功する
+- [済] Node.js 18で`npm run render:layouts`が成功した
+- [済] Node.js 20で`npm run render:layouts`が成功した
+- [済] Node.js 22で`npm run render:layouts`が成功した
+- [済] 選定ガイドと比較SVGの単体試験が成功した
+- [済] 既存の配置分析結果が変わっていない
+- [済] build後の`dist`差分がなく、本番公開物を変更していない
+- [済] Pull Request #26のhead `6fe2163ff508a7f7c1a2602cdbebc349f19e92c7`でRun #22が成功した
 
 ### Phase 3B 人の確認
 
