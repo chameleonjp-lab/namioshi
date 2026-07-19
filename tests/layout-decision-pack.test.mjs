@@ -4,17 +4,22 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const guide=read('../docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md');
+const selection=read('../docs/OFFICIAL_LAYOUT_SELECTION_v3.md');
 const horizontal=read('../docs/layout-previews/layout-comparison.svg');
 const mobile=read('../docs/layout-previews/layout-comparison-mobile.svg');
 
-test('decision guide keeps selection pending while recommending candidate C for device review',()=>{
-  assert.match(guide,/human-decision-pending/);
-  assert.match(guide,/初回の実機確認へ進める優先候補は、候補C・開港型/);
-  assert.match(guide,/採用決定ではありません/);
-  for(const option of ['候補Aを採用','候補Bを採用','候補Cを採用','候補Dを追加して再比較'])assert.match(guide,new RegExp(option));
+test('decision guide and selection record adopt candidate C for implementation',()=>{
+  assert.match(guide,/candidate-c-selected-for-implementation/);
+  assert.match(guide,/候補C・開港型を公式配置の実装対象として採用/);
+  assert.match(guide,/公開承認: 未完了/);
+  assert.match(selection,/selected-for-implementation/);
+  assert.match(selection,/候補Cでまずは実装/);
+  assert.match(selection,/candidate-c-open-harbor/);
+  assert.match(selection,/fnv1a-fc71e804/);
+  assert.match(selection,/namioshi-v3-layout-study-001/);
 });
 
-test('both comparison SVGs contain all three candidates and remain accessible images',()=>{
+test('comparison SVGs remain accessible pre-selection history',()=>{
   for(const [name,svg] of [['horizontal',horizontal],['mobile',mobile]]){
     assert.match(svg,/^<svg\b/);
     assert.match(svg,/role="img"/);
@@ -25,9 +30,11 @@ test('both comparison SVGs contain all three candidates and remain accessible im
     assert.match(svg,/採用状態: 人の判断待ち/);
     assert.ok(svg.length>1000,`${name} preview is unexpectedly small`);
   }
+  assert.match(guide,/画像内の「人の判断待ち」は比較時点の状態/);
 });
 
-test('decision guide embeds the mobile preview and links the horizontal preview',()=>{
+test('decision guide links selection record and both comparison previews',()=>{
+  assert.match(guide,/OFFICIAL_LAYOUT_SELECTION_v3\.md/);
   assert.match(guide,/layout-previews\/layout-comparison-mobile\.svg/);
   assert.match(guide,/layout-previews\/layout-comparison\.svg/);
 });
