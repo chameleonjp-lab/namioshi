@@ -63,6 +63,9 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Check layout analysis snapshot
+        run: npm run analyze:layouts
+
       - name: Verify source and dist contracts
         run: npm run verify
 

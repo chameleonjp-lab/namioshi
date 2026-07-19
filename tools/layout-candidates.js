@@ -1,0 +1,55 @@
+export const LAYOUT_RULE_VERSION='namioshi-v3-layout-study-001';
+
+export const LAYOUT_CANDIDATES=[
+  {
+    id:'candidate-a-cross-current',
+    label:'候補A・交差流',
+    summary:'中央の斜めガラスを軸に、左右の壁反射とガラス反射を均等に探す候補。',
+    ruleVersion:LAYOUT_RULE_VERSION,
+    beacons:[
+      {id:'beacon-a',x:88,y:180,vx:10,vy:5,radius:16},
+      {id:'beacon-b',x:272,y:326,vx:-9,vy:7,radius:16},
+      {id:'beacon-c',x:116,y:500,vx:7,vy:-6,radius:16}
+    ],
+    glass:[
+      {id:'glass-a1',x1:74,y1:278,x2:164,y2:224},
+      {id:'glass-a2',x1:198,y1:252,x2:294,y2:308},
+      {id:'glass-a3',x1:76,y1:424,x2:170,y2:478},
+      {id:'glass-a4',x1:206,y1:466,x2:300,y2:410}
+    ]
+  },
+  {
+    id:'candidate-b-stair-channel',
+    label:'候補B・段流路',
+    summary:'上から下へ段階的に反射点を置き、連続した読み筋を作る候補。',
+    ruleVersion:LAYOUT_RULE_VERSION,
+    beacons:[
+      {id:'beacon-a',x:118,y:160,vx:8,vy:7,radius:16},
+      {id:'beacon-b',x:244,y:334,vx:-7,vy:-6,radius:16},
+      {id:'beacon-c',x:148,y:526,vx:9,vy:-5,radius:16}
+    ],
+    glass:[
+      {id:'glass-b1',x1:58,y1:236,x2:150,y2:278},
+      {id:'glass-b2',x1:210,y1:214,x2:302,y2:164},
+      {id:'glass-b3',x1:78,y1:402,x2:172,y2:350},
+      {id:'glass-b4',x1:202,y1:430,x2:306,y2:474}
+    ]
+  },
+  {
+    id:'candidate-c-open-harbor',
+    label:'候補C・開港型',
+    summary:'中央を広く空け、壁反射と外周寄りのガラス反射を選びやすくする候補。',
+    ruleVersion:LAYOUT_RULE_VERSION,
+    beacons:[
+      {id:'beacon-a',x:76,y:204,vx:11,vy:-4,radius:16},
+      {id:'beacon-b',x:284,y:286,vx:-10,vy:5,radius:16},
+      {id:'beacon-c',x:180,y:510,vx:6,vy:-7,radius:16}
+    ],
+    glass:[
+      {id:'glass-c1',x1:44,y1:302,x2:126,y2:244},
+      {id:'glass-c2',x1:236,y1:226,x2:318,y2:286},
+      {id:'glass-c3',x1:46,y1:474,x2:136,y2:518},
+      {id:'glass-c4',x1:224,y1:520,x2:316,y2:470}
+    ]
+  }
+];

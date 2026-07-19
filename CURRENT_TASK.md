@@ -1,150 +1,162 @@
-# CURRENT_TASK: namioshi v3 Phase 3A 360×640固定論理座標
+# CURRENT_TASK: namioshi v3 Phase 3B 公式配置比較ラボ
 
 ## 今回の目的
 
-端末の画面サイズが波の距離、速度、反射時刻、得点へ影響しないようにする。ゲーム内部を360×640へ固定し、画面への拡大縮小とPointer入力の座標変換だけを導入する。
+公式モードへ配置を組み込む前に、3つの候補を同じ条件で比較し、人が採用候補を判断できる資料と道具を作る。
 
-得点式、公式配置、練習モード、ランキング送信、WebGLの高品質化は変更しない。
+今回は本番ゲームの配置、得点、ランキング送信、公式モード、練習モードを変更しない。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `7dd230211195f855743f14411092a80b9ac1e253`（Pull Request #23のマージ）
-- 作業ブランチ: `codex/namioshi-v3-phase3a-logical-viewport`
-- 対象Pull Request: `#24`
-- 前提ゲート: G2「開発構成」通過済み
-- 対象ゲート: G3「公平な盤面」のうち固定論理座標
+- 基準コミット: `15aed890aedd03399b0bc474ebf2c4bc7cd3c858`（Pull Request #24のマージ）
+- 作業ブランチ: `codex/namioshi-v3-phase3b-layout-lab`
+- 対象Pull Request: `#25`
+- 前提: Phase 3Aの360×640固定論理座標がmainへ反映済み
+- 対象ゲート: G3「公平な盤面」のうち公式配置候補の比較
+- 採用状態: `human-decision-pending`
 - 実機確認: 未完了
 
-## 実装契約
+## 追加した候補
 
-```text
-論理幅: 360
-論理高: 640
-表示倍率: min(viewWidth / 360, viewHeight / 640)
-表示幅: 360 × 表示倍率
-表示高: 640 × 表示倍率
-左右余白: (viewWidth - 表示幅) / 2
-上下余白: (viewHeight - 表示高) / 2
-```
+同じルール版`namioshi-v3-layout-study-001`で、次の3候補を定義した。
 
-入力変換:
+- 候補A・交差流: `candidate-a-cross-current`
+- 候補B・段流路: `candidate-b-stair-channel`
+- 候補C・開港型: `candidate-c-open-harbor`
 
-```text
-logicalX = (clientX - canvasRect.left - offsetX) / scale
-logicalY = (clientY - canvasRect.top  - offsetY) / scale
-```
+各候補は、ビーコン3個の初期位置と固定速度、ガラス片4個の端点、候補ID、説明文を持つ。候補データには`selected`または`official`を入れていない。
 
-論理領域外の入力は拒否する。
+## 比較条件
 
-## 実装内容
+- 360×640論理座標
+- 121タップ地点
+- 0.25秒から3.00秒までの56到達時刻
+- 画面4辺とガラス片4個
+- 直接波、壁反射、ガラス反射、2回反射
+- 共通3タップ: `(90,140)`, `(180,340)`, `(270,490)`
 
-### 設定と共通変換
+比較する値は、各反射種類の経路数とビーコン到達、共通3タップの参考得点、直接経路の割合、反射経路の分散、ビーコン同士とガラスとの最小間隔、近接警告、画面端との余白、候補指紋である。
 
-- `src/config.js`へ`LOGICAL_WIDTH=360`と`LOGICAL_HEIGHT=640`を追加した。
-- `src/game/viewport.js`を追加した。
-- 表示倍率、表示範囲、余白、座標変換を一か所へまとめた。
+## 追加したファイル
 
-### World
+### 候補と分析
 
-- `World.w / World.h`を360×640へ固定した。
-- `World.reset()`へ画面サイズを渡さない。
-- resizeと画面回転相当の処理でWorldを作り直さない。
-- 現在のランダム配置、波、反射、得点を維持した。
+- `tools/layout-candidates.js`
+- `tools/layout-analysis.js`
+- `tools/analyze-layouts.mjs`
+- `tools/layout-analysis.snapshot.json`
 
-### 入力
+候補データが変わり、保存済み分析結果と一致しなくなった場合は自動検査を失敗させる。
 
-- `clientX / clientY`を直接`World.tap()`へ渡さない。
-- Canvasの`getBoundingClientRect()`を基準に論理座標へ変換する。
-- 余白とゲーム領域外の入力をタップ数へ加えない。
-- `PLAYING`中の主Pointerだけを受ける。
-- `pointercancel`を処理する。
+### 比較画面
 
-### 描画
+- `tools/layout-lab.html`
+- `tools/layout-lab.js`
 
-- WebGLとCanvas 2Dへ同じviewportを渡す。
-- ゲーム領域を切り取らず中央へ配置する。
-- 余白を暗い水面背景で埋める。
-- Device Pixel Ratioは描画解像度だけへ使う。
-- resizeでは表示変換と描画解像度だけを更新する。
+比較画面では、候補の切り替え、360×640上のビーコンとガラス片、10秒間のビーコン移動、共通3タップ地点、主要な分析値、候補IDと指紋を確認できる。
 
-### 自動試験
+比較画面は本番`src`と`dist`へ入れていない。
 
-`tests/viewport.test.mjs`へ5件の試験を追加した。
+### 試験と文書
 
-対象画面サイズ:
+- `tests/layouts.test.mjs`
+- `docs/OFFICIAL_LAYOUT_STUDY_v3.md`
+- `README.md`
+- `docs/REVIEW_CHECKLIST_v3.md`
 
-- 320×568
-- 375×812
-- 390×844
-- 1024×1366
+## 比較結果
 
-確認内容:
+| 指標 | 候補A | 候補B | 候補C |
+|---|---:|---:|---:|
+| ガラス反射経路 | 359 | 146 | 330 |
+| 2回反射経路 | 652 | 546 | 516 |
+| 共通3タップの最良参考得点 | 2747 | 2192 | 2650 |
+| ビーコン最小間隔 | 44.18 | 50.12 | 118.12 |
+| ビーコン・ガラス近接警告 | 2 | 1 | 1 |
 
-- 左上、中央、右下の変換誤差0.25以内
-- 余白入力の拒否
-- viewport変更でWorld状態が不変
-- 同じ乱数列と論理タップなら画面サイズが違っても同じ得点とWorld状態
-- ゲーム領域全体が切り取られない
+この表は採用順位ではない。分析方法、完全な数値、各候補の注意点は`docs/OFFICIAL_LAYOUT_STUDY_v3.md`へ記録した。
 
 ## GitHub Actions結果
 
-Pull Request #24のhead `1e860545a18c6cbf9b99549ecbdc477fed55afe1`に対するRun #10、Run ID `29638102137`は成功した。
+### 初回成功
 
-| 実行環境 | build | viewport試験5件 | verify | size | dist再現性 |
-|---|---|---|---|---|---|
-| Node.js 18 | 成功 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 20 | 成功 | 成功 | 成功 | 成功 | 成功 |
-| Node.js 22 | 成功 | 成功 | 成功 | 成功 | 成功 |
+Pull Request #25のhead `b4d6591f9136d301f02d350d81382628685ea0ac`に対する`G2 Build Verification` Run #15、Run ID `29650585832`は成功した。
 
-詳細は`docs/PHASE3A_VIEWPORT_REPORT.md`へ記録した。
+### 文書更新後の成功
 
-この文書更新後のPull Request最新headでも同じworkflowを実行し、失敗している状態ではマージしない。
+head `b490329a58fbeece17acab526b53b666095acafe`に対するRun #18、Run ID `29650717139`も成功した。
+
+Node.js 18、20、22のすべてで次が成功した。
+
+```text
+npm run build
+npm test
+npm run analyze:layouts
+npm run verify
+npm run size
+git diff --exit-code -- dist
+```
+
+自動試験では次を確認した。
+
+- 候補が3件あり、全候補が同じルール版を使う。
+- 各候補がビーコン3個とガラス片4個を持つ。
+- 候補は未選択である。
+- 指紋と保存済み分析結果が現在の候補データと一致する。
+- 直接、壁、ガラス、2回反射の経路候補が全ビーコンへ存在する。
+- 共通3タップの参考得点がv3候補上限3240以下である。
+- build後の`dist`に差分がなく、本番公開物を変更していない。
+
+この最終記録更新後に起動するworkflow結果は、ファイルを再更新せずPull Request #25のコメントへ記録する。
 
 ## 変更しなかった重要部分
 
+- `src/**`
+- `dist/**`
+- root `index.html`
+- 現在のランダム配置を使う本番World
 - 10秒、最大3タップ
-- ビーコンとガラス片の現在のランダム配置
-- 波速度、寿命、反射回数
-- 現在の得点式、コンボ、ランキング上限
-- Supabase URL、Publishable key、Authorizationヘッダー、送信本文
+- 波速度、寿命、反射処理
+- 現在の得点式とコンボ
+- Supabase URL、Publishable key、ランキング送信
 - 共有文と共有処理
-- HOME / RULES / COUNTDOWN / PLAYING / RESULT / ERROR
-- 公式配置
+- WebGLとCanvas 2D
 - 公式モードと練習モード
-- WebGLの帯状波、高品質な光、音
+
+分析内で波速度と参考得点を使うが、本番コードは変更していない。
 
 ## 未確認の範囲
 
-- rootとdistのブラウザ操作
-- iPhoneとiPad実機
-- iPhone Safariで余白タップが拒否されること
-- 画面回転中の見た目と操作
-- WebGL実表示
-- Canvas 2Dへの実切り替え
+- `tools/layout-lab.html`の実ブラウザ表示
+- iPhone SE級での候補A、B、Cの見やすさ
+- 実際に3タップして感じる難しさ
+- 反射の分かりやすさ
+- ビーコンとガラスの重なりが許容できるか
+- 採用する公式配置
 - Codeberg Pages
 - Supabase実通信
 
-自動試験の成功を、実機確認済みという意味にはしない。
+自動分析の成功を、候補採用済みまたは実機確認済みという意味にはしない。
 
 ## 自動検査の判定
 
-Phase 3Aの自動検査は合格と判定する。
+Phase 3Bの自動検査は合格と判定する。
 
-- Worldは常に360×640である。
-- resizeはWorld状態を変更しない。
-- WebGLとCanvas 2Dが同じviewportを使う。
-- 余白上の入力を拒否する。
-- 4つの画面サイズで同じ論理入力が同じ結果になる。
-- 5件の自動試験がNode.js 18、20、22ですべて成功した。
-- build、verify、size、dist再現性が成功した。
-- 得点式、公式配置、ランキング送信を変更していない。
+ただし、Phase 3B全体は人の候補選択が必要である。採用状態は引き続き`human-decision-pending`とする。
 
 ## 戻し方
 
-このPhaseを取り消す場合は、Phase 3AのPull Requestをrevertする。Supabaseデータや旧ランキングの変更は含まないため、データベースの戻し作業は不要。
+このPhaseを取り消す場合は、Phase 3BのPull Requestをrevertする。本番ゲーム、公開物、Supabaseデータは変更していないため、ランキングやデータベースの戻し作業は不要。
 
 ## 次の作業
 
-Pull Request #24のレビューとマージ後、Phase 3B「公式配置比較ラボ」を開始する。
+Pull Request #25のレビュー後、ユーザーが次のいずれかを明示する。
+
+- 候補Aを採用
+- 候補Bを採用
+- 候補Cを採用
+- 候補Dを追加して再比較
+
+採用判断を別の記録作業で確定した後、Phase 3C「公式モードと練習モードの分離」へ進む。
