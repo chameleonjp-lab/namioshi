@@ -34,15 +34,20 @@ export class World{
 
   constructor({random=Math.random}={}){
     if(typeof random!=='function')throw new TypeError('random source must be a function');
+    this.practiceRandomSource=random;
     this.random=random;
   }
 
-  reset({mode=GAME_MODE.OFFICIAL,random=this.random}={}){
+  reset({mode=GAME_MODE.OFFICIAL,random=this.practiceRandomSource}={}){
     this.w=LOGICAL_WIDTH;
     this.h=LOGICAL_HEIGHT;
     this.mode=normalizeGameMode(mode);
     const official=isOfficialMode(this.mode);
-    this.random=official?seededRandom(OFFICIAL_RANDOM_SEED):random;
+    if(!official){
+      if(typeof random!=='function')throw new TypeError('practice random source must be a function');
+      this.practiceRandomSource=random;
+    }
+    this.random=official?seededRandom(OFFICIAL_RANDOM_SEED):this.practiceRandomSource;
     const layout=official?createOfficialLayout():createPracticeLayout(this.random);
     this.layoutId=layout.id;
     this.ruleVersion=layout.ruleVersion;
