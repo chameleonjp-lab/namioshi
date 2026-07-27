@@ -13,6 +13,7 @@ v3は段階的に実装しています。文書があることだけを完成の
 - 公式配置候補の比較: [`docs/OFFICIAL_LAYOUT_STUDY_v3.md`](docs/OFFICIAL_LAYOUT_STUDY_v3.md)
 - 公式配置の選定ガイド: [`docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md`](docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md)
 - 公式配置の選定記録: [`docs/OFFICIAL_LAYOUT_SELECTION_v3.md`](docs/OFFICIAL_LAYOUT_SELECTION_v3.md)
+- Phase 3Cマージ後監査: [`docs/POST_PHASE3C_AUDIT.md`](docs/POST_PHASE3C_AUDIT.md)
 - レビュー・公開確認: [`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)
 
 v3では3MBを受け入れ上限にしません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を優先します。複数ファイルとES Modulesを正式に使用します。
@@ -72,6 +73,8 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 旧ランダム配置の記録と新しい公式配置の記録を混ぜないため、公式モードの実送信もPhase 5まで停止します。画面には現在の送信状態をそのまま表示します。
 
+結果画面では、同じモードの再挑戦と、公式・練習を選び直すためのHOME復帰を選べます。停止中の送信関数は、直接呼ばれても通信を開始しません。
+
 比較ラボと静止画像は選定履歴として`tools`と`docs/layout-previews`に残します。
 
 ## 描画方式
@@ -80,6 +83,6 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 ## 確認状態
 
-Phase 1と1.1で画面状態と共有処理を修正し、Phase 2A・2BでJavaScript正本、再現可能なbuild、依存0件、容量報告専用化を完了しました。Phase 3Aの固定論理座標、Phase 3Bの候補分析、Phase 3B.1の判断資料は自動検査を通過しています。現在はPhase 3Cで候補Cの公式配置と練習ランダムを分離しています。
+Phase 1と1.1で画面状態と共有処理を修正し、Phase 2A・2BでJavaScript正本、再現可能なbuild、依存0件、容量報告専用化を完了しました。Phase 3Aの固定論理座標、Phase 3Bの候補分析、Phase 3B.1の判断資料、Phase 3Cの候補C固定と練習分離は自動検査を通過しています。現在はPhase 3Cのfollow-upとして、モード再選択と送信停止境界を補修しています。
 
 iPhone、iPad、Codeberg Pages、実Supabase通信は未確認です。実機で確認していない項目は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で`[未確認]`のまま管理します。

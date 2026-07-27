@@ -6,6 +6,9 @@ export const RANKING_SERVICE_STATE=Object.freeze({
 });
 
 export async function submitScore(playerName,score){
+  if(!RANKING_SERVICE_STATE.enabled){
+    throw new Error(`ranking service is disabled until ${RANKING_SERVICE_STATE.activationPhase}`);
+  }
   const res=await fetch(`${SUPABASE_URL}/rest/v1/rpc/submit_score`,{
     method:'POST',
     headers:{

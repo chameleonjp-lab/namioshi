@@ -21,7 +21,8 @@ export const MODE_PRESENTATION=Object.freeze({
 });
 
 export function normalizeGameMode(value){
-  return value===GAME_MODE.PRACTICE?GAME_MODE.PRACTICE:GAME_MODE.OFFICIAL;
+  if(value===GAME_MODE.OFFICIAL||value===GAME_MODE.PRACTICE)return value;
+  throw new RangeError(`unknown game mode: ${String(value)}`);
 }
 
 export function isOfficialMode(value){

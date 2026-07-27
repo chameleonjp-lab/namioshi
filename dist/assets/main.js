@@ -16,7 +16,7 @@ app.innerHTML=`
   <div class="pill">残り <span id="tm">10.0</span></div>
   <div class="pill">タップ <span id="tp">0</span>/3</div>
 </div>
-<section id="HOME" class="screen show">
+<section id="HOME" class="screen freshStart show">
   <div class="panel">
     <h1>namioshi</h1>
     <p>暗い水面に波を押し出し、壁やガラス片で反射させて3つのビーコンへ波の線を重ねる10秒ゲーム。</p>
@@ -43,7 +43,7 @@ app.innerHTML=`
     <p id="msg" class="small warn" aria-live="polite"></p>
   </div>
 </section>
-<section id="RULES" class="screen">
+<section id="RULES" class="screen freshStart">
   <div class="panel">
     <h1 class="sectionTitle">RULES</h1>
     <ul class="rulesList">
@@ -57,7 +57,7 @@ app.innerHTML=`
     <button id="closeRules" class="btn secondary">閉じる</button>
   </div>
 </section>
-<section id="COUNTDOWN" class="screen">
+<section id="COUNTDOWN" class="screen freshStart">
   <div>
     <p id="countdownMode" class="countdownMode">公式モード</p>
     <div id="countdownText">3</div>
@@ -71,6 +71,7 @@ app.innerHTML=`
     <p id="rank" class="small" aria-live="polite"></p>
     <button id="share" class="btn">シェア</button>
     <button id="again" class="btn secondary">同じモードでもう一度</button>
+    <button id="changeMode" class="btn secondary">モードを選び直す</button>
     <p id="resultShareStatus" class="small"></p>
     <textarea id="shareText" class="shareText" readonly></textarea>
   </div>
@@ -275,12 +276,22 @@ async function doShare(score,statusId,textId){
   }
 }
 
+function returnToModeSelection(){
+  if(state!=='RESULT')return;
+  clearCountdown();
+  $('resultShareStatus').textContent='';
+  $('shareText').value='';
+  $('shareText').style.display='none';
+  setState('HOME');
+}
+
 world.onHit=()=>tone(620,.09,'sine');
 $('startOfficial').onclick=()=>start(GAME_MODE.OFFICIAL);
 $('startPractice').onclick=()=>start(GAME_MODE.PRACTICE);
 $('rule').onclick=()=>{if(state==='HOME')setState('RULES')};
 $('closeRules').onclick=()=>setState('HOME');
 $('again').onclick=()=>{if(state==='RESULT')beginCountdown()};
+$('changeMode').onclick=returnToModeSelection;
 $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
 $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('gesturestart',event=>event.preventDefault());
