@@ -2,6 +2,7 @@
 html,body,#app{margin:0;width:100%;height:100%;overflow:hidden;background:#020813;color:#eaf7ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;user-select:none;-webkit-user-select:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:18px;text-align:center;background:radial-gradient(circle at 50% 30%,rgba(29,116,154,.22),rgba(2,8,19,.84) 58%,rgba(0,0,0,.94));z-index:3;overflow-y:auto}
+.freshStart{background:radial-gradient(circle at 50% 30%,#0b3045,#020813 58%,#000)}
 .show{display:flex}
 .panel{width:min(430px,100%);padding:22px 18px;border:1px solid rgba(142,229,255,.24);border-radius:24px;background:rgba(3,13,28,.74);box-shadow:0 0 38px rgba(0,213,255,.14)}
 h1{margin:0 0 8px;font-size:clamp(36px,13vw,58px);letter-spacing:.08em;text-shadow:0 0 22px #37d9ff}

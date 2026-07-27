@@ -7,9 +7,9 @@ import {
   OFFICIAL_RULE_VERSION
 } from '../src/config.js';
 import {OFFICIAL_LAYOUT,createPracticeLayout} from '../src/game/layouts.js';
-import {GAME_MODE,rankingPolicy} from '../src/game/modes.js';
+import {GAME_MODE,normalizeGameMode,rankingPolicy} from '../src/game/modes.js';
 import {World} from '../src/game/world.js';
-import {RANKING_SERVICE_STATE} from '../src/services/ranking.js';
+import {RANKING_SERVICE_STATE,submitScore} from '../src/services/ranking.js';
 import {LAYOUT_CANDIDATES} from '../tools/layout-candidates.js';
 
 function seededRandom(seed){
@@ -99,6 +99,14 @@ test('practice mode is reproducible with injected random and changes with anothe
   assert.equal(world.rankingCandidate,false);
 });
 
+test('only explicit official and practice mode values are accepted',()=>{
+  assert.equal(normalizeGameMode(GAME_MODE.OFFICIAL),GAME_MODE.OFFICIAL);
+  assert.equal(normalizeGameMode(GAME_MODE.PRACTICE),GAME_MODE.PRACTICE);
+  for(const value of [undefined,null,'',false,'unexpected']){
+    assert.throws(()=>normalizeGameMode(value),/unknown game mode/);
+  }
+});
+
 test('practice can never submit and official remains disabled until ranking Phase 5',()=>{
   assert.deepEqual(RANKING_SERVICE_STATE,{
     enabled:false,
@@ -122,4 +130,36 @@ test('practice can never submit and official remains disabled until ranking Phas
   assert.match(main,/startOfficial/);
   assert.match(main,/startPractice/);
   assert.match(main,/rankingPolicy\(world\.mode\)/);
+});
+
+test('disabled ranking service rejects before any network request',async()=>{
+  const originalFetch=globalThis.fetch;
+  let requestCount=0;
+  globalThis.fetch=async()=>{
+    requestCount++;
+    return{ok:true};
+  };
+  try{
+    await assert.rejects(submitScore('test-player',123),/disabled until Phase 5/);
+    assert.equal(requestCount,0);
+  }finally{
+    globalThis.fetch=originalFetch;
+  }
+});
+
+test('result flow offers replay and a clean return to mode selection',()=>{
+  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+  const styles=readFileSync(new URL('../src/ui/styles.css',import.meta.url),'utf8');
+  const returnFlow=main.match(/function returnToModeSelection\(\)\{[\s\S]*?\n\}/)?.[0]??'';
+  assert.match(main,/id="again"/);
+  assert.match(main,/id="changeMode"/);
+  assert.match(returnFlow,/setState\('HOME'\)/);
+  assert.doesNotMatch(returnFlow,/\$\('name'\)|selectedMode\s*=|world\.reset/);
+  assert.match(main,/\$\('changeMode'\)\.onclick=returnToModeSelection/);
+  assert.match(main,/\$\('startOfficial'\)\.onclick=\(\)=>start\(GAME_MODE\.OFFICIAL\)/);
+  assert.match(main,/\$\('startPractice'\)\.onclick=\(\)=>start\(GAME_MODE\.PRACTICE\)/);
+  assert.match(main,/id="HOME" class="screen freshStart show"/);
+  assert.match(main,/id="RULES" class="screen freshStart"/);
+  assert.match(main,/id="COUNTDOWN" class="screen freshStart"/);
+  assert.match(styles,/\.freshStart\{background:radial-gradient\(circle at 50% 30%,#0b3045,#020813 58%,#000\)\}/);
 });

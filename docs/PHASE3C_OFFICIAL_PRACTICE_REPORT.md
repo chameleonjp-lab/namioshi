@@ -14,6 +14,22 @@
 - 成功対象head: `a72d504d0082f6a49116f6aa770300ba64af23d5`
 - 公開承認: 未完了
 
+## 0. Phase 3C follow-up 補修
+
+Pull Request #28のマージ後監査で、RESULTからHOMEへ戻る導線がなく、公式から練習、練習から公式への切り替えを再読み込みなしでは試せないことが判明した。
+
+基準main `3448cbac1ef8bc1312589c192e340d3bbfc9b5ac`から、`codex/namioshi-v3-phase3c1-mode-transition-hardening`で次を補修する。
+
+- RESULTへ「モードを選び直す」を追加する。
+- 名前を保持したままHOMEへ戻し、公式と練習を選び直せるようにする。
+- HOME、RULES、COUNTDOWNを不透明にし、前回の盤面を次の開始前に見せない。
+- 公式と練習以外のモード値を拒否する。
+- `RANKING_SERVICE_STATE.enabled=false`の間は、`submitScore()`を直接呼んでも`fetch()`より前に拒否する。
+
+候補Cの座標、配置ID、指紋、ルール版、得点、反射、共有、Supabase URL、Publishable key、RPC本文は変更しない。
+
+ローカルのNode.js 24では、21件の単体試験、配置分析、比較画像生成一致、build、verify、容量報告が成功した。GitHub ActionsのNode.js 18、20、22と実機操作は未確認のまま残す。
+
 ## 1. 実装の目的
 
 公式モードを全員同じ候補C配置へ固定し、従来のランダム配置を練習モードとして残す。
@@ -68,6 +84,8 @@ COUNTDOWN、HUD、RESULTへモード名を表示する。練習では結果見�
 
 結果画面には配置IDを表示し、どの条件で遊んだか確認できるようにする。
 
+Phase 3C follow-upではRESULTへ「モードを選び直す」を追加する。HOME、RULES、COUNTDOWNでは前回のWorldを背景へ透過表示しない。
+
 ## 4. ランキング送信の扱い
 
 Phase 3Cでは`src/main.js`から`submitScore`を呼ばない。
@@ -77,6 +95,8 @@ Phase 3Cでは`src/main.js`から`submitScore`を呼ばない。
 公式結果は「ランキング送信はPhase 5で開始します」と表示する。練習結果は「練習モードのためランキングへ送信しません」と表示する。
 
 `src/services/ranking.js`には`RANKING_SERVICE_STATE`を追加し、Phase 5まで`enabled=false`とした。通信関数、URL、キー、RPC本文は変更していない。モード表示が停止状態を参照するため、公開物の到達可能性検査も維持できる。
+
+Phase 3C follow-upでは停止状態を`submitScore()`の入口でも強制し、停止中は通信を開始しない。
 
 ## 5. 自動試験
 
@@ -92,6 +112,10 @@ Phase 3Cでは`src/main.js`から`submitScore`を呼ばない。
 - 公式と練習のランキング方針
 - ランキングサービスがPhase 5まで無効であること
 - `src/main.js`が`submitScore`を参照しないこと
+- 不明なモード値を拒否すること
+- 停止中の送信関数が`fetch()`を呼ばないこと
+- RESULTからモード選択へ戻る導線があること
+- 次の開始前に前回盤面を背景へ透過表示しないこと
 
 選定ガイドの試験も更新し、候補Cの正式記録、ID、指紋、ルール版を確認する。
 
@@ -123,7 +147,7 @@ git diff --exit-code -- dist
 - `src`と`dist/assets`が一致する。
 - build後の`dist`差分がない。
 
-この報告更新後の最新headでも同じworkflowを再実行し、結果はファイルを再更新せずPull Request #28のコメントへ記録する。
+Pull Request #28では最終head `38158ffea5d51923b5f146121b58328fbb766a09`まで同じworkflowを実行し、Node.js 18、20、22の全検査が成功した。
 
 ## 7. 変更していないもの
 
@@ -144,7 +168,7 @@ git diff --exit-code -- dist
 
 - iPhone SE級で候補Cの端側ガラスを見分けられるか。
 - HOMEの2つの開始カードが320×568で無理なく操作できるか。
-- 公式から練習、練習から公式へ連続で切り替えられるか。
+- 公式から練習、練習から公式へ連続で切り替える実機操作。
 - WebGLとCanvas 2Dで候補Cが同じ位置に見えるか。
 - Codeberg PagesでES Modulesを読み込めるか。
 - Supabaseの正式ランキング契約。
@@ -155,10 +179,12 @@ Phase 3Cの自動検査は合格と判定する。
 
 ただし、実機確認前の実装完了であり、公開承認は行わない。
 
-G3の完全通過には、固定論理座標、候補C固定配置、公式・練習分離、同じ入力で同じ結果、実機での識別確認が必要である。
+G3の「同じ入力で同じ結果」は、同じタップと同じ物理step列での再現性を指し、自動試験で確認済みである。実描画間隔が異なる場合の一致は、Phase 4Cの固定更新とG4で扱う。
+
+G3の完全通過には、固定論理座標、候補C固定配置、公式・練習分離、同じ物理step列での再現性、実機での識別確認が必要である。
 
 ## 10. 次の作業
 
-Pull Request #28の最新headで自動検査を再確認し、iPhoneで候補Cとモード切り替えを確認する。
+Phase 3C follow-upのGitHub Actionsを確認し、iPhoneで候補Cとモード切り替えを確認する。
 
 重大な表示問題がなければPhase 4Aへ進む。端側ガラスが見づらい場合は候補Dの比較へ戻る。
