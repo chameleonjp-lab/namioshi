@@ -83,6 +83,6 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 ## 確認状態
 
-Phase 1と1.1で画面状態と共有処理を修正し、Phase 2A・2BでJavaScript正本、再現可能なbuild、依存0件、容量報告専用化を完了しました。Phase 3Aの固定論理座標、Phase 3Bの候補分析、Phase 3B.1の判断資料、Phase 3Cの候補C固定と練習分離は自動検査を通過しています。現在はPhase 3Cのfollow-upとして、モード再選択と送信停止境界を補修しています。
+Phase 1と1.1で画面状態と共有処理を修正し、Phase 2A・2BでJavaScript正本、再現可能なbuild、依存0件、容量報告専用化を完了しました。Phase 3Aの固定論理座標、Phase 3Bの候補分析、Phase 3B.1の判断資料、Phase 3Cの候補C固定と練習分離を実装済みです。Phase 3C follow-upのPull Request #29もmainへマージ済みで、Node.js 18・20・22の全検査が成功しています。
 
-iPhone、iPad、Codeberg Pages、実Supabase通信は未確認です。実機で確認していない項目は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で`[未確認]`のまま管理します。
+320×568相当のローカルChromiumでは、rootと`dist`の両方で公式・練習・公式の往復、名前保持、不透明な開始前画面、ランキング通信0件を確認しました。一方、iPhone、iPad、Codeberg Pages、実Supabase通信は未確認です。また、3タップ後に約6秒で終了する問題、有限ガラス線分の外側で反射する問題、60Hz相当と120Hz相当の得点差を後続Phaseの必須修正として記録しています。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。

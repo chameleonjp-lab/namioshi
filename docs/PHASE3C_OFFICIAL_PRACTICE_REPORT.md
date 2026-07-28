@@ -12,23 +12,28 @@
 - 初回成功Run: `G2 Build Verification #26`
 - Run ID: `29704853801`
 - 成功対象head: `a72d504d0082f6a49116f6aa770300ba64af23d5`
+- follow-up Pull Request: `#29`（マージ済み）
+- follow-up head: `1f9428b91a2b7afea0d104fdb71dca477dbfb484`
+- follow-up merge commit: `95f80a2eef4325e736835192864943d4c311e2dd`
+- follow-up成功Run: `G2 Build Verification #30`
+- follow-up Run ID: `30243727062`
 - 公開承認: 未完了
 
 ## 0. Phase 3C follow-up 補修
 
 Pull Request #28のマージ後監査で、RESULTからHOMEへ戻る導線がなく、公式から練習、練習から公式への切り替えを再読み込みなしでは試せないことが判明した。
 
-基準main `3448cbac1ef8bc1312589c192e340d3bbfc9b5ac`から、`codex/namioshi-v3-phase3c1-mode-transition-hardening`で次を補修する。
+基準main `3448cbac1ef8bc1312589c192e340d3bbfc9b5ac`から、`codex/namioshi-v3-phase3c1-mode-transition-hardening`で次を補修し、Pull Request #29としてmainへマージした。
 
-- RESULTへ「モードを選び直す」を追加する。
-- 名前を保持したままHOMEへ戻し、公式と練習を選び直せるようにする。
-- HOME、RULES、COUNTDOWNを不透明にし、前回の盤面を次の開始前に見せない。
-- 公式と練習以外のモード値を拒否する。
-- `RANKING_SERVICE_STATE.enabled=false`の間は、`submitScore()`を直接呼んでも`fetch()`より前に拒否する。
+- RESULTへ「モードを選び直す」を追加した。
+- 名前を保持したままHOMEへ戻し、公式と練習を選び直せるようにした。
+- HOME、RULES、COUNTDOWNを不透明にし、前回の盤面を次の開始前に見せないようにした。
+- 公式と練習以外のモード値を拒否するようにした。
+- `RANKING_SERVICE_STATE.enabled=false`の間は、`submitScore()`を直接呼んでも`fetch()`より前に拒否するようにした。
 
 候補Cの座標、配置ID、指紋、ルール版、得点、反射、共有、Supabase URL、Publishable key、RPC本文は変更しない。
 
-ローカルのNode.js 24では、21件の単体試験、配置分析、比較画像生成一致、build、verify、容量報告が成功した。GitHub ActionsのNode.js 18、20、22と実機操作は未確認のまま残す。
+ローカルのNode.js 24では、21件の単体試験、配置分析、比較画像生成一致、build、verify、容量報告が成功した。Pull Request #29のGitHub ActionsでもNode.js 18、20、22の全検査が成功した。実機操作は未確認のまま残す。
 
 ## 1. 実装の目的
 
@@ -84,7 +89,7 @@ COUNTDOWN、HUD、RESULTへモード名を表示する。練習では結果見�
 
 結果画面には配置IDを表示し、どの条件で遊んだか確認できるようにする。
 
-Phase 3C follow-upではRESULTへ「モードを選び直す」を追加する。HOME、RULES、COUNTDOWNでは前回のWorldを背景へ透過表示しない。
+Phase 3C follow-upではRESULTへ「モードを選び直す」を追加した。HOME、RULES、COUNTDOWNでは前回のWorldを背景へ透過表示しない。
 
 ## 4. ランキング送信の扱い
 
@@ -96,7 +101,7 @@ Phase 3Cでは`src/main.js`から`submitScore`を呼ばない。
 
 `src/services/ranking.js`には`RANKING_SERVICE_STATE`を追加し、Phase 5まで`enabled=false`とした。通信関数、URL、キー、RPC本文は変更していない。モード表示が停止状態を参照するため、公開物の到達可能性検査も維持できる。
 
-Phase 3C follow-upでは停止状態を`submitScore()`の入口でも強制し、停止中は通信を開始しない。
+Phase 3C follow-upでは停止状態を`submitScore()`の入口でも強制し、停止中は通信を開始しないようにした。
 
 ## 5. 自動試験
 
@@ -149,9 +154,11 @@ git diff --exit-code -- dist
 
 Pull Request #28では最終head `38158ffea5d51923b5f146121b58328fbb766a09`まで同じworkflowを実行し、Node.js 18、20、22の全検査が成功した。
 
+Pull Request #29のhead `1f9428b91a2b7afea0d104fdb71dca477dbfb484`に対する`G2 Build Verification #30`、Run ID `30243727062`でも、Node.js 18、20、22の全検査が成功した。
+
 ## 7. 変更していないもの
 
-- 10秒
+- 10秒という仕様値（ただし早期終了問題は未修正）
 - 最大3タップ
 - 360×640固定論理座標
 - 波速度
@@ -164,20 +171,33 @@ Pull Request #28では最終head `38158ffea5d51923b5f146121b58328fbb766a09`ま�
 - Supabase URLとPublishable key
 - 共通`submit_score` RPCの通信内容
 
-## 8. 未確認
+## 8. ブラウザ確認と未確認
+
+320×568相当のローカルChromium 149で、root `index.html`と`dist/index.html`の両方を確認した。
+
+- 公式、練習、公式の順に再読み込みなしで切り替えられる。
+- HOMEへ戻った後も名前を保持する。
+- HOMEとCOUNTDOWNは不透明である。
+- Supabaseへの通信は0件である。
+- ページエラーとconsole errorは0件である。
+
+この確認で、3タップ後に波がなくなると約6秒でRESULTへ進む既存問題も再現した。10秒契約に反するため、Phase 4Cの必須修正とする。
+
+次はローカルChromiumではなく、引き続き未確認である。
 
 - iPhone SE級で候補Cの端側ガラスを見分けられるか。
 - HOMEの2つの開始カードが320×568で無理なく操作できるか。
 - 公式から練習、練習から公式へ連続で切り替える実機操作。
+- 再挑戦とモード再選択で、前回盤面を次の配置と誤認しないか。
 - WebGLとCanvas 2Dで候補Cが同じ位置に見えるか。
 - Codeberg PagesでES Modulesを読み込めるか。
 - Supabaseの正式ランキング契約。
 
 ## 9. 合否
 
-Phase 3Cの自動検査は合格と判定する。
+Phase 3CとPull Request #29の自動検査、ローカルChromiumでのモード遷移は合格と判定する。
 
-ただし、実機確認前の実装完了であり、公開承認は行わない。
+ただし、Phase 3Cとfollow-upの実装範囲が完了したという意味であり、iPhone実機確認、G3通過、公開承認は未完了である。
 
 G3の「同じ入力で同じ結果」は、同じタップと同じ物理step列での再現性を指し、自動試験で確認済みである。実描画間隔が異なる場合の一致は、Phase 4Cの固定更新とG4で扱う。
 
@@ -185,6 +205,6 @@ G3の完全通過には、固定論理座標、候補C固定配置、公式・�
 
 ## 10. 次の作業
 
-Phase 3C follow-upのGitHub Actionsを確認し、iPhoneで候補Cとモード切り替えを確認する。
+iPhoneで候補Cの端側ガラス、公式・練習カード、公式と練習の往復、前回盤面を次の配置と誤認しないことを確認する。確認結果を記録するまでG3を完了にせず、Phase 4Aへ進めない。端側ガラスが見づらい場合は候補Dの比較へ戻る。
 
-重大な表示問題がなければPhase 4Aへ進む。端側ガラスが見づらい場合は候補Dの比較へ戻る。
+Phase 4A開始前には、有限線分の外側で反射する問題と、同一面を再判定できる移動距離の契約を正本へ反映する。Phase 4Cでは、3タップ後の早期終了と60Hz相当・120Hz相当の差を必ず修正する。
