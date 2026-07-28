@@ -1,25 +1,27 @@
-# CURRENT_TASK: namioshi v3 Phase 3C follow-up モード遷移と送信停止の補修
+# CURRENT_TASK: namioshi v3 PR #29完了記録の同期とG3再監査
 
 ## 今回の目的
 
-マージ済みのPhase 3Cを監査し、結果画面から公式と練習を選び直せない問題と、停止中の送信関数を直接呼ぶと通信できる問題を補修する。
+Pull Request #29で完了したPhase 3C follow-upの状態を文書へ同期し、G3の確認済み範囲、未確認範囲、後続Phaseの停止条件を正確に記録する。
 
-候補Cの配置、得点、反射、共有、Supabase設定は変更しない。
+この同期では製品コード、候補Cの配置、得点、反射、共有、Supabase設定を変更しない。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `3448cbac1ef8bc1312589c192e340d3bbfc9b5ac`（Pull Request #28のマージ）
-- 作業ブランチ: `codex/namioshi-v3-phase3c1-mode-transition-hardening`
-- 前段Pull Request: `#28`
+- 進捗反映基準: `95f80a2eef4325e736835192864943d4c311e2dd`（Pull Request #29のマージ）
+- 完了Pull Request: `#29`
+- 完了head: `1f9428b91a2b7afea0d104fdb71dca477dbfb484`
 - ユーザー判断: 「候補Cでまずは実装」
 - 選定状態: `selected-for-implementation`
 - 対象ゲート: G3「公平な盤面」
-- 前段の自動検査: 合格
-- 今回のローカル自動検査: 合格
-- 今回のGitHub Actions: 未確認
+- ローカル自動検査: 合格
+- GitHub Actions: 合格
+- ローカルChromiumのモード遷移: 合格
+- ローカルChromiumの10秒契約: 失敗。10秒未満で終了する既存問題を再現
 - 実機確認: 未完了
+- 公開承認: 未完了
 
 ## 公式配置
 
@@ -106,7 +108,7 @@
 
 ## GitHub Actions結果
 
-Pull Request #28のhead `a72d504d0082f6a49116f6aa770300ba64af23d5`に対する`G2 Build Verification` Run #26、Run ID `29704853801`は成功した。
+Pull Request #29のhead `1f9428b91a2b7afea0d104fdb71dca477dbfb484`に対する`G2 Build Verification #30`、Run ID `30243727062`は成功した。
 
 Node.js 18、20、22のすべてで次が成功した。
 
@@ -122,11 +124,25 @@ git diff --exit-code -- dist
 
 自動検査上、候補C固定、公式の再現性、練習乱数、送信停止、既存分析、`src`と`dist/assets`の一致を確認した。
 
-Phase 3C follow-upのローカル検査では、21件の単体試験、配置分析、比較画像生成一致、build、verify、容量報告が成功した。GitHub ActionsのNode.js 18、20、22はPull Request作成後に確認し、結果はPull Requestのコメントへ記録する。
+Phase 3C follow-upのローカル検査でも、21件の単体試験、配置分析、比較画像生成一致、build、verify、容量報告が成功した。
+
+## ローカルブラウザ確認
+
+Chromium 149を320×568 CSSピクセル相当で起動し、root `index.html`と`dist/index.html`の両方で次を確認した。
+
+- HOMEが表示され、横方向にはみ出さない。
+- 公式、練習、公式の順に再読み込みなしで切り替えられる。
+- モード選択へ戻った後も名前を保持する。
+- HOMEとCOUNTDOWNの背景は不透明で、前回盤面を透過表示しない。
+- 公式結果と練習結果を区別して表示する。
+- Supabaseへの通信は0件である。
+- ページエラーとconsole errorは0件である。
+
+これはChromiumでの確認であり、iPhone Safariの実機確認には置き換えない。
 
 ## 変更していない重要部分
 
-- 10秒、最大3タップ
+- 10秒という仕様値と最大3タップ（ただし早期終了問題は未修正）
 - 360×640固定論理座標
 - 波速度、寿命、現在の反射処理
 - 現在の得点式とコンボ
@@ -139,7 +155,6 @@ Phase 3C follow-upのローカル検査では、21件の単体試験、配置分
 
 ## 未確認の範囲
 
-- rootとdistの実ブラウザ操作
 - iPhone SE級で候補Cの端側ガラスを識別できること
 - 公式から練習、練習から公式への実機切り替え
 - HOMEの2つの開始カードが320×568で操作しやすいこと
@@ -148,24 +163,34 @@ Phase 3C follow-upのローカル検査では、21件の単体試験、配置分
 - Codeberg Pages
 - Supabase実通信
 
-自動試験の成功を、実機確認済みまたは公開承認済みという意味にはしない。
+自動試験とローカルChromium確認の成功を、iPhone実機確認済みまたは公開承認済みという意味にはしない。
+
+## 後続Phaseの停止条件
+
+再監査で次を確認した。
+
+- `src/main.js`は、3タップ後に波がなくなると10秒を待たずRESULTへ進む。ローカルChromiumでは、rootが公式約5.9秒・練習約6.0秒、distが公式約5.9秒・練習約6.5秒で終了した。1プレイ10秒の契約に反するため、Phase 4Cで必ず修正する。
+- `src/game/world.js`のガラス反射判定は、有限線分の外側でも延長線上で反射できる。配置分析は有限線分を前提としているため、Phase 4Aで判定と分析の前提を一致させる。
+- 反射子波が半径1、年齢0、空の面履歴で始まるため、左壁の反射子波が次の更新で同じ左壁へ即時再反射する。Phase 4Aで距離・履歴・寿命の継承を修正する。
+- 同じ候補Cと同じ3タップでも、60分割は24,525点、120分割は24,012点になる。Phase 4Cの固定更新で解消する。
+- WebGLの低画質では、判定中の波の一部を描画しない。Phase 7で、判定する波を簡略表示でもすべて見せる。
 
 ## 判定
 
-Phase 3Cの自動検査は合格と判定する。
+Phase 3CとPull Request #29の自動検査、ローカルChromiumでのモード遷移は合格と判定する。
 
 G3の「同じ入力で同じ結果」は、同じタップと同じ物理step列を与えた場合の再現性を指す。この条件は自動試験で確認済みである。60Hz相当と120Hz相当のように物理step列が異なる場合の一致は、Phase 4Cの固定更新とG4で解消する。
 
-G3の完全通過には、残るiPhoneでの候補C識別とモード切り替えを確認する必要がある。
+G3は未完了とする。完全通過には、残るiPhoneでの候補C識別とモード切り替えを確認する必要がある。後続Phaseの既知問題も、担当Phaseの完了条件から外さない。
 
 ## 戻し方
 
-このfollow-upだけを取り消す場合は、今回作成するPull Requestまたはそのマージコミットをrevertする。基準であるPull Request #28は維持する。
+Phase 3C follow-upだけを取り消す場合は、Pull Request #29のマージコミット `95f80a2eef4325e736835192864943d4c311e2dd`をrevertする。Pull Request #28は維持する。
 
 Phase 3C全体を取り消す場合だけ、後続変更との依存順を確認したうえでPull Request #28も別にrevertする。新しい公式スコアをSupabaseへ送っていないため、ランキングデータの戻し作業は不要。
 
 ## 次の作業
 
-Phase 3C follow-upのGitHub Actionsを確認し、iPhoneで候補Cとモード切り替えを確認する。
+G3の残りとして、iPhoneで候補Cの端側ガラス、公式・練習カード、公式と練習の往復、前回盤面を次の配置と誤認しないことを確認する。
 
-重大な表示問題がなければPhase 4A「波の親子関係と反射処理」へ進む。端側ガラスが見づらい場合は候補Dの比較へ戻る。
+実機結果を記録するまでG3を完了にせず、Phase 4Aへ進めない。端側ガラスが見づらい場合は候補Dの比較へ戻る。
