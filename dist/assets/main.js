@@ -5,7 +5,7 @@ import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
-import {isSoundEnabled,playCue,playHitSound,setSoundEnabled,wake} from './core/audio.js';
+import {isSoundEnabled,playCue,playHitSound,setAudioActive,setSoundEnabled,wake} from './core/audio.js';
 
 const app=document.querySelector('#app');
 app.innerHTML=`
@@ -138,11 +138,11 @@ function boot(){
     canvas.addEventListener('pointerdown',event=>{
       if(!event.isPrimary)return;
       event.preventDefault();
-      wake();
+      const audioReady=wake();
       if(state!=='PLAYING')return;
       const point=clientToLogical(event.clientX,event.clientY,canvas.getBoundingClientRect(),viewport);
       if(point&&world.tap(point.x,point.y)){
-        playCue('TAP');
+        void audioReady.then(ready=>{if(ready&&state==='PLAYING')playCue('TAP')});
         hud();
       }
     },{passive:false});
@@ -167,7 +167,7 @@ function start(mode){
   }
   $('msg').textContent='';
   $('name').blur();
-  wake();
+  void wake();
   beginCountdown();
 }
 
@@ -295,12 +295,16 @@ function returnToModeSelection(){
   setState('HOME');
 }
 
+function syncAudioVisibility(){
+  void setAudioActive(!document.hidden);
+}
+
 world.onReflect=reflection=>playCue(reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT');
 world.onHit=hit=>playHitSound(hit);
 $('soundToggle').onclick=()=>{
   const enabled=setSoundEnabled(!isSoundEnabled());
   updateSoundControl();
-  if(enabled&&wake())playCue('ENABLE');
+  if(enabled)void wake().then(ready=>{if(ready)playCue('ENABLE')});
 };
 $('startOfficial').onclick=()=>start(GAME_MODE.OFFICIAL);
 $('startPractice').onclick=()=>start(GAME_MODE.PRACTICE);
@@ -311,5 +315,9 @@ $('changeMode').onclick=returnToModeSelection;
 $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
 $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('gesturestart',event=>event.preventDefault());
+document.addEventListener('visibilitychange',syncAudioVisibility);
+addEventListener('pagehide',()=>{void setAudioActive(false)});
+addEventListener('pageshow',syncAudioVisibility);
+syncAudioVisibility();
 updateSoundControl();
 boot();
