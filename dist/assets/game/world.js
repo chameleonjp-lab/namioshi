@@ -160,6 +160,7 @@ export class World{
       if(wave.radius>distance&&!wave.edges.has(side)){
         wave.edges.add(side);
         const reflected=this.addWave(x,y,wave.reflections+1,'wall');
+        reflected.edges.add(side);
         this.onReflect({kind:'wall',reflections:reflected.reflections});
       }
     }
@@ -181,6 +182,7 @@ export class World{
           wave.reflections+1,
           'glass'
         );
+        reflected.glass.add(piece.id);
         this.onReflect({kind:'glass',reflections:reflected.reflections});
       }
     }

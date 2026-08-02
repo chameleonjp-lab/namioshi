@@ -50,3 +50,42 @@ test('world reports wall reflections for their own sound cue',()=>{
 
   assert.deepEqual(reflections,[{kind:'wall',reflections:1}]);
 });
+
+test('a reflected wave does not report its source wall twice',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const root=world.addWave(10,200,0,'direct');
+  root.radius=11;
+  const reflections=[];
+  world.onReflect=value=>reflections.push(value);
+
+  world.reflect(root);
+  const reflected=world.waves.at(-1);
+  world.reflect(reflected);
+
+  assert.deepEqual(reflections,[{kind:'wall',reflections:1}]);
+  assert.equal(reflected.edges.has('l'),true);
+});
+
+test('a reflected wave does not report its source glass twice',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[{id:'test-glass',x1:100,y1:0,x2:100,y2:400,nx:1,ny:0}];
+  world.waves=[];
+  const root=world.addWave(80,200,0,'direct');
+  root.radius=20;
+  const reflections=[];
+  world.onReflect=value=>reflections.push(value);
+
+  world.reflect(root);
+  const reflected=world.waves.at(-1);
+  reflected.radius=20;
+  world.reflect(reflected);
+
+  assert.deepEqual(reflections,[{kind:'glass',reflections:1}]);
+  assert.equal(reflected.glass.has('test-glass'),true);
+});
