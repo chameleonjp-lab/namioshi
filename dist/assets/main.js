@@ -5,7 +5,7 @@ import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
-import {isSoundEnabled,setSoundEnabled,tone,wake} from './core/audio.js';
+import {isSoundEnabled,playCue,playHitSound,setSoundEnabled,wake} from './core/audio.js';
 
 const app=document.querySelector('#app');
 app.innerHTML=`
@@ -142,7 +142,7 @@ function boot(){
       if(state!=='PLAYING')return;
       const point=clientToLogical(event.clientX,event.clientY,canvas.getBoundingClientRect(),viewport);
       if(point&&world.tap(point.x,point.y)){
-        tone(180,.07,'triangle');
+        playCue('TAP');
         hud();
       }
     },{passive:false});
@@ -227,7 +227,7 @@ function finish(){
   $('rank').textContent=policy.statusText;
   $('resultShareStatus').textContent='';
   $('shareText').style.display='none';
-  tone(330,.12);
+  playCue('RESULT');
 }
 
 function hud(force=false){
@@ -295,11 +295,12 @@ function returnToModeSelection(){
   setState('HOME');
 }
 
-world.onHit=()=>tone(620,.09,'sine');
+world.onReflect=reflection=>playCue(reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT');
+world.onHit=hit=>playHitSound(hit);
 $('soundToggle').onclick=()=>{
   const enabled=setSoundEnabled(!isSoundEnabled());
   updateSoundControl();
-  if(enabled&&wake())tone(440,.06,'sine');
+  if(enabled&&wake())playCue('ENABLE');
 };
 $('startOfficial').onclick=()=>start(GAME_MODE.OFFICIAL);
 $('startPractice').onclick=()=>start(GAME_MODE.PRACTICE);
