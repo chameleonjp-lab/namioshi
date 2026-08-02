@@ -39,6 +39,8 @@ const JUDGEMENT_CUES=Object.freeze({
 let audioContext=null;
 let masterGain=null;
 let soundEnabled=readStoredSetting();
+let audioActive=true;
+const activeOscillators=new Set();
 
 function storage(){
   try{return globalThis.localStorage??null}catch{return null}
@@ -59,9 +61,41 @@ function createAudioContext(){
   if(!AudioContextClass)return null;
   audioContext=new AudioContextClass();
   masterGain=audioContext.createGain();
-  masterGain.gain.value=1;
+  masterGain.gain.value=0;
   masterGain.connect(audioContext.destination);
   return audioContext;
+}
+
+function setMasterVolume(value){
+  if(!audioContext||!masterGain)return;
+  try{masterGain.gain.setValueAtTime(value,audioContext.currentTime)}catch{}
+}
+
+function stopActiveOscillators(){
+  for(const oscillator of activeOscillators){
+    try{oscillator.stop()}catch{}
+  }
+  activeOscillators.clear();
+}
+
+async function suspendContext(){
+  stopActiveOscillators();
+  setMasterVolume(0);
+  try{
+    if(audioContext?.state==='running'&&typeof audioContext.suspend==='function')await audioContext.suspend();
+    return true;
+  }catch{return false}
+}
+
+async function resumeContext(context){
+  try{
+    if(context.state!=='running'&&context.state!=='closed')await context.resume();
+    return context.state==='running';
+  }catch{return false}
+}
+
+function isPlaybackReady(){
+  return soundEnabled&&audioActive&&audioContext?.state==='running'&&masterGain!==null;
 }
 
 export function isSoundEnabled(){
@@ -71,27 +105,37 @@ export function isSoundEnabled(){
 export function setSoundEnabled(enabled){
   soundEnabled=enabled===true;
   saveSetting();
-  if(audioContext&&masterGain){
-    masterGain.gain.setValueAtTime(soundEnabled?1:0,audioContext.currentTime);
-  }
+  if(!soundEnabled)void suspendContext();
   return soundEnabled;
 }
 
-export function wake(){
+export async function wake(){
   try{
-    if(!soundEnabled)return false;
+    if(!soundEnabled||!audioActive)return false;
     const context=createAudioContext();
     if(!context||!masterGain)return false;
-    masterGain.gain.setValueAtTime(1,context.currentTime);
-    if(context.state==='suspended')void context.resume();
+    const resumed=await resumeContext(context);
+    if(!resumed||!soundEnabled||!audioActive){
+      if(!soundEnabled||!audioActive)await suspendContext();
+      return false;
+    }
+    setMasterVolume(1);
     return true;
   }catch{return false}
 }
 
+export async function setAudioActive(active){
+  audioActive=active===true;
+  if(!audioActive)return suspendContext();
+  if(!soundEnabled||!audioContext)return false;
+  return wake();
+}
+
 export function tone(frequency,duration=.08,type='sine',delay=0,volume=.045){
+  let oscillator=null;
   try{
-    if(!soundEnabled||!audioContext||!masterGain||audioContext.state==='closed')return false;
-    const oscillator=audioContext.createOscillator();
+    if(!isPlaybackReady())return false;
+    oscillator=audioContext.createOscillator();
     const gain=audioContext.createGain();
     const startTime=audioContext.currentTime+Math.max(0,delay);
     const stopTime=startTime+Math.max(.01,duration);
@@ -100,15 +144,25 @@ export function tone(frequency,duration=.08,type='sine',delay=0,volume=.045){
     gain.gain.setValueAtTime(Math.max(.0001,volume),startTime);
     gain.gain.exponentialRampToValueAtTime(.0001,stopTime);
     oscillator.connect(gain).connect(masterGain);
+    const forget=()=>activeOscillators.delete(oscillator);
+    if(typeof oscillator.addEventListener==='function')oscillator.addEventListener('ended',forget,{once:true});
+    else oscillator.onended=forget;
+    activeOscillators.add(oscillator);
     oscillator.start(startTime);
     oscillator.stop(stopTime);
     return true;
-  }catch{return false}
+  }catch{
+    if(oscillator){
+      activeOscillators.delete(oscillator);
+      try{oscillator.stop()}catch{}
+    }
+    return false;
+  }
 }
 
 export function playCue(name){
   const notes=SOUND_CUES[name];
-  if(!notes||!soundEnabled||!audioContext||!masterGain)return false;
+  if(!notes||!isPlaybackReady())return false;
   let played=false;
   for(const note of notes){
     played=tone(note.frequency,note.duration,note.type,note.delay??0,note.volume??.045)||played;
