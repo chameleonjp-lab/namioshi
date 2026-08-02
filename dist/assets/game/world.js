@@ -1,4 +1,5 @@
 import {LOGICAL_HEIGHT,LOGICAL_WIDTH,MAX_TAPS,PLAY_SECONDS} from '../config.js';
+import {judgementFromPrecision} from './judgement.js';
 import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
 
@@ -31,6 +32,7 @@ export class World{
   glass=[];
   particles=[];
   onHit=()=>{};
+  onReflect=()=>{};
 
   constructor({random=Math.random}={}){
     if(typeof random!=='function')throw new TypeError('random source must be a function');
@@ -71,7 +73,7 @@ export class World{
   }
 
   addWave(x,y,reflections,kind){
-    this.waves.push({
+    const wave={
       id:waveSequence++,
       originX:x,
       originY:y,
@@ -85,8 +87,10 @@ export class World{
       hit:new Set(),
       edges:new Set(),
       glass:new Set()
-    });
+    };
+    this.waves.push(wave);
     while(this.waves.length>24)this.waves.shift();
+    return wave;
   }
 
   step(dt){
@@ -112,15 +116,23 @@ export class World{
         if(error<=band){
           wave.hit.add(beacon.id);
           const base=wave.reflections>=2?260:wave.kind==='glass'?200:wave.kind==='wall'?160:100;
-          const accuracy=1+Math.max(0,1-error/band)*.45;
+          const precision=Math.max(0,1-error/band);
+          const accuracy=1+precision*.45;
           const multiplier=accuracy*(1+Math.min(this.combo,5)*.12);
+          const points=Math.round(base*multiplier);
           this.combo++;
-          this.score+=Math.round(base*multiplier);
+          this.score+=points;
           beacon.flash=1;
           beacon.vx+=(beacon.x-wave.originX)/(distance||1)*22;
           beacon.vy+=(beacon.y-wave.originY)/(distance||1)*22;
           this.burst(beacon.x,beacon.y);
-          this.onHit();
+          this.onHit({
+            judgement:judgementFromPrecision(precision),
+            precision,
+            points,
+            kind:wave.kind,
+            reflections:wave.reflections
+          });
         }
       }
       if(wave.age>wave.life)this.waves.splice(index,1);
@@ -147,7 +159,8 @@ export class World{
       const distance=side==='l'?wave.originX:side==='r'?this.w-wave.originX:side==='t'?wave.originY:this.h-wave.originY;
       if(wave.radius>distance&&!wave.edges.has(side)){
         wave.edges.add(side);
-        this.addWave(x,y,wave.reflections+1,'wall');
+        const reflected=this.addWave(x,y,wave.reflections+1,'wall');
+        this.onReflect({kind:'wall',reflections:reflected.reflections});
       }
     }
 
@@ -162,12 +175,13 @@ export class World{
       const perpendicular=(wave.originX-pointX)*piece.nx+(wave.originY-pointY)*piece.ny;
       if(Math.abs(Math.abs(perpendicular)-wave.radius)<9){
         wave.glass.add(piece.id);
-        this.addWave(
+        const reflected=this.addWave(
           wave.originX-2*perpendicular*piece.nx,
           wave.originY-2*perpendicular*piece.ny,
           wave.reflections+1,
           'glass'
         );
+        this.onReflect({kind:'glass',reflections:reflected.reflections});
       }
     }
   }
