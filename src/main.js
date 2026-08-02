@@ -1,5 +1,5 @@
-import {MAX_TAPS} from './config.js';
 import {World} from './game/world.js';
+import {shouldFinishPlay} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
 import {WebGLView} from './render/webgl.js';
@@ -259,7 +259,7 @@ function loop(timestamp){
   if(state==='PLAYING'){
     world.step(dt);
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||Math.abs(Math.max(0,world.time)-lastHudTime)>=.1)hud();
-    if(world.time<=0||(world.taps>=MAX_TAPS&&world.waves.length===0))finish();
+    if(shouldFinishPlay(world.time))finish();
   }
   view?.render(world,timestamp,quality);
   frames.push(1/dt);
