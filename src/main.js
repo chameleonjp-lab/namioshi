@@ -5,7 +5,7 @@ import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
-import {tone,wake} from './core/audio.js';
+import {isSoundEnabled,setSoundEnabled,tone,wake} from './core/audio.js';
 
 const app=document.querySelector('#app');
 app.innerHTML=`
@@ -35,6 +35,8 @@ app.innerHTML=`
         <p class="small">練習結果はランキングへ送信しません。</p>
       </div>
     </div>
+    <button id="soundToggle" class="btn secondary" type="button" aria-pressed="false">効果音：なし</button>
+    <p id="soundStatus" class="small">効果音は初期設定で「なし」です。</p>
     <button id="rule" class="btn secondary">ルールを見る</button>
     <button id="homeShare" class="btn secondary">シェア</button>
     <p id="homeShareStatus" class="small"></p>
@@ -165,7 +167,15 @@ function start(mode){
   }
   $('msg').textContent='';
   $('name').blur();
+  wake();
   beginCountdown();
+}
+
+function updateSoundControl(){
+  const enabled=isSoundEnabled();
+  $('soundToggle').textContent=`効果音：${enabled?'あり':'なし'}`;
+  $('soundToggle').setAttribute('aria-pressed',String(enabled));
+  $('soundStatus').textContent=enabled?'効果音を使います。設定はこの端末に保存されます。':'効果音は鳴りません。必要なときだけ「あり」に変更できます。';
 }
 
 function beginCountdown(){
@@ -286,6 +296,11 @@ function returnToModeSelection(){
 }
 
 world.onHit=()=>tone(620,.09,'sine');
+$('soundToggle').onclick=()=>{
+  const enabled=setSoundEnabled(!isSoundEnabled());
+  updateSoundControl();
+  if(enabled&&wake())tone(440,.06,'sine');
+};
 $('startOfficial').onclick=()=>start(GAME_MODE.OFFICIAL);
 $('startPractice').onclick=()=>start(GAME_MODE.PRACTICE);
 $('rule').onclick=()=>{if(state==='HOME')setState('RULES')};
@@ -295,4 +310,5 @@ $('changeMode').onclick=returnToModeSelection;
 $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
 $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('gesturestart',event=>event.preventDefault());
+updateSoundControl();
 boot();
