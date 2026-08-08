@@ -1,9 +1,9 @@
 export const GAME_SLUG='namioshi';
 export const GAME_URL='https://chameleonjp.codeberg.page/namioshi/';
-export const CLIENT_VERSION='namioshi-v2.0.0';
+export const CLIENT_VERSION='namioshi-v3.1.0-official002';
 export const SCORE_UNIT='点';
-export const PLAY_SECONDS=10;
-export const MAX_TAPS=3;
+export const PLAY_SECONDS=30;
+export const MAX_TAPS=6;
 export const LOGICAL_WIDTH=360;
 export const LOGICAL_HEIGHT=640;
 export const OFFICIAL_LAYOUT_ID='candidate-c-open-harbor';

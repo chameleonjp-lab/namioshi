@@ -24,9 +24,21 @@ p{line-height:1.55;color:#bad9e8}
 .hud{position:absolute;z-index:2;left:0;right:0;top:env(safe-area-inset-top);display:none;justify-content:space-between;gap:4px;padding:10px;font-weight:800;pointer-events:none}
 .hud.show{display:flex}
 .pill{font-size:12px;padding:8px 8px;border-radius:999px;background:rgba(0,0,0,.32);border:1px solid rgba(142,229,255,.18);white-space:nowrap}
+.playLegend{position:absolute;z-index:2;left:50%;bottom:calc(env(safe-area-inset-bottom) + 10px);display:none;transform:translateX(-50%);width:min(390px,calc(100% - 20px));padding:8px 10px;border:1px solid rgba(210,183,255,.42);border-radius:13px;background:rgba(5,8,28,.78);color:#e9ddff;font-size:12px;line-height:1.45;text-align:center;pointer-events:none;box-shadow:0 0 20px rgba(110,67,255,.18)}
+.playLegend.show{display:grid}
+.playLegend b{color:#f4dfff}
+.guideOverlay{position:absolute;z-index:4;top:76px;left:50%;display:none;transform:translateX(-50%);width:min(390px,calc(100% - 24px));padding:15px 16px;border:1px solid rgba(255,218,126,.55);border-radius:18px;background:rgba(8,13,35,.94);box-shadow:0 0 28px rgba(74,50,160,.36);text-align:center;pointer-events:auto}
+.guideOverlay.show{display:block}
+.guideOverlay h2{margin:0;color:#ffe8a2;font-size:22px}
+.guideOverlay p{margin:8px 0;color:#d7e8f4;font-size:14px;line-height:1.55}
+.guideButtons{display:grid;gap:7px}
+.guideButtons .btn{margin-top:0;padding:11px;font-size:15px}
 #countdownText{font-size:clamp(58px,22vw,104px);font-weight:900;text-shadow:0 0 28px #58f0ff}
 .countdownMode{margin:0 0 4px;color:#d9f8ff;font-weight:800;letter-spacing:.08em}
 .rulesList{margin:14px 0 4px;padding-left:1.3em;text-align:left;color:#bad9e8;line-height:1.7}
+.breakdown{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0;padding:10px;border:1px solid rgba(142,229,255,.2);border-radius:14px;background:rgba(0,0,0,.18)}
+.breakdown p{margin:0;padding:7px 4px;color:#cde7f2;font-size:13px}
+.breakdown b{display:block;color:#fff;font-size:18px}
 .small{font-size:13px;color:#9fc1d0}
 .warn{color:#ffd0d0}
 .shareText{display:none;margin-top:12px;width:100%;min-height:82px;color:#fff;background:#07111f;border:1px solid #477487;border-radius:12px;padding:10px;user-select:text}
