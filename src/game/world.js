@@ -2,6 +2,7 @@ import {LOGICAL_HEIGHT,LOGICAL_WIDTH,MAX_TAPS,PLAY_SECONDS} from '../config.js';
 import {judgementFromPrecision} from './judgement.js';
 import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
+import {candidateScore,scoreCategory} from './scoring.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const OFFICIAL_RANDOM_SEED=0xfc71e804;
@@ -24,13 +25,15 @@ export class World{
   layoutFingerprint=null;
   rankingCandidate=true;
   score=0;
+  scoreBreakdown={direct:0,wall:0,glass:0,double:0};
   taps=0;
   time=PLAY_SECONDS;
-  combo=0;
   waves=[];
   beacons=[];
   glass=[];
   particles=[];
+  reflectionEffects=[];
+  bestHits=new Map();
   onHit=()=>{};
   onReflect=()=>{};
 
@@ -56,11 +59,13 @@ export class World{
     this.layoutFingerprint=layout.fingerprint;
     this.rankingCandidate=official;
     this.score=0;
+    this.scoreBreakdown={direct:0,wall:0,glass:0,double:0};
     this.taps=0;
     this.time=PLAY_SECONDS;
-    this.combo=0;
     this.waves=[];
     this.particles=[];
+    this.reflectionEffects=[];
+    this.bestHits=new Map();
     this.beacons=layout.beacons;
     this.glass=layout.glass;
   }
@@ -68,13 +73,15 @@ export class World{
   tap(x,y){
     if(this.taps>=MAX_TAPS)return false;
     this.taps++;
-    this.addWave(x,y,0,'direct');
+    this.addWave(x,y,0,'direct',{rootTapId:`tap-${this.taps}`});
     return true;
   }
 
-  addWave(x,y,reflections,kind){
+  addWave(x,y,reflections,kind,{rootTapId=null,parentWaveId=null,surfaceHistory=[]}={}){
     const wave={
       id:waveSequence++,
+      rootTapId:rootTapId??`manual-${waveSequence}`,
+      parentWaveId,
       originX:x,
       originY:y,
       radius:1,
@@ -86,15 +93,17 @@ export class World{
       kind,
       hit:new Set(),
       edges:new Set(),
-      glass:new Set()
+      glass:new Set(),
+      surfaceHistory:new Set(surfaceHistory),
+      hitCandidates:new Map()
     };
     this.waves.push(wave);
     while(this.waves.length>24)this.waves.shift();
     return wave;
   }
 
-  step(dt){
-    this.time-=dt;
+  step(dt,{countTime=true}={}){
+    if(countTime)this.time-=dt;
     for(const beacon of this.beacons){
       beacon.flash=Math.max(0,beacon.flash-dt*3);
       beacon.x=clamp(beacon.x+beacon.vx*dt,beacon.radius,this.w-beacon.radius);
@@ -115,24 +124,32 @@ export class World{
         const band=wave.width+beacon.radius*.35;
         if(error<=band){
           wave.hit.add(beacon.id);
-          const base=wave.reflections>=2?260:wave.kind==='glass'?200:wave.kind==='wall'?160:100;
           const precision=Math.max(0,1-error/band);
-          const accuracy=1+precision*.45;
-          const multiplier=accuracy*(1+Math.min(this.combo,5)*.12);
-          const points=Math.round(base*multiplier);
-          this.combo++;
-          this.score+=points;
-          beacon.flash=1;
-          beacon.vx+=(beacon.x-wave.originX)/(distance||1)*22;
-          beacon.vy+=(beacon.y-wave.originY)/(distance||1)*22;
-          this.burst(beacon.x,beacon.y);
-          this.onHit({
-            judgement:judgementFromPrecision(precision),
-            precision,
-            points,
-            kind:wave.kind,
-            reflections:wave.reflections
-          });
+          const category=scoreCategory(wave);
+          const candidate=candidateScore(category,precision);
+          const hitKey=`${wave.rootTapId}:${beacon.id}`;
+          const previous=this.bestHits.get(hitKey);
+          wave.hitCandidates.set(beacon.id,{category,score:candidate,error,waveId:wave.id,reflectionDepth:wave.reflections});
+          if(!previous||candidate>previous.score){
+            if(previous)this.scoreBreakdown[previous.category]-=previous.score;
+            this.scoreBreakdown[category]+=candidate;
+            this.bestHits.set(hitKey,{category,score:candidate,error,waveId:wave.id,reflectionDepth:wave.reflections});
+            const points=candidate-(previous?.score??0);
+            this.score+=points;
+            beacon.flash=1;
+            beacon.vx+=(beacon.x-wave.originX)/(distance||1)*22;
+            beacon.vy+=(beacon.y-wave.originY)/(distance||1)*22;
+            this.burst(beacon.x,beacon.y);
+            this.onHit({
+              judgement:judgementFromPrecision(precision),
+              precision,
+              points,
+              candidateScore:candidate,
+              category,
+              kind:wave.kind,
+              reflections:wave.reflections
+            });
+          }
         }
       }
       if(wave.age>wave.life)this.waves.splice(index,1);
@@ -144,6 +161,12 @@ export class World{
       particle.x+=particle.vx*dt;
       particle.y+=particle.vy*dt;
       if(particle.age>particle.life)this.particles.splice(index,1);
+    }
+
+    for(let index=this.reflectionEffects.length-1;index>=0;index--){
+      const effect=this.reflectionEffects[index];
+      effect.age+=dt;
+      if(effect.age>effect.life)this.reflectionEffects.splice(index,1);
     }
   }
 
@@ -159,9 +182,21 @@ export class World{
       const distance=side==='l'?wave.originX:side==='r'?this.w-wave.originX:side==='t'?wave.originY:this.h-wave.originY;
       if(wave.radius>distance&&!wave.edges.has(side)){
         wave.edges.add(side);
-        const reflected=this.addWave(x,y,wave.reflections+1,'wall');
+        const normalX=side==='l'?1:side==='r'?-1:0;
+        const normalY=side==='t'?1:side==='b'?-1:0;
+        const contactX=side==='l'?0:side==='r'?this.w:clamp(wave.originX,0,this.w);
+        const contactY=side==='t'?0:side==='b'?this.h:clamp(wave.originY,0,this.h);
+        const surfaceKey=`wall:${side}`;
+        wave.surfaceHistory.add(surfaceKey);
+        const reflected=this.addWave(x,y,wave.reflections+1,'wall',{
+          rootTapId:wave.rootTapId,
+          parentWaveId:wave.id,
+          surfaceHistory:wave.surfaceHistory
+        });
         reflected.edges.add(side);
-        this.onReflect({kind:'wall',reflections:reflected.reflections});
+        reflected.surfaceHistory.add(surfaceKey);
+        this.addReflectionEffect(contactX,contactY,normalX,normalY,'wall');
+        this.onReflect({kind:'wall',reflections:reflected.reflections,x:contactX,y:contactY,normalX,normalY});
       }
     }
 
@@ -176,14 +211,23 @@ export class World{
       const perpendicular=(wave.originX-pointX)*piece.nx+(wave.originY-pointY)*piece.ny;
       if(Math.abs(Math.abs(perpendicular)-wave.radius)<9){
         wave.glass.add(piece.id);
+        const surfaceKey=`glass:${piece.id}`;
+        wave.surfaceHistory.add(surfaceKey);
         const reflected=this.addWave(
           wave.originX-2*perpendicular*piece.nx,
           wave.originY-2*perpendicular*piece.ny,
           wave.reflections+1,
-          'glass'
+          'glass',
+          {
+            rootTapId:wave.rootTapId,
+            parentWaveId:wave.id,
+            surfaceHistory:wave.surfaceHistory
+          }
         );
         reflected.glass.add(piece.id);
-        this.onReflect({kind:'glass',reflections:reflected.reflections});
+        reflected.surfaceHistory.add(surfaceKey);
+        this.addReflectionEffect(pointX,pointY,piece.nx,piece.ny,'glass');
+        this.onReflect({kind:'glass',reflections:reflected.reflections,x:pointX,y:pointY,normalX:piece.nx,normalY:piece.ny});
       }
     }
   }
@@ -200,5 +244,14 @@ export class World{
       });
     }
     while(this.particles.length>90)this.particles.shift();
+  }
+
+  addReflectionEffect(x,y,normalX,normalY,kind){
+    this.reflectionEffects.push({x,y,normalX,normalY,kind,age:0,life:.42});
+    while(this.reflectionEffects.length>24)this.reflectionEffects.shift();
+  }
+
+  getScoreBreakdown(){
+    return{...this.scoreBreakdown};
   }
 }

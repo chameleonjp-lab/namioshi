@@ -12,6 +12,13 @@ export class CanvasView{
     this.viewport=createViewport(1,1);
   }
 
+  waveStroke(wave){
+    if(wave.reflections>=2)return[255,198,64];
+    if(wave.kind==='glass')return[194,126,255];
+    if(wave.kind==='wall')return[116,148,255];
+    return[90,235,255];
+  }
+
   resize(width,height,_quality,viewport=createViewport(width,height)){
     const dpr=Math.min(devicePixelRatio||1,1.25);
     this.dpr=dpr;
@@ -58,16 +65,50 @@ export class CanvasView{
     }
     context.lineCap='round';
     for(const glass of world.glass){
-      context.strokeStyle='rgba(220,250,255,.45)';
-      context.lineWidth=5;
+      context.strokeStyle='rgba(93,54,255,.24)';
+      context.lineWidth=10;
       context.beginPath();
       context.moveTo(glass.x1,glass.y1);
       context.lineTo(glass.x2,glass.y2);
       context.stroke();
+      context.strokeStyle='rgba(207,183,255,.92)';
+      context.lineWidth=3;
+      context.beginPath();
+      context.moveTo(glass.x1,glass.y1);
+      context.lineTo(glass.x2,glass.y2);
+      context.stroke();
+      context.strokeStyle='rgba(255,224,117,.9)';
+      context.lineWidth=2;
+      const midX=(glass.x1+glass.x2)*.5;
+      const midY=(glass.y1+glass.y2)*.5;
+      context.beginPath();
+      context.moveTo(midX-glass.nx*10,midY-glass.ny*10);
+      context.lineTo(midX+glass.nx*10,midY+glass.ny*10);
+      context.stroke();
+      for(const point of [[glass.x1,glass.y1],[glass.x2,glass.y2]]){
+        context.beginPath();
+        context.arc(point[0],point[1],4,0,Math.PI*2);
+        context.stroke();
+      }
+    }
+    for(const effect of world.reflectionEffects){
+      const progress=Math.min(1,effect.age/effect.life);
+      const alpha=(1-progress)*.72;
+      context.strokeStyle=effect.kind==='glass'?`rgba(214,152,255,${alpha})`:`rgba(127,171,255,${alpha})`;
+      context.lineWidth=2;
+      context.beginPath();
+      context.arc(effect.x,effect.y,4+progress*22,0,Math.PI*2);
+      context.stroke();
+      context.strokeStyle=`rgba(255,224,117,${alpha})`;
+      context.beginPath();
+      context.moveTo(effect.x,effect.y);
+      context.lineTo(effect.x+effect.normalX*(12+progress*18),effect.y+effect.normalY*(12+progress*18));
+      context.stroke();
     }
     for(const wave of world.waves){
-      context.strokeStyle=`rgba(90,235,255,${(1-wave.age/wave.life)*.8})`;
-      context.lineWidth=3;
+      const [red,green,blue]=this.waveStroke(wave);
+      context.strokeStyle=`rgba(${red},${green},${blue},${(1-wave.age/wave.life)*.86})`;
+      context.lineWidth=wave.reflections>=2?4:3;
       context.beginPath();
       context.arc(wave.originX,wave.originY,wave.radius,0,Math.PI*2);
       context.stroke();

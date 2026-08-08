@@ -49,6 +49,13 @@ export class WebGLView{
   quad=new Float32Array([-1,-1,1,-1,-1,1,1,1]);
   waveData=new Float32Array(MAX_WAVES*4);
 
+  waveColor(wave,fade){
+    if(wave.reflections>=2)return[1,.78,.25,fade*.9];
+    if(wave.kind==='glass')return[.76,.52,1,fade*.86];
+    if(wave.kind==='wall')return[.46,.58,1,fade*.82];
+    return[.35,.92,1,fade*.82];
+  }
+
   constructor(canvas){
     this.canvas=canvas;
     const gl=canvas.getContext('webgl',{alpha:false,antialias:false,powerPreference:'high-performance'})||canvas.getContext('experimental-webgl',{alpha:false});
@@ -154,7 +161,35 @@ export class WebGLView{
 
     for(const glass of world.glass){
       this.tmp.set([glass.x1,glass.y1,glass.x2,glass.y2]);
-      this.drawLine(this.tmp,2,[.78,1,1,.48],gl.LINES,3);
+      this.drawLine(this.tmp,2,[.42,.24,1,.20],gl.LINES,8);
+      this.drawLine(this.tmp,2,[.78,.68,1,.92],gl.LINES,3);
+      const midX=(glass.x1+glass.x2)*.5;
+      const midY=(glass.y1+glass.y2)*.5;
+      this.tmp.set([
+        glass.x1-4,glass.y1-4,glass.x1+4,glass.y1+4,
+        glass.x1-4,glass.y1+4,glass.x1+4,glass.y1-4,
+        glass.x2-4,glass.y2-4,glass.x2+4,glass.y2+4,
+        glass.x2-4,glass.y2+4,glass.x2+4,glass.y2-4
+      ]);
+      this.drawLine(this.tmp,8,[.88,.82,1,.78],gl.LINES,1.5);
+      this.tmp.set([midX-glass.nx*10,midY-glass.ny*10,midX+glass.nx*10,midY+glass.ny*10]);
+      this.drawLine(this.tmp,2,[1,.86,.4,.9],gl.LINES,2);
+    }
+    for(const effect of world.reflectionEffects){
+      const progress=Math.min(1,effect.age/effect.life);
+      const radius=4+progress*22;
+      this.circle[0]=effect.x;
+      this.circle[1]=effect.y;
+      for(let i=0;i<=SEGMENTS;i++){
+        const angle=i/SEGMENTS*Math.PI*2;
+        const offset=(i+1)*2;
+        this.circle[offset]=effect.x+Math.cos(angle)*radius;
+        this.circle[offset+1]=effect.y+Math.sin(angle)*radius;
+      }
+      const alpha=(1-progress)*.72;
+      this.drawLine(this.circle,SEGMENTS+2,effect.kind==='glass'?[.84,.56,1,alpha]:[.5,.7,1,alpha],gl.LINE_STRIP,2);
+      this.tmp.set([effect.x,effect.y,effect.x+effect.normalX*(12+progress*18),effect.y+effect.normalY*(12+progress*18)]);
+      this.drawLine(this.tmp,2,[1,.86,.4,alpha],gl.LINES,2);
     }
     for(const wave of world.waves.slice(0,QUALITY[quality].waves)){
       for(let i=0;i<=SEGMENTS;i++){
@@ -164,7 +199,7 @@ export class WebGLView{
         this.ring[offset+1]=wave.originY+Math.sin(angle)*wave.radius;
       }
       const fade=Math.max(0,1-wave.age/wave.life);
-      this.drawLine(this.ring,SEGMENTS+1,wave.kind==='glass'?[.72,.96,1,fade*.78]:[.35,.92,1,fade*.82],gl.LINE_STRIP,2);
+      this.drawLine(this.ring,SEGMENTS+1,this.waveColor(wave,fade),gl.LINE_STRIP,wave.reflections>=2?3:2);
     }
     for(const beacon of world.beacons){
       this.circle[0]=beacon.x;

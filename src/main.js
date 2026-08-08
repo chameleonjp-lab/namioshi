@@ -13,13 +13,25 @@ app.innerHTML=`
 <div id="hud" class="hud">
   <div class="pill"><span id="modeHud">公式</span></div>
   <div class="pill">スコア <span id="s">0</span></div>
-  <div class="pill">残り <span id="tm">10.0</span></div>
-  <div class="pill">タップ <span id="tp">0</span>/3</div>
+  <div class="pill">残り <span id="tm">30.0</span></div>
+  <div class="pill">タップ <span id="tp">0</span>/6</div>
+</div>
+<div id="playLegend" class="playLegend" aria-live="polite">
+  <span><b>反射板</b>：棒に波を当てると、波の向きが変わります</span>
+  <span>得点　直接20 ／ 壁100 ／ 反射板180 ／ 2回反射300</span>
+</div>
+<div id="guideOverlay" class="guideOverlay" role="dialog" aria-labelledby="guideTitle" aria-describedby="guideText">
+  <h2 id="guideTitle">初回案内</h2>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（棒）へ当ててみてください。反射板に触れると、波の向きが変わり、直接当てるより高得点になります。</p>
+  <div class="guideButtons">
+    <button id="guideContinue" class="btn">案内を終えて本番へ</button>
+    <button id="guideHome" class="btn secondary">ホームへ戻る</button>
+  </div>
 </div>
 <section id="HOME" class="screen freshStart show">
   <div class="panel">
     <h1>namioshi</h1>
-    <p>暗い水面に波を押し出し、壁やガラス片で反射させて3つのビーコンへ波の線を重ねる10秒ゲーム。</p>
+    <p>暗い水面に波を押し出し、壁や反射板で反射させて3つのビーコンへ波の線を重ねる30秒ゲームです。</p>
     <input id="name" class="input" maxlength="20" placeholder="名前">
     <div class="modeGrid" role="group" aria-label="ゲームモード">
       <div class="modeCard officialCard">
@@ -49,10 +61,11 @@ app.innerHTML=`
   <div class="panel">
     <h1 class="sectionTitle">RULES</h1>
     <ul class="rulesList">
-      <li>タップは最大3回</li>
-      <li>制限時間は10秒</li>
-      <li>波を壁やガラス片で反射させる</li>
+      <li>タップは最大6回</li>
+      <li>制限時間は30秒</li>
+      <li>棒の反射板に波を当てると、波の向きが変わる</li>
       <li>波を3つのビーコンへ重ねる</li>
+      <li>直接より、壁・反射板・2回反射の順に高得点</li>
       <li>公式は候補Cの固定配置</li>
       <li>練習はランダム配置でランキング送信なし</li>
     </ul>
@@ -70,6 +83,12 @@ app.innerHTML=`
     <h1 id="resultTitle" class="sectionTitle">公式結果</h1>
     <p id="resultMode" class="modeResult"></p>
     <p><b id="fs">0</b> 点</p>
+    <div class="breakdown" aria-label="得点内訳">
+      <p>直接 <b id="scoreDirect">0</b>点</p>
+      <p>壁反射 <b id="scoreWall">0</b>点</p>
+      <p>反射板 <b id="scoreGlass">0</b>点</p>
+      <p>2回反射 <b id="scoreDouble">0</b>点</p>
+    </div>
     <p id="rank" class="small" aria-live="polite"></p>
     <button id="share" class="btn">シェア</button>
     <button id="again" class="btn secondary">同じモードでもう一度</button>
@@ -101,6 +120,20 @@ let lastHudTaps=-1;
 let lastHudTime=-1;
 let countdownTimer=0;
 let countdownId=0;
+let tutorialMode=false;
+let guideCompletedInMemory=false;
+
+const GUIDE_STORAGE_KEY='namioshi.guide.completed';
+
+function hasCompletedGuide(){
+  if(guideCompletedInMemory)return true;
+  try{return localStorage.getItem(GUIDE_STORAGE_KEY)==='yes'}catch{return false}
+}
+
+function markGuideCompleted(){
+  guideCompletedInMemory=true;
+  try{localStorage.setItem(GUIDE_STORAGE_KEY,'yes')}catch{}
+}
 
 function setState(nextState){
   state=nextState;
@@ -108,6 +141,8 @@ function setState(nextState){
     $(screen)?.classList?.toggle('show',screen===nextState);
   }
   $('hud').classList.toggle('show',nextState==='PLAYING');
+  $('playLegend').classList.toggle('show',nextState==='PLAYING');
+  $('guideOverlay').classList.toggle('show',nextState==='PLAYING'&&tutorialMode);
   const busy=nextState==='COUNTDOWN';
   $('startOfficial').disabled=busy;
   $('startPractice').disabled=busy;
@@ -168,7 +203,8 @@ function start(mode){
   $('msg').textContent='';
   $('name').blur();
   void wake();
-  beginCountdown();
+  if(!hasCompletedGuide())startGuide();
+  else beginCountdown();
 }
 
 function updateSoundControl(){
@@ -203,8 +239,31 @@ function beginCountdown(){
   tick();
 }
 
+function startGuide(){
+  clearCountdown();
+  tutorialMode=true;
+  world.reset({mode:selectedMode});
+  world.time=Number.POSITIVE_INFINITY;
+  const presentation=modePresentation(world.mode);
+  $('modeHud').textContent=presentation.label+'・案内';
+  lastHudScore=-1;
+  lastHudTaps=-1;
+  lastHudTime=-1;
+  setState('PLAYING');
+  hud(true);
+}
+
+function leaveGuide(startGame){
+  if(state!=='PLAYING'||!tutorialMode)return;
+  markGuideCompleted();
+  tutorialMode=false;
+  if(startGame)beginCountdown();
+  else setState('HOME');
+}
+
 function play(){
   clearCountdown();
+  tutorialMode=false;
   world.reset({mode:selectedMode});
   const presentation=modePresentation(world.mode);
   $('modeHud').textContent=presentation.label;
@@ -224,6 +283,11 @@ function finish(){
   $('resultTitle').textContent=presentation.resultTitle;
   $('resultMode').textContent=`${presentation.description} 配置ID: ${world.layoutId}`;
   $('fs').textContent=String(world.score);
+  const breakdown=world.getScoreBreakdown();
+  $('scoreDirect').textContent=String(breakdown.direct);
+  $('scoreWall').textContent=String(breakdown.wall);
+  $('scoreGlass').textContent=String(breakdown.glass);
+  $('scoreDouble').textContent=String(breakdown.double);
   $('rank').textContent=policy.statusText;
   $('resultShareStatus').textContent='';
   $('shareText').style.display='none';
@@ -231,7 +295,7 @@ function finish(){
 }
 
 function hud(force=false){
-  const time=Math.max(0,world.time);
+  const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
   if(force||world.score!==lastHudScore){
     $('s').textContent=String(world.score);
     lastHudScore=world.score;
@@ -240,8 +304,8 @@ function hud(force=false){
     $('tp').textContent=String(world.taps);
     lastHudTaps=world.taps;
   }
-  if(force||Math.abs(time-lastHudTime)>=.1){
-    $('tm').textContent=time.toFixed(1);
+  if(force||time!==lastHudTime&&(time===Infinity||Math.abs(time-lastHudTime)>=.1)){
+    $('tm').textContent=time===Infinity?'∞':time.toFixed(1);
     lastHudTime=time;
   }
 }
@@ -257,9 +321,10 @@ function loop(timestamp){
   const dt=Math.min(.033,(timestamp-last)/1000||0);
   last=timestamp;
   if(state==='PLAYING'){
-    world.step(dt);
-    if(world.score!==lastHudScore||world.taps!==lastHudTaps||Math.abs(Math.max(0,world.time)-lastHudTime)>=.1)hud();
-    if(shouldFinishPlay(world.time))finish();
+    world.step(dt,{countTime:!tutorialMode});
+    const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
+    if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
+    if(!tutorialMode&&shouldFinishPlay(world.time))finish();
   }
   view?.render(world,timestamp,quality);
   frames.push(1/dt);
@@ -312,6 +377,8 @@ $('rule').onclick=()=>{if(state==='HOME')setState('RULES')};
 $('closeRules').onclick=()=>setState('HOME');
 $('again').onclick=()=>{if(state==='RESULT')beginCountdown()};
 $('changeMode').onclick=returnToModeSelection;
+$('guideContinue').onclick=()=>leaveGuide(true);
+$('guideHome').onclick=()=>leaveGuide(false);
 $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
 $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('gesturestart',event=>event.preventDefault());

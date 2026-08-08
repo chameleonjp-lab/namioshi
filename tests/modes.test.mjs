@@ -163,3 +163,13 @@ test('result flow offers replay and a clean return to mode selection',()=>{
   assert.match(main,/id="COUNTDOWN" class="screen freshStart"/);
   assert.match(styles,/\.freshStart\{background:radial-gradient\(circle at 50% 30%,#0b3045,#020813 58%,#000\)\}/);
 });
+
+test('the play contract gives the player time and decisions to plan reflections',async()=>{
+  const config=await import(new URL('../src/config.js',import.meta.url));
+  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+  assert.equal(config.PLAY_SECONDS,30);
+  assert.equal(config.MAX_TAPS,6);
+  assert.match(main,/反射板/);
+  assert.match(main,/id="scoreGlass"/);
+  assert.match(main,/id="guideOverlay"/);
+});

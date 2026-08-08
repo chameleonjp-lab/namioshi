@@ -29,10 +29,13 @@ test('world reports judgement quality without changing hit scoring',()=>{
 
   assert.equal(hit?.judgement,HIT_JUDGEMENT.PERFECT);
   assert.ok(Math.abs(hit.precision-1)<1e-9);
-  assert.equal(hit.points,145);
+  assert.equal(hit.points,24);
+  assert.equal(hit.candidateScore,24);
+  assert.equal(hit.category,'direct');
   assert.equal(hit.kind,'direct');
   assert.equal(hit.reflections,0);
-  assert.equal(world.score,145);
+  assert.equal(world.score,24);
+  assert.deepEqual(world.getScoreBreakdown(),{direct:24,wall:0,glass:0,double:0});
 });
 
 test('world reports wall reflections for their own sound cue',()=>{
@@ -48,7 +51,7 @@ test('world reports wall reflections for their own sound cue',()=>{
 
   world.reflect(wave);
 
-  assert.deepEqual(reflections,[{kind:'wall',reflections:1}]);
+  assert.deepEqual(reflections.map(({kind,reflections})=>({kind,reflections})),[{kind:'wall',reflections:1}]);
 });
 
 test('a reflected wave does not report its source wall twice',()=>{
@@ -66,7 +69,7 @@ test('a reflected wave does not report its source wall twice',()=>{
   const reflected=world.waves.at(-1);
   world.reflect(reflected);
 
-  assert.deepEqual(reflections,[{kind:'wall',reflections:1}]);
+  assert.deepEqual(reflections.map(({kind,reflections})=>({kind,reflections})),[{kind:'wall',reflections:1}]);
   assert.equal(reflected.edges.has('l'),true);
 });
 
@@ -86,6 +89,66 @@ test('a reflected wave does not report its source glass twice',()=>{
   reflected.radius=20;
   world.reflect(reflected);
 
-  assert.deepEqual(reflections,[{kind:'glass',reflections:1}]);
+  assert.deepEqual(reflections.map(({kind,reflections})=>({kind,reflections})),[{kind:'glass',reflections:1}]);
   assert.equal(reflected.glass.has('test-glass'),true);
+});
+
+test('reflected waves keep their root, parent, and source surface history',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const root=world.addWave(10,200,0,'direct',{rootTapId:'root-identity'});
+  root.radius=11;
+
+  world.reflect(root);
+  const child=world.waves.at(-1);
+
+  assert.equal(child.rootTapId,'root-identity');
+  assert.equal(child.parentWaveId,root.id);
+  assert.equal(child.surfaceHistory.has('wall:l'),true);
+});
+
+test('the same tap and beacon keep only the highest candidate score',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[{id:'test-beacon',x:100,y:100,radius:10,flash:0,vx:0,vy:0}];
+  world.glass=[];
+  world.waves=[];
+
+  const direct=world.addWave(0,100,0,'direct',{rootTapId:'root-1'});
+  direct.speed=0;
+  direct.radius=100;
+  world.step(.01);
+  assert.equal(world.score,24);
+
+  const wall=world.addWave(0,100,1,'wall',{rootTapId:'root-1'});
+  wall.speed=0;
+  wall.radius=100;
+  world.step(.01);
+  assert.ok(world.score>24);
+  assert.deepEqual(world.getScoreBreakdown(),{direct:0,wall:world.score,glass:0,double:0});
+  assert.equal(Object.values(world.getScoreBreakdown()).reduce((total,points)=>total+points,0),world.score);
+});
+
+test('world ignores taps after the six-tap limit',async()=>{
+  const {MAX_TAPS}=await import(new URL('../src/config.js',import.meta.url));
+  const world=new World({random:()=>.5});
+  world.reset();
+  for(let index=0;index<MAX_TAPS;index++)assert.equal(world.tap(100+index,100),true);
+  assert.equal(world.tap(200,100),false);
+  assert.equal(world.taps,MAX_TAPS);
+  assert.equal(world.waves.length,MAX_TAPS);
+});
+
+test('score bases distinguish direct, wall, reflector, and double reflection',async()=>{
+  const scoring=await import(new URL('../src/game/scoring.js',import.meta.url));
+  assert.deepEqual(scoring.SCORE_BASES,{direct:20,wall:100,glass:180,double:300});
+  assert.deepEqual([
+    scoring.candidateScore('direct',1),
+    scoring.candidateScore('wall',1),
+    scoring.candidateScore('glass',1),
+    scoring.candidateScore('double',1)
+  ],[24,120,216,360]);
 });
