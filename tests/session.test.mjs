@@ -100,5 +100,6 @@ test('main uses fixed updates, a monotonic deadline, and visibility suspension r
   assert.match(main,/world\.step\(step,\{countTime:false\}\)/);
   assert.match(main,/if\(document\.hidden\)/);
   assert.match(main,/state==='COUNTDOWN'[\s\S]*?setState\('HOME'\)/);
+  assert.match(main,/addEventListener\('pagehide',[\s\S]*?state==='COUNTDOWN'[\s\S]*?setState\('HOME'\)/);
   assert.match(main,/fixedSteps\.resume\(now\)/);
 });

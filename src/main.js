@@ -449,6 +449,10 @@ addEventListener('pagehide',()=>{
   fixedSteps.suspend();
   lastRenderTimestamp=null;
   frames=[];
+  if(state==='COUNTDOWN'){
+    clearCountdown();
+    setState('HOME');
+  }
   void setAudioActive(false);
 });
 addEventListener('pageshow',syncAudioVisibility);
