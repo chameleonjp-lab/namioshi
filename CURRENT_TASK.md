@@ -1,79 +1,71 @@
-# CURRENT_TASK: namioshi Phase 4C 固定更新と画面休止
+# CURRENT_TASK: namioshi Phase 5A Supabaseと旧ランキング監査
 
 ## 今回の目的
 
-Pull Request #39でPhase 4Aの有限線分、端点反射、親子波、寿命継承、反射面の再判定距離、エネルギー減衰、波ID、24波上限をmainへ統合した。
+Pull Request #40でPhase 4Cの固定更新、単調増加時計、画面休止時の停止と復帰をmainへ統合した。
 
-次に、画面の更新間隔や一時停止によって物理結果と30秒の締切が変わらないよう、Phase 4Cを実装する。
+次に、ランキングを再開する前に、正式なSupabase接続先、RPC、`namioshi`登録、旧記録、権限、v3と旧版の分離方法を読み取り専用で監査する。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `014f53e197854a582b270b9615a591d34ee9e57c`（Pull Request #39マージ後）
-- Pull Request #37（30秒・6タップ、反射板説明、得点台帳）はmainへマージ済み
-- Pull Request #38（PR #37後の計画同期）はmainへマージ済み
-- Pull Request #39（Phase 4A反射処理）はmainへマージ済み
+- 基準コミット: `85c2deb1d8cd6df0af7e820defdc97a529e2d06f`（Pull Request #40マージ後）
+- Pull Request #37、#38、#39、#40はmainへマージ済み
 - 変更はmainへ直接入れず、下書きPull Requestで提出する
-- ランキング送信、Supabase、公式配置の座標は変更しない
-- 実機確認を自動試験で完了扱いにしない
+- 本番スコアを送信しない
+- SQL、RPC、RLS、権限、Supabaseデータを変更しない
+- ランキング送信の有効化を行わない
 
-## 今回のPhase 4C実装
+## 今回のPhase 5A監査
 
-### 固定更新
+- `docs/SUPABASE_AUDIT_v3.md`を作成する
+- Supabase projectの正式URLと状態を確認する
+- Publishable keyの種類と有効状態を確認する。実値は文書へ書かない
+- `submit_score`とランキング取得RPCの引数、戻り値、実行権限、`SECURITY DEFINER`を確認する
+- `public.games`の`namioshi`登録を確認する
+- `score_runs`、`game_scores`、`game_play_events`の`namioshi`件数と`client_version`を確認する
+- RLS、直接INSERT権限、RPC実行権限を確認する
+- GitHub mainのSupabase URL、ヘッダー、送信停止状態と照合する
 
-- 物理更新を1/60秒の固定刻みにする
-- 1回の描画で進める物理更新を最大3回にする
-- 累積時間を最大50msへ制限する
-- 長時間停止後に残った余分な累積時間を捨てる
-- Worldの物理更新ではゲーム時間を減算せず、画面側で締切時刻から残り時間を求める
+## 監査で確認した事実
 
-### 締切と画面休止
+- 正式Project URLは`https://mlpnjgezrnhdxsxolyzj.supabase.co`で、状態は`ACTIVE_HEALTHY`
+- 現行`src/config.js`のURLは正式Project URLと一致しない
+- `public.games`に`namioshi`は登録されていない
+- `namioshi`の`score_runs`、`game_scores`、`game_play_events`はすべて0件
+- `client_version`は`score_runs`へ保存されるが、既存ランキングRPCは`game_scores`を読むため、v3と旧版を絞り込まない
+- 直接INSERT権限は`anon`にない。productionへのINSERT試験は行っていない
+- `RANKING_SERVICE_STATE.enabled`は`false`のままである
+- 現行クライアントには`Authorization: Bearer`が残っている
 
-- プレイ開始時の単調増加時計から30秒の締切を作る
-- 画面非表示中は物理更新、描画、音を停止する
-- 画面非表示中も締切は進める
-- 復帰時に締切を過ぎていればRESULTへ進める
-- 締切前なら物理状態を一気に進めず、固定更新を再開する
-- COUNTDOWN中に画面非表示になった場合はカウントダウンを取り消してHOMEへ戻る
-- `pagehide` と `pageshow` でも固定更新の時間基準を再初期化する
+## 自動・読み取り確認
 
-## 今回変更しない範囲
-
-- Supabase URL、Publishable key、RPC、ランキング送信、本番データ
-- 公式配置の座標、配置ID、配置指紋、得点式
-- 波の反射計算、反射上限、命中判定の分類
-- WebGLの高品質化、波の帯描画、コンテキスト消失からの復帰
-- 結果画面の保存項目、ランキング表示、safe-area、アクセシビリティ
-
-## 自動確認
-
-- 固定更新を60Hz相当と120Hz相当の描画列から同じ回数だけ進める
-- 長い描画間隔を最大3回へ制限し、余分な累積を捨てる
-- 画面休止と復帰で一時停止中の時間を物理更新へ持ち込まない
-- 単調増加時計による締切が0秒未満にならない
-- mainが固定更新、`performance.now()`、`document.hidden`、COUNTDOWNのHOME復帰を使うことを確認する
-- `npm test`: 50件成功
-- `npm run build`: 成功
-- `npm run verify`: 成功
-- `npm run analyze:layouts`: 成功
-- `npm run render:layouts`: 成功
-- `npm run size`: 成功。容量は報告値であり、固定上限で失敗させていない
+- Supabase projectメタデータ、Project URL、Publishable key一覧を読み取った
+- publicスキーマのテーブル、列、RLS状態、行数を読み取った
+- RPC定義、引数、戻り値、権限、関数本体を読み取った
+- `pg_policies`、テーブル権限、関数権限を読み取った
+- 本番スコア送信は0件
 
 ## 未確認
 
-- iPhone Safariでバックグラウンド移動と復帰を10回繰り返した場合の実機挙動
-- iPhone Safariの長時間・反復・発熱試験
-- iPad、Codeberg Pages、実Supabase通信
-- WebGLコンテキスト消失後の復帰
-- 画面回転、safe-area、Canvas 2Dとの表示差
+- コード内Publishable keyと正式Project URLの完全な組み合わせ確認
+- `submit_score`のHTTP実RPC疎通
+- `public.games`への登録内容とSQL変更案
+- v3と旧版を分離するランキング取得方法のユーザー承認
+- Phase 5Bの1プレイ1送信、公式限定、タイムアウト、失敗時の結果保持
 
 ## 後続停止条件
 
-この変更の自動試験で固定更新と締切の決定性を確認する。ただし、実機のバックグラウンド復帰、WebGLコンテキスト復帰、ランキング通信、本番公開は別工程として残す。
+URLの対応、`namioshi`の登録、v3と旧版の分離方法が確定するまで、ランキング送信を有効にしない。SQL変更が必要な場合は、SQL案を別途提示し、ユーザー承認前には実行しない。
 
-Phase 4とPhase 5の契約が完了するまで、ランキング送信と本番公開を開始しない。
+## 次の作業
+
+1. この監査文書を独立レビューし、監査事実と推測が混ざっていないことを確認する。
+2. ユーザー承認後に、URL、`public.games`登録、v3と旧版の分離方法を確定する。
+3. Phase 5Bで送信クライアントを実装する。
+4. Phase 5Cでサーバー側の上限・version検査と実RPC疎通を確認する。
 
 ## 戻し方
 
-このPull Requestだけを取り消す場合は、今回の変更提案をrevertする。ゲームの得点やSupabase本番データは変更していないため、データの戻し作業は不要である。
+このPull Requestをrevertする。コード、Supabaseスキーマ、ランキングデータ、本番送信状態は変更していない。
