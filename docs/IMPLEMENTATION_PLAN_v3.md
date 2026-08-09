@@ -1,6 +1,8 @@
 # namioshi v3 実装計画
 
-v3は一度にすべて実装しない。各Phaseを別Pull Requestにし、1つのPull Requestで得点、ランキング、WebGL、ビルド、画面を同時に変更しない。現在実装はv2相当であり、v3は未実装である。
+> この文書はv3着手時の段階別計画を残す歴史資料であり、現在の実装状態や作業順の正本ではない。現行仕様は[`SPEC_v3.md`](SPEC_v3.md)、現在の工程と状態は[`MASTER_COMPLETION_PLAN_v3.md`](MASTER_COMPLETION_PLAN_v3.md)、敵対的検証後の順序は[`PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md`](PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md)を参照する。
+
+以下は着手時の計画記録である。v3は一度にすべて実装せず、各Phaseを別Pull Requestにし、1つのPull Requestで得点、ランキング、WebGL、ビルド、画面を同時に変更しない方針を定めた。
 
 ## Phase 1: 現行コードの正しさ
 

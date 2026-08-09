@@ -1,7 +1,7 @@
 import {LOGICAL_HEIGHT,LOGICAL_WIDTH,QUALITY} from '../config.js';
 import {createViewport} from '../game/viewport.js';
 
-const MAX_WAVES=12;
+const MAX_BACKGROUND_WAVES=12;
 const MAX_PARTICLES=90;
 const SEGMENTS=96;
 
@@ -47,7 +47,7 @@ export class WebGLView{
   circle=new Float32Array((SEGMENTS+2)*2);
   tmp=new Float32Array(1024);
   quad=new Float32Array([-1,-1,1,-1,-1,1,1,1]);
-  waveData=new Float32Array(MAX_WAVES*4);
+  waveData=new Float32Array(MAX_BACKGROUND_WAVES*4);
 
   waveColor(wave,fade){
     if(wave.reflections>=2)return[1,.78,.25,fade*.9];
@@ -132,7 +132,7 @@ export class WebGLView{
     gl.vertexAttribPointer(attribute,2,gl.FLOAT,false,0,0);
     gl.uniform1f(gl.getUniformLocation(this.bg,'uTime'),time*.001);
     gl.uniform2f(gl.getUniformLocation(this.bg,'uRes'),resolutionWidth,resolutionHeight);
-    const visible=waves.slice(0,Math.min(MAX_WAVES,QUALITY[quality].waves));
+    const visible=waves.slice(0,Math.min(MAX_BACKGROUND_WAVES,QUALITY[quality].waves));
     this.waveData.fill(0);
     visible.forEach((wave,index)=>this.waveData.set([wave.originX,wave.originY,wave.radius,wave.width],index*4));
     gl.uniform1i(gl.getUniformLocation(this.bg,'uWaveCount'),visible.length);
@@ -191,7 +191,7 @@ export class WebGLView{
       this.tmp.set([effect.x,effect.y,effect.x+effect.normalX*(12+progress*18),effect.y+effect.normalY*(12+progress*18)]);
       this.drawLine(this.tmp,2,[1,.86,.4,alpha],gl.LINES,2);
     }
-    for(const wave of world.waves.slice(0,QUALITY[quality].waves)){
+    for(const wave of world.waves){
       for(let i=0;i<=SEGMENTS;i++){
         const angle=i/SEGMENTS*Math.PI*2;
         const offset=i*2;

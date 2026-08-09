@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {MAX_WAVES} from '../src/config.js';
 import {HIT_JUDGEMENT,judgementFromPrecision} from '../src/game/judgement.js';
+import {createReflectionPath} from '../src/game/reflection-path.js';
 import {World} from '../src/game/world.js';
 
 test('hit precision has four stable judgement levels',()=>{
@@ -186,7 +188,7 @@ test('wave capacity rejects a new wave without shifting existing waves',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   world.waves=[];
-  const waves=Array.from({length:24},(_,index)=>world.addWave(index,100,0,'direct'));
+  const waves=Array.from({length:MAX_WAVES},(_,index)=>world.addWave(index,100,0,'direct'));
   const ids=waves.map(wave=>wave.id);
   assert.equal(world.addWave(200,100,0,'direct'),null);
   assert.deepEqual(world.waves.map(wave=>wave.id),ids);
@@ -208,17 +210,6 @@ test('one accepted tap creates one root wave and reflection depth stops at two',
   assert.equal(world.waves.filter(wave=>wave.parentWaveId===depthTwo.waveId).length,0);
 });
 
-test('the reflection surface clearance is measured in logical pixels',async()=>{
-  const {REFLECTION_SURFACE_CLEARANCE}=await import(new URL('../src/config.js',import.meta.url));
-  const world=new World({random:()=>.5});
-  world.reset();
-  const wave=world.addWave(10,200,1,'wall',{surfaceCooldowns:new Map([['wall:l',10]])});
-  wave.radius=10+REFLECTION_SURFACE_CLEARANCE-0.01;
-  assert.equal(world.surfaceIsCooling(wave,'wall:l'),true);
-  wave.radius=10+REFLECTION_SURFACE_CLEARANCE;
-  assert.equal(world.surfaceIsCooling(wave,'wall:l'),false);
-});
-
 test('the same tap and beacon keep only the highest candidate score',()=>{
   const world=new World({random:()=>.5});
   world.reset();
@@ -232,7 +223,19 @@ test('the same tap and beacon keep only the highest candidate score',()=>{
   world.step(.01);
   assert.equal(world.score,24);
 
-  const wall=world.addWave(0,100,1,'wall',{rootTapId:'root-1'});
+  const reflectionPath=createReflectionPath({
+    surfaceKey:'wall:test',
+    surfaceKind:'wall',
+    x1:50,
+    y1:0,
+    x2:50,
+    y2:200,
+    parentOriginX:100,
+    parentOriginY:100,
+    childOriginX:0,
+    childOriginY:100
+  });
+  const wall=world.addWave(0,100,1,'wall',{rootTapId:'root-1',reflectionPath});
   wall.speed=0;
   wall.radius=100;
   world.step(.01);

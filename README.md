@@ -6,16 +6,17 @@
 
 v3は段階的に実装しています。文書があることだけを完成の証拠として扱いません。
 
-- 要件の正本: [`docs/REQUIREMENTS_v3.md`](docs/REQUIREMENTS_v3.md)
-- ゲーム仕様の正本: [`docs/SPEC_v3.md`](docs/SPEC_v3.md)
-- 段階別の実装順: [`docs/IMPLEMENTATION_PLAN_v3.md`](docs/IMPLEMENTATION_PLAN_v3.md)
-- 完成までの統合計画: [`docs/MASTER_COMPLETION_PLAN_v3.md`](docs/MASTER_COMPLETION_PLAN_v3.md)
+- 現行ゲーム仕様の唯一の正本: [`docs/SPEC_v3.md`](docs/SPEC_v3.md)
+- 初期要求の背景資料: [`docs/REQUIREMENTS_v3.md`](docs/REQUIREMENTS_v3.md)
+- 初期の段階別計画（歴史資料）: [`docs/IMPLEMENTATION_PLAN_v3.md`](docs/IMPLEMENTATION_PLAN_v3.md)
+- 現在の工程と状態: [`docs/MASTER_COMPLETION_PLAN_v3.md`](docs/MASTER_COMPLETION_PLAN_v3.md)
 - 公式配置候補の比較: [`docs/OFFICIAL_LAYOUT_STUDY_v3.md`](docs/OFFICIAL_LAYOUT_STUDY_v3.md)
 - 公式配置の選定ガイド: [`docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md`](docs/OFFICIAL_LAYOUT_DECISION_GUIDE_v3.md)
 - 公式配置の選定記録: [`docs/OFFICIAL_LAYOUT_SELECTION_v3.md`](docs/OFFICIAL_LAYOUT_SELECTION_v3.md)
 - Phase 3Cマージ後監査: [`docs/POST_PHASE3C_AUDIT.md`](docs/POST_PHASE3C_AUDIT.md)
 - レビュー・公開確認: [`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)
 - Supabase Phase 5A監査: [`docs/SUPABASE_AUDIT_v3.md`](docs/SUPABASE_AUDIT_v3.md)
+- 敵対的検証後の回復計画: [`docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md`](docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md)
 
 v3では3MBを受け入れ上限にしません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を優先します。複数ファイルとES Modulesを正式に使用します。
 
@@ -84,6 +85,6 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 ## 確認状態
 
-Phase 1と1.1で画面状態と共有処理を修正し、Phase 2A・2BでJavaScript正本、再現可能なbuild、依存0件、容量報告専用化を完了しました。Phase 3Aの固定論理座標、Phase 3Bの候補分析、Phase 3B.1の判断資料、Phase 3Cの候補C固定と練習分離を実装済みです。Phase 3C follow-upのPull Request #29に加え、Pull Request #31〜#35で初期無音の任意効果音、判定別の音、音声の停止と復帰、反射元の二重通知防止、10秒未満の早期終了防止をmainへ反映しました。Pull Request #37で、30秒・6タップ、初回の時間制限なし案内、反射板の視覚説明、最高候補だけを採用する得点台帳、結果画面の得点内訳を追加し、mainへマージしました。Pull Request #39でPhase 4Aの有限線分・親子波・寿命継承をmainへマージし、Pull Request #40でPhase 4Cの固定更新、単調増加時計、画面休止時の停止と復帰をmainへ統合しました。現在はPhase 5AのSupabaseと旧ランキング監査を進めています。
+Phase 1からPhase 5Aの監査までの変更はmainへ統合済みです。ただし、main `c9ddd8e`への敵対的検証で、有限反射板を通らない得点、判定波の表示切り捨て、6回未満の入力拒否、寿命後得点、ビーコン速度暴走、時刻付き入力と締切の不一致を再現しました。このためG4「物理と得点」を不合格へ戻し、競技版公開とランキング再開を停止しています。
 
-320×568相当のローカルChromiumでは、rootと`dist`の両方で公式・練習・公式の往復、名前保持、不透明な開始前画面、ランキング通信0件を確認しました。自動試験では、30秒の終了条件、6タップ、最高候補への差し替え、得点内訳、有限線分、端点距離、親子波の寿命、反射エネルギー、波IDと24波上限、固定更新の60Hz/120Hz一致、長時間停止後の累積破棄、単調増加時計を確認しています。一方、iPad、Codeberg Pages、実Supabase通信、iPhoneの実機休止復帰、WebGLコンテキスト復帰は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
+現在の回復作業では、反射面を逆順にたどる有限経路検査、同一step内の反射伝播、3秒寿命境界、正規ルールから導いた390波の故障検知上限、全判定波の前景表示、上限付きの一時的なビーコン揺れを実装しています。ローカル自動試験は67件成功し、Draft Pull Request #42のGitHub Actions Run #59もNode.js 18、20、22を含め成功しています。時刻付き入力と締切精算は不一致・step欠落を再現済みで未解決です。WebGL消失復旧、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
