@@ -1,24 +1,169 @@
 export const FIXED_STEP_SECONDS=1/60;
 export const MAX_FIXED_STEPS_PER_FRAME=3;
-export const MAX_ACCUMULATED_SECONDS=.05;
+// A render frame is deliberately limited to three updates, but elapsed time
+// must remain queued for later frames.  Capping this accumulator would make a
+// long frame permanently change the simulation result.
+export const MAX_ACCUMULATED_SECONDS=Number.POSITIVE_INFINITY;
 
 const EPSILON=1e-9;
+const BOUNDARY_EPSILON_MS=1e-6;
+
+/**
+ * Input captured by the UI is applied at a fixed simulation boundary rather
+ * than when the browser happens to dispatch the event.  Keeping the clock
+ * timestamp and an insertion order makes equal-time inputs deterministic too.
+ */
+export class TimedInputQueue{
+  entries=[];
+  nextOrder=0;
+  startTimestamp=null;
+  closedAt=null;
+  closedInclusive=true;
+
+  reset(startTimestamp=null){
+    this.entries=[];
+    this.nextOrder=0;
+    this.startTimestamp=Number.isFinite(startTimestamp)?startTimestamp:null;
+    this.closedAt=null;
+    this.closedInclusive=true;
+  }
+
+  get length(){
+    return this.entries.length;
+  }
+
+  get pending(){
+    return this.entries.slice();
+  }
+
+  get isClosed(){
+    return this.closedAt!==null;
+  }
+
+  clear(){
+    this.entries=[];
+  }
+
+  enqueue(inputOrX,y=null,timestamp=null){
+    const input=inputOrX&&typeof inputOrX==='object'
+      ?inputOrX
+      :{x:inputOrX,y,timestamp};
+    const x=Number(input.x);
+    const pointY=Number(input.y);
+    const time=Number(input.timestamp);
+    if(!Number.isFinite(x)||!Number.isFinite(pointY)||!Number.isFinite(time))return false;
+    if(this.startTimestamp!==null&&time<this.startTimestamp)return false;
+    if(this.closedAt!==null){
+      const within=this.closedInclusive?time<=this.closedAt:time<this.closedAt;
+      if(!within)return false;
+    }
+    // The browser event stream is the source of same-time ordering.  Do not
+    // accept caller-supplied order values that could reorder that stream.
+    const order=this.nextOrder++;
+    this.entries.push({
+      x,
+      y:pointY,
+      timestamp:time,
+      order
+    });
+    this.entries.sort((left,right)=>left.timestamp-right.timestamp||left.order-right.order);
+    return true;
+  }
+
+  enqueueWithinLimit(input,{accepted=0,maximum=Number.POSITIVE_INFINITY}={}){
+    if(!Number.isFinite(accepted)||accepted<0)return false;
+    if(!(Number.isFinite(maximum)||maximum===Number.POSITIVE_INFINITY)||maximum<0)return false;
+    if(accepted+this.entries.length>=maximum)return false;
+    return this.enqueue(input);
+  }
+
+  /**
+   * Stop accepting inputs at and after `timestamp`; already queued inputs
+   * strictly before that boundary remain eligible.  Future-dated entries are
+   * removed because they cannot belong to the play being finalized.
+   */
+  closeAt(timestamp,{inclusive=false}={}){
+    if(!Number.isFinite(timestamp))return;
+    if(this.closedAt===null||timestamp<this.closedAt){
+      this.closedAt=timestamp;
+      this.closedInclusive=inclusive;
+    }else if(timestamp===this.closedAt){
+      this.closedInclusive=this.closedInclusive&&inclusive;
+    }
+    this.entries=this.entries.filter(entry=>this.closedInclusive
+      ?entry.timestamp<=this.closedAt
+      :entry.timestamp<this.closedAt);
+  }
+
+  close(timestamp){
+    this.closeAt(timestamp);
+  }
+
+  closeBefore(timestamp){
+    this.closeAt(timestamp,{inclusive:false});
+  }
+
+  /**
+   * Deliver every input whose timestamp is no later than the first fixed
+   * boundary being processed.  Returns the number delivered.
+   */
+  drainThrough(boundaryTimestamp,deliver){
+    if(typeof deliver!=='function')throw new TypeError('input delivery callback must be a function');
+    if(!Number.isFinite(boundaryTimestamp))return 0;
+    let delivered=0;
+    while(this.entries.length>0){
+      const entry=this.entries[0];
+      const dueAtBoundary=entry.timestamp<=boundaryTimestamp+BOUNDARY_EPSILON_MS;
+      const beforeClose=this.closedAt===null
+        ?true
+        :this.closedInclusive?entry.timestamp<=this.closedAt:entry.timestamp<this.closedAt;
+      if(!dueAtBoundary||!beforeClose)break;
+      const input=this.entries.shift();
+      deliver(input);
+      delivered++;
+    }
+    return delivered;
+  }
+}
 
 export class FixedStepRunner{
   accumulator=0;
   lastTimestamp=null;
+  originTimestamp=null;
+  boundaryOriginTimestamp=null;
+  boundaryStepIndex=0;
+  processedBoundaryTimestamp=null;
+  simulationTime=0;
+  stepCount=0;
 
   reset(timestamp=null){
     this.accumulator=0;
     this.lastTimestamp=Number.isFinite(timestamp)?timestamp:null;
+    this.originTimestamp=Number.isFinite(timestamp)?timestamp:null;
+    this.boundaryOriginTimestamp=Number.isFinite(timestamp)?timestamp:null;
+    this.boundaryStepIndex=0;
+    this.processedBoundaryTimestamp=Number.isFinite(timestamp)?timestamp:null;
+    this.simulationTime=0;
+    this.stepCount=0;
   }
 
   suspend(){
-    this.reset();
+    // Visibility suspension intentionally does not fast-forward the world.
+    // This is the explicit visibility/pagehide exception: discard the
+    // partial accumulator, then resume() re-anchors the boundary clock.
+    this.accumulator=0;
+    this.lastTimestamp=null;
   }
 
   resume(timestamp){
-    this.reset(timestamp);
+    this.accumulator=0;
+    this.lastTimestamp=Number.isFinite(timestamp)?timestamp:null;
+    if(Number.isFinite(timestamp)){
+      this.originTimestamp=timestamp;
+      this.boundaryOriginTimestamp=timestamp;
+      this.boundaryStepIndex=0;
+      this.processedBoundaryTimestamp=timestamp;
+    }
   }
 
   advance(timestamp,update){
@@ -26,8 +171,16 @@ export class FixedStepRunner{
     if(!Number.isFinite(timestamp))return 0;
     if(this.lastTimestamp===null){
       this.lastTimestamp=timestamp;
+      this.originTimestamp=timestamp;
+      this.boundaryOriginTimestamp=timestamp;
+      this.boundaryStepIndex=0;
+      this.processedBoundaryTimestamp=timestamp;
       return 0;
     }
+    // A browser clock should be monotonic, but a synthetic RAF or restored
+    // document can still report an older timestamp.  Do not move the origin
+    // backwards and create artificial elapsed time on the next frame.
+    if(timestamp<this.lastTimestamp)timestamp=this.lastTimestamp;
 
     const elapsed=Math.max(0,(timestamp-this.lastTimestamp)/1000);
     this.lastTimestamp=timestamp;
@@ -36,13 +189,67 @@ export class FixedStepRunner{
     let steps=0;
     while(this.accumulator+EPSILON>=FIXED_STEP_SECONDS&&steps<MAX_FIXED_STEPS_PER_FRAME){
       this.accumulator=Math.max(0,this.accumulator-FIXED_STEP_SECONDS);
-      update(FIXED_STEP_SECONDS);
+      const nextSimulationTime=this.simulationTime+FIXED_STEP_SECONDS;
+      this.boundaryStepIndex++;
+      const boundaryTimestamp=this.boundaryOriginTimestamp===null
+        ?timestamp
+        :this.boundaryOriginTimestamp+this.boundaryStepIndex*FIXED_STEP_SECONDS*1000;
+      update(FIXED_STEP_SECONDS,{
+        boundaryTimestamp,
+        simulationTime:nextSimulationTime,
+        stepIndex:this.stepCount
+      });
+      this.simulationTime=nextSimulationTime;
+      this.processedBoundaryTimestamp=boundaryTimestamp;
+      this.stepCount++;
       steps++;
     }
 
-    if(steps===MAX_FIXED_STEPS_PER_FRAME&&this.accumulator+EPSILON>=FIXED_STEP_SECONDS)this.accumulator=0;
     return steps;
   }
+
+  isCaughtUp(){
+    return this.accumulator+EPSILON<FIXED_STEP_SECONDS;
+  }
+
+  hasPendingSteps(){
+    return !this.isCaughtUp();
+  }
+}
+
+/**
+ * Advance one visible PLAYING render frame. The deadline is clamped before
+ * elapsed time enters the accumulator, then any backlog is drained over
+ * later renders by FixedStepRunner's per-frame limit.
+ */
+export function advancePlayFrame({
+  timestamp,
+  deadline=null,
+  tutorial=false,
+  runner,
+  inputQueue,
+  update
+}){
+  if(!runner||typeof runner.advance!=='function'||typeof runner.isCaughtUp!=='function'){
+    throw new TypeError('play frame requires a fixed-step runner');
+  }
+  if(typeof update!=='function')throw new TypeError('play frame requires an update callback');
+  const deadlineExpired=!tutorial&&Number.isFinite(deadline)&&timestamp>=deadline;
+  if(deadlineExpired){
+    if(!inputQueue||typeof inputQueue.closeBefore!=='function'){
+      throw new TypeError('deadline settlement requires a timed input queue');
+    }
+    inputQueue.closeBefore(deadline);
+  }
+  const effectiveTimestamp=deadlineExpired?deadline:timestamp;
+  const steps=runner.advance(effectiveTimestamp,update);
+  const caughtUp=runner.isCaughtUp();
+  return{
+    steps,
+    deadlineExpired,
+    caughtUp,
+    shouldFinish:deadlineExpired&&caughtUp
+  };
 }
 
 export function createPlayDeadline(startTimestamp,durationSeconds){

@@ -30,6 +30,14 @@ const clampVector=(x,y,maximum)=>{
 const OFFICIAL_RANDOM_SEED=0xfc71e804;
 const LIFETIME_EPSILON=1e-9;
 
+function isBetterCandidate(candidate,previous){
+  if(!previous)return true;
+  if(candidate.score!==previous.score)return candidate.score>previous.score;
+  if(candidate.reflectionDepth!==previous.reflectionDepth)return candidate.reflectionDepth>previous.reflectionDepth;
+  if(candidate.error!==previous.error)return candidate.error<previous.error;
+  return candidate.waveId<previous.waveId;
+}
+
 function seededRandom(seed){
   let state=seed>>>0;
   return()=>{
@@ -148,7 +156,8 @@ export class World{
       glass:new Set(glass),
       surfaceHistory:new Set(surfaceHistory),
       emittedSurfaces:new Set(emittedSurfaces),
-      hitCandidates:new Map()
+      hitCandidates:new Map(),
+      finalizedHits:new Set()
     };
     this.waves.push(wave);
     return wave;
@@ -180,48 +189,98 @@ export class World{
     beacon.y=clamp(beacon.baseY+beacon.shakeY,70,this.h-beacon.radius);
   }
 
-  scoreWave(wave,beaconTargets){
+  commitWaveHit(wave,beacon){
+    if(wave.finalizedHits.has(beacon.id))return;
+    const candidate=wave.hitCandidates.get(beacon.id);
+    if(!candidate)return;
+    wave.finalizedHits.add(beacon.id);
+    candidate.pending=false;
+    const hitKey=`${wave.rootTapId}:${beacon.id}`;
+    const previous=this.bestHits.get(hitKey);
+    if(!isBetterCandidate(candidate,previous))return;
+    this.bestHits.set(hitKey,{...candidate,pending:false});
+    const points=candidate.score-(previous?.score??0);
+    if(points===0){
+      // A same-score representative can still move between categories in
+      // synthetic/tie cases. Keep the ledger aligned with bestHits without
+      // replaying score or presentation side effects.
+      if(previous&&previous.category!==candidate.category){
+        this.scoreBreakdown[previous.category]-=previous.score;
+        this.scoreBreakdown[candidate.category]+=candidate.score;
+      }
+      return;
+    }
+    this.prepareBeacon(beacon);
+    if(previous)this.scoreBreakdown[previous.category]-=previous.score;
+    this.scoreBreakdown[candidate.category]+=candidate.score;
+    this.score+=points;
+    const targetX=Number.isFinite(candidate.targetX)?candidate.targetX:beacon.x;
+    const targetY=Number.isFinite(candidate.targetY)?candidate.targetY:beacon.y;
+    const distance=Math.hypot(wave.originX-targetX,wave.originY-targetY);
+    beacon.flash=1;
+    beacon.shakeVx+=(targetX-wave.originX)/(distance||1)*BEACON_SHAKE_IMPULSE;
+    beacon.shakeVy+=(targetY-wave.originY)/(distance||1)*BEACON_SHAKE_IMPULSE;
+    [beacon.shakeVx,beacon.shakeVy]=clampVector(beacon.shakeVx,beacon.shakeVy,BEACON_SHAKE_MAX_SPEED);
+    this.burst(targetX,targetY);
+    this.onHit({
+      beaconId:beacon.id,
+      waveId:wave.id,
+      judgement:judgementFromPrecision(candidate.precision),
+      precision:candidate.precision,
+      points,
+      candidateScore:candidate.score,
+      category:candidate.category,
+      kind:wave.kind,
+      reflections:wave.reflections,
+      pathIntersections:candidate.pathIntersections
+    });
+  }
+
+  flushWaveHits(wave){
+    for(const beacon of this.beacons)this.commitWaveHit(wave,beacon);
+  }
+
+  scoreWave(wave,beaconTargets,{finalize=false}={}){
     for(let beaconIndex=0;beaconIndex<this.beacons.length;beaconIndex++){
       const beacon=this.beacons[beaconIndex];
       const target=beaconTargets[beaconIndex];
+      // `hit` is reserved for an explicit route suppression. Pending and
+      // finalized candidates have their own stores so the states cannot be
+      // confused with one another.
+      if(wave.finalizedHits.has(beacon.id))continue;
       if(wave.hit.has(beacon.id))continue;
       const distance=Math.hypot(wave.originX-target.x,wave.originY-target.y);
       const error=Math.abs(distance-wave.radius);
       const band=wave.width+beacon.radius*.35;
-      if(error>band)continue;
-      const pathTrace=this.traceWavePath(wave,target.x,target.y);
-      if(!pathTrace.valid)continue;
-      wave.hit.add(beacon.id);
-      const precision=Math.max(0,1-error/band);
-      const category=scoreCategory(wave);
-      const candidate=candidateScore(category,precision);
-      const hitKey=`${wave.rootTapId}:${beacon.id}`;
-      const previous=this.bestHits.get(hitKey);
-      const pathIntersections=pathTrace.intersections.map(intersection=>({...intersection}));
-      wave.hitCandidates.set(beacon.id,{category,score:candidate,error,waveId:wave.id,reflectionDepth:wave.reflections,pathIntersections});
-      if(previous&&candidate<=previous.score)continue;
-      if(previous)this.scoreBreakdown[previous.category]-=previous.score;
-      this.scoreBreakdown[category]+=candidate;
-      this.bestHits.set(hitKey,{category,score:candidate,error,waveId:wave.id,reflectionDepth:wave.reflections,pathIntersections});
-      const points=candidate-(previous?.score??0);
-      this.score+=points;
-      beacon.flash=1;
-      beacon.shakeVx+=(target.x-wave.originX)/(distance||1)*BEACON_SHAKE_IMPULSE;
-      beacon.shakeVy+=(target.y-wave.originY)/(distance||1)*BEACON_SHAKE_IMPULSE;
-      [beacon.shakeVx,beacon.shakeVy]=clampVector(beacon.shakeVx,beacon.shakeVy,BEACON_SHAKE_MAX_SPEED);
-      this.burst(target.x,target.y);
-      this.onHit({
-        beaconId:beacon.id,
-        waveId:wave.id,
-        judgement:judgementFromPrecision(precision),
-        precision,
-        points,
-        candidateScore:candidate,
-        category,
-        kind:wave.kind,
-        reflections:wave.reflections,
-        pathIntersections
-      });
+      const previousCandidate=wave.hitCandidates.get(beacon.id);
+      if(error<=band){
+        const pathTrace=this.traceWavePath(wave,target.x,target.y);
+        if(pathTrace.valid&&(!previousCandidate||error<previousCandidate.error-1e-9)){
+          const precision=Math.max(0,1-error/band);
+          const category=scoreCategory(wave);
+          const candidate=candidateScore(category,precision);
+          const pathIntersections=pathTrace.intersections.map(intersection=>({...intersection}));
+          wave.hitCandidates.set(beacon.id,{
+            category,
+            score:candidate,
+            error,
+            precision,
+            targetX:target.x,
+            targetY:target.y,
+            waveId:wave.id,
+            reflectionDepth:wave.reflections,
+            pathIntersections,
+            pending:true
+          });
+          // A mathematically exact hit cannot be improved by a later sample.
+          if(error<=LIFETIME_EPSILON)this.commitWaveHit(wave,beacon);
+        }
+      }else if(previousCandidate){
+        // The wave has passed through its finite judgement band.  Commit the
+        // minimum-error sample once, after no further improvement is possible.
+        this.commitWaveHit(wave,beacon);
+      }
+      if(finalize)this.commitWaveHit(wave,beacon);
     }
   }
 
@@ -258,6 +317,9 @@ export class World{
           includeActiveContacts:propagation.includeActiveContacts
         });
         this.scoreWave(propagation.wave,beaconTargets);
+        if(propagation.wave.age>=propagation.wave.lifetime-LIFETIME_EPSILON){
+          this.flushWaveHits(propagation.wave);
+        }
         for(const child of children){
           propagationQueue.push({wave:child,startRadius:child.previousRadius,includeActiveContacts:true});
         }

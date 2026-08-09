@@ -1,8 +1,8 @@
 import {World} from './game/world.js';
-import {createPlayDeadline,FixedStepRunner,remainingPlaySeconds,shouldFinishPlay} from './game/session.js';
+import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,shouldFinishPlay,TimedInputQueue} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
-import {PLAY_SECONDS} from './config.js';
+import {MAX_TAPS,PLAY_SECONDS} from './config.js';
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
@@ -123,6 +123,7 @@ let countdownId=0;
 let tutorialMode=false;
 let guideCompletedInMemory=false;
 const fixedSteps=new FixedStepRunner();
+const timedInputs=new TimedInputQueue();
 let playDeadline=null;
 let lastRenderTimestamp=null;
 
@@ -167,6 +168,7 @@ function monotonicNow(){
 function resetPlayClock(){
   const start=monotonicNow();
   fixedSteps.reset(start);
+  timedInputs.reset(start);
   playDeadline=tutorialMode?null:createPlayDeadline(start,PLAY_SECONDS);
 }
 
@@ -176,6 +178,22 @@ function updatePlayTime(timestamp){
     return;
   }
   world.time=remainingPlaySeconds(playDeadline,timestamp);
+}
+
+function advanceSimulation(timestamp){
+  return advancePlayFrame({
+    timestamp,
+    deadline:playDeadline,
+    tutorial:tutorialMode,
+    runner:fixedSteps,
+    inputQueue:timedInputs,
+    update:(step,{boundaryTimestamp})=>{
+      world.step(step,{countTime:false});
+      timedInputs.drainThrough(boundaryTimestamp,input=>{
+        world.tap(input.x,input.y);
+      });
+    }
+  });
 }
 
 function resize(){
@@ -196,10 +214,18 @@ function boot(){
       event.preventDefault();
       const audioReady=wake();
       if(state!=='PLAYING')return;
+      const inputTimestamp=monotonicNow();
+      if(playDeadline!==null&&inputTimestamp>=playDeadline){
+        timedInputs.closeBefore(playDeadline);
+        return;
+      }
       const point=clientToLogical(event.clientX,event.clientY,canvas.getBoundingClientRect(),viewport);
-      if(point&&world.tap(point.x,point.y)){
+      if(point&&timedInputs.enqueueWithinLimit({
+        x:point.x,
+        y:point.y,
+        timestamp:inputTimestamp
+      },{accepted:world.taps,maximum:MAX_TAPS})){
         void audioReady.then(ready=>{if(ready&&state==='PLAYING')playCue('TAP')});
-        hud();
       }
     },{passive:false});
     canvas.addEventListener('pointercancel',event=>{
@@ -302,6 +328,8 @@ function play(){
 function finish(){
   if(state!=='PLAYING')return;
   clearCountdown();
+  if(playDeadline!==null)timedInputs.closeBefore(playDeadline);
+  timedInputs.clear();
   fixedSteps.suspend();
   playDeadline=null;
   world.time=0;
@@ -362,13 +390,11 @@ function loop(timestamp){
 
   if(state==='PLAYING'){
     updatePlayTime(now);
-    if(tutorialMode||!shouldFinishPlay(world.time)){
-      fixedSteps.advance(now,step=>world.step(step,{countTime:false}));
-      updatePlayTime(now);
-    }
+    const playFrame=advanceSimulation(now);
+    updatePlayTime(now);
     const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
-    if(!tutorialMode&&shouldFinishPlay(world.time))finish();
+    if(playFrame.shouldFinish)finish();
   }
   view?.render(world,now,quality);
   if(frameSeconds>0)frames.push(1/frameSeconds);
@@ -422,7 +448,7 @@ function syncAudioVisibility(){
   lastRenderTimestamp=now;
   if(state==='PLAYING'){
     updatePlayTime(now);
-    if(!tutorialMode&&shouldFinishPlay(world.time))finish();
+    if(!tutorialMode&&shouldFinishPlay(world.time))timedInputs.closeBefore(playDeadline);
   }
 }
 
