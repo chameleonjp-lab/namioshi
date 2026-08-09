@@ -1,5 +1,5 @@
 import {World} from './game/world.js';
-import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,shouldFinishPlay,TimedInputQueue} from './game/session.js';
+import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,TimedInputQueue} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
 import {MAX_TAPS,PLAY_SECONDS} from './config.js';
@@ -126,6 +126,7 @@ const fixedSteps=new FixedStepRunner();
 const timedInputs=new TimedInputQueue();
 let playDeadline=null;
 let lastRenderTimestamp=null;
+let deadlineSettlementActive=false;
 
 const GUIDE_STORAGE_KEY='namioshi.guide.completed';
 
@@ -170,6 +171,7 @@ function resetPlayClock(){
   fixedSteps.reset(start);
   timedInputs.reset(start);
   playDeadline=tutorialMode?null:createPlayDeadline(start,PLAY_SECONDS);
+  deadlineSettlementActive=false;
 }
 
 function updatePlayTime(timestamp){
@@ -178,6 +180,10 @@ function updatePlayTime(timestamp){
     return;
   }
   world.time=remainingPlaySeconds(playDeadline,timestamp);
+}
+
+function applyTimedInput(input){
+  world.tap(input.x,input.y);
 }
 
 function advanceSimulation(timestamp){
@@ -189,11 +195,27 @@ function advanceSimulation(timestamp){
     inputQueue:timedInputs,
     update:(step,{boundaryTimestamp})=>{
       world.step(step,{countTime:false});
-      timedInputs.drainThrough(boundaryTimestamp,input=>{
-        world.tap(input.x,input.y);
-      });
+      timedInputs.drainThrough(boundaryTimestamp,applyTimedInput);
     }
   });
+}
+
+function rememberPlayFrame(playFrame){
+  deadlineSettlementActive=Boolean(playFrame?.deadlineExpired&&!playFrame?.caughtUp);
+  return playFrame;
+}
+
+function suspendVisiblePlay(now){
+  if(state==='PLAYING'&&fixedSteps.lastTimestamp!==null){
+    updatePlayTime(now);
+    const playFrame=rememberPlayFrame(advanceSimulation(now));
+    updatePlayTime(now);
+    if(playFrame.shouldFinish){
+      finish();
+      return;
+    }
+  }
+  fixedSteps.suspend(now);
 }
 
 function resize(){
@@ -328,10 +350,18 @@ function play(){
 function finish(){
   if(state!=='PLAYING')return;
   clearCountdown();
-  if(playDeadline!==null)timedInputs.closeBefore(playDeadline);
+  if(playDeadline!==null){
+    timedInputs.closeBefore(playDeadline);
+    // A visibility pause can shift the next fixed boundary beyond the wall
+    // deadline. Apply any still-eligible input at the terminal boundary so an
+    // input accepted before 30s is not silently lost. Physics is not advanced.
+    timedInputs.drainThrough(playDeadline,applyTimedInput);
+  }
+  world.finalizePendingHits();
   timedInputs.clear();
   fixedSteps.suspend();
   playDeadline=null;
+  deadlineSettlementActive=false;
   world.time=0;
   const presentation=modePresentation(world.mode);
   const policy=rankingPolicy(world.mode);
@@ -381,7 +411,7 @@ function loop(timestamp){
   lastRenderTimestamp=now;
 
   if(document.hidden){
-    fixedSteps.suspend();
+    suspendVisiblePlay(now);
     lastRenderTimestamp=null;
     frames=[];
     requestAnimationFrame(loop);
@@ -390,7 +420,7 @@ function loop(timestamp){
 
   if(state==='PLAYING'){
     updatePlayTime(now);
-    const playFrame=advanceSimulation(now);
+    const playFrame=rememberPlayFrame(advanceSimulation(now));
     updatePlayTime(now);
     const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
@@ -434,7 +464,7 @@ function syncAudioVisibility(){
   const now=monotonicNow();
   void setAudioActive(!document.hidden);
   if(document.hidden){
-    fixedSteps.suspend();
+    suspendVisiblePlay(now);
     lastRenderTimestamp=null;
     frames=[];
     if(state==='COUNTDOWN'){
@@ -444,12 +474,24 @@ function syncAudioVisibility(){
     return;
   }
 
-  fixedSteps.resume(now);
-  lastRenderTimestamp=now;
-  if(state==='PLAYING'){
-    updatePlayTime(now);
-    if(!tutorialMode&&shouldFinishPlay(world.time))timedInputs.closeBefore(playDeadline);
+  if(state==='PLAYING'&&deadlineSettlementActive){
+    fixedSteps.resume(playDeadline,{shiftTimeline:false});
+  }else{
+    // If the wall-clock deadline passed while hidden, shift the paused
+    // simulation only as far as that deadline. Visible backlog accumulated
+    // before suspension still belongs to the round and must be settled.
+    const resumeAt=state==='PLAYING'&&!tutorialMode&&now>=playDeadline
+      ?playDeadline
+      :now;
+    const hiddenDuration=fixedSteps.resume(resumeAt);
+    if(state==='PLAYING'&&hiddenDuration>0){
+      timedInputs.shiftPendingTimestamps(hiddenDuration,{
+        before:tutorialMode?Number.POSITIVE_INFINITY:playDeadline
+      });
+    }
   }
+  lastRenderTimestamp=now;
+  if(state==='PLAYING')updatePlayTime(now);
 }
 
 world.onReflect=reflection=>playCue(reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT');
@@ -472,7 +514,7 @@ $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('gesturestart',event=>event.preventDefault());
 document.addEventListener('visibilitychange',syncAudioVisibility);
 addEventListener('pagehide',()=>{
-  fixedSteps.suspend();
+  suspendVisiblePlay(monotonicNow());
   lastRenderTimestamp=null;
   frames=[];
   if(state==='COUNTDOWN'){

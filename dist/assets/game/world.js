@@ -240,6 +240,15 @@ export class World{
     for(const beacon of this.beacons)this.commitWaveHit(wave,beacon);
   }
 
+  /**
+   * The round deadline is a third hit-finalization boundary alongside band
+   * exit and wave lifetime. Commit only candidates already observed by the
+   * final fixed step; do not advance wave or beacon physics here.
+   */
+  finalizePendingHits(){
+    for(const wave of this.waves)this.flushWaveHits(wave);
+  }
+
   scoreWave(wave,beaconTargets,{finalize=false}={}){
     for(let beaconIndex=0;beaconIndex<this.beacons.length;beaconIndex++){
       const beacon=this.beacons[beaconIndex];

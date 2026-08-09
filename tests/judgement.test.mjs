@@ -158,6 +158,55 @@ test('a non-perfect candidate commits once in the lifetime-final slice',()=>{
   assert.equal(world.score,23);
 });
 
+test('round finalization commits only observed candidates without advancing physics',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.w=1000;
+  world.h=1000;
+  const beacon={id:'deadline-beacon',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0};
+  world.beacons=[beacon];
+  world.glass=[];
+  world.waves=[];
+  const pending=world.addWave(0,100,0,'direct',{
+    rootTapId:'deadline-root',
+    radius:99,
+    previousRadius:99,
+    speed:165,
+    width:10,
+    age:1
+  });
+  const untouched=world.addWave(0,100,0,'direct',{
+    rootTapId:'untouched-root',
+    radius:1,
+    previousRadius:1,
+    speed:165,
+    width:10,
+    age:0
+  });
+  const hits=[];
+  world.onHit=value=>hits.push(value);
+  world.scoreWave(pending,world.beacons);
+  assert.equal(pending.hitCandidates.get(beacon.id)?.pending,true);
+  assert.equal(untouched.hitCandidates.size,0);
+  const physicalState=world.waves.map(wave=>[wave.waveId,wave.age,wave.radius,wave.previousRadius]);
+  const reflections=world.reflectionEffects.map(effect=>({...effect}));
+
+  world.finalizePendingHits();
+  assert.equal(world.score,23);
+  assert.equal(world.bestHits.get('deadline-root:deadline-beacon')?.pending,false);
+  assert.equal(world.bestHits.has('untouched-root:deadline-beacon'),false);
+  assert.equal(hits.length,1);
+  assert.equal(world.particles.length,14);
+  assert.deepEqual(world.waves.map(wave=>[wave.waveId,wave.age,wave.radius,wave.previousRadius]),physicalState);
+  assert.deepEqual(world.reflectionEffects,reflections);
+
+  world.finalizePendingHits();
+  assert.equal(world.score,23);
+  assert.equal(hits.length,1);
+  assert.equal(world.particles.length,14);
+  assert.deepEqual(world.waves.map(wave=>[wave.waveId,wave.age,wave.radius,wave.previousRadius]),physicalState);
+});
+
 test('equal-score representatives use depth, error, then wave id without side effects',()=>{
   const world=new World({random:()=>.5});
   world.reset();
