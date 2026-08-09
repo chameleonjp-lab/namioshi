@@ -1,71 +1,86 @@
-# CURRENT_TASK: namioshi Phase 5A Supabaseと旧ランキング監査
+# CURRENT_TASK: namioshi 物理・得点整合性の回復
 
 ## 今回の目的
 
-Pull Request #40でPhase 4Cの固定更新、単調増加時計、画面休止時の停止と復帰をmainへ統合した。
+敵対的検証で再現した、有限反射経路、寿命後得点、6回未満の入力拒否、不可視得点、ビーコン速度暴走を同じ変更提案で直す。
 
-次に、ランキングを再開する前に、正式なSupabase接続先、RPC、`namioshi`登録、旧記録、権限、v3と旧版の分離方法を読み取り専用で監査する。
+対応の実行順と停止条件は[`docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md`](docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md)で管理する。ゲーム仕様の唯一の正本は`docs/SPEC_v3.md`である。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `85c2deb1d8cd6df0af7e820defdc97a529e2d06f`（Pull Request #40マージ後）
-- Pull Request #37、#38、#39、#40はmainへマージ済み
-- 変更はmainへ直接入れず、下書きPull Requestで提出する
-- 本番スコアを送信しない
-- SQL、RPC、RLS、権限、Supabaseデータを変更しない
-- ランキング送信の有効化を行わない
+- 基準コミット: `c9ddd8e468af347567a5628de7f658aa91f7824b`
+- Pull Request #41までmainへ統合済み
+- G4「物理と得点」は敵対的検証により再開・不合格
+- G5「ランキング」はG4再合格まで停止
+- mainへ直接変更せず、Draft Pull Requestで提出する
 
-## 今回のPhase 5A監査
+## 今回の変更
 
-- `docs/SUPABASE_AUDIT_v3.md`を作成する
-- Supabase projectの正式URLと状態を確認する
-- Publishable keyの種類と有効状態を確認する。実値は文書へ書かない
-- `submit_score`とランキング取得RPCの引数、戻り値、実行権限、`SECURITY DEFINER`を確認する
-- `public.games`の`namioshi`登録を確認する
-- `score_runs`、`game_scores`、`game_play_events`の`namioshi`件数と`client_version`を確認する
-- RLS、直接INSERT権限、RPC実行権限を確認する
-- GitHub mainのSupabase URL、ヘッダー、送信停止状態と照合する
+- 反射波へ有限面と反射順序を記録し、得点前に逆順で経路を検査する
+- 経路情報のない反射波を得点対象から外す
+- 壁とガラスの端点を実距離で判定し、支持線で鏡像を作る
+- 同じ経路で同一面を再使用しない
+- 波を残り寿命までしか進めない
+- 8面・深度2・6入力から構造上限390波を導出する
+- HIGH、MID、LOWの全品質で得点波を前景表示する
+- ビーコンの基準運動と命中の一時揺れを分離する
+- 敵対的再現を回帰試験へ固定する
+- `src`から`dist`を再生成する
+- 計画、現状、確認表を現在の事実へ同期する
 
-## 監査で確認した事実
+## 変更しない範囲
 
-- 正式Project URLは`https://mlpnjgezrnhdxsxolyzj.supabase.co`で、状態は`ACTIVE_HEALTHY`
-- 現行`src/config.js`のURLは正式Project URLと一致しない
-- `public.games`に`namioshi`は登録されていない
-- `namioshi`の`score_runs`、`game_scores`、`game_play_events`はすべて0件
-- `client_version`は`score_runs`へ保存されるが、既存ランキングRPCは`game_scores`を読むため、v3と旧版を絞り込まない
-- 直接INSERT権限は`anon`にない。productionへのINSERT試験は行っていない
-- `RANKING_SERVICE_STATE.enabled`は`false`のままである
-- 現行クライアントには`Authorization: Bearer`が残っている
+- 30秒、6入力、得点基礎値、公式配置
+- 入力時刻キュー、固定stepの未処理時間、締切精算
+- WebGL context lost/restoredとcanvas交換
+- Supabase URL、key、SQL、RPC、RLS、`public.games`
+- ランキング有効化と本番送信
+- 本番公開、Ready化、マージ
 
-## 自動・読み取り確認
+## 自動確認
 
-- Supabase projectメタデータ、Project URL、Publishable key一覧を読み取った
-- publicスキーマのテーブル、列、RLS状態、行数を読み取った
-- RPC定義、引数、戻り値、権限、関数本体を読み取った
-- `pg_policies`、テーブル権限、関数権限を読み取った
-- 本番スコア送信は0件
+- 基準main: 既存50件成功
+- 現在: 67件成功
+- 既知のbeacon-b GLASS 168点を拒否
+- 有効な有限ガラス反射を維持
+- 採用した反射得点の全交点が有限区間内
+- 経路情報のない反射波は得点しない
+- 壁とガラスの端点で有効な有限経路を維持
+- 早い無効接触の先にある有効な二面経路を欠落させない
+- 同じ固定step内の二面反射を接触半径から続けて処理する
+- 新規子波の生成時点ですでに仮想円内にある面も、後続の有限経路候補から落とさない
+- 1秒間隔の6入力を受理し、7回目だけ拒否
+- 3秒を越えた得点なし
+- 寿命をまたぐstepでは移動中ビーコンを寿命時刻で照合し、180step後に波を残さない
+- 寿命最終slice内の正当な反射・得点を接触時刻で処理する
+- 全品質の前景描画から波数による切り捨てを削除
+- ビーコンの一時速度・変位を上限内にし、基準軌道へ復帰
 
-## 未確認
+## 未確認・未解決
 
-- コード内Publishable keyと正式Project URLの完全な組み合わせ確認
-- `submit_score`のHTTP実RPC疎通
-- `public.games`への登録内容とSQL変更案
-- v3と旧版を分離するランキング取得方法のユーザー承認
-- Phase 5Bの1プレイ1送信、公式限定、タイムアウト、失敗時の結果保持
+- GitHub ActionsのNode.js 18、20、22
+- iPhone 17 Proで6入力と最大波場面
+- Node診断の6同時入力はピーク318波。iPhone描画性能は未確認
+- 20/30/60/120Hzの時刻付き入力結果は不一致を再現済み・未解決
+- 29.9秒から30.05秒の締切跨ぎは物理step欠落を再現済み・未解決
+- WebGL消失とCanvas切替
+- 反射波の全円表示を有効な弧へ直す工程
+- 親の有限経路で到達不能な最初の接触に出る反射光・音通知を、有効弧生成と一緒に直す工程
+- 命中精度を最接近時に決める方法
+- 公式配置と得点分布の再検証
+- 理論上限6480点は自動試験済み。修正後の実到達上限は未確認
+- 長時間、反復、発熱
 
 ## 後続停止条件
 
-URLの対応、`namioshi`の登録、v3と旧版の分離方法が確定するまで、ランキング送信を有効にしない。SQL変更が必要な場合は、SQL案を別途提示し、ユーザー承認前には実行しない。
+まとまりAの自動検査とiPhone短期確認が終わるまで、時刻修正へ進まない。A、B、Cがすべて合格するまでランキング作業を再開しない。
 
-## 次の作業
+## 次に渡す担当
 
-1. この監査文書を独立レビューし、監査事実と推測が混ざっていないことを確認する。
-2. ユーザー承認後に、URL、`public.games`登録、v3と旧版の分離方法を確定する。
-3. Phase 5Bで送信クライアントを実装する。
-4. Phase 5Cでサーバー側の上限・version検査と実RPC疎通を確認する。
+実装担当とは別の独立コードレビューへ渡す。必須修正がなく、GitHub Actionsが成功した後、ユーザーのiPhone短期確認へ渡す。
 
 ## 戻し方
 
-このPull Requestをrevertする。コード、Supabaseスキーマ、ランキングデータ、本番送信状態は変更していない。
+この変更提案をrevertする。Supabase、本番データ、SQL、ランキング状態は変更していない。
