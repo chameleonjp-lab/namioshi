@@ -272,22 +272,29 @@
 
 ## 自動確認: ランキング
 
-- [未確認] game_slugはnamioshi
-- [未確認] 共通submit_scoreを使用
-- [未確認] apikeyヘッダー
-- [未確認] Authorization: Bearerなし
-- [未確認] secret keyなし
-- [済] service_role keyなし
-- [未確認] 4項目本文
-- [未確認] CLIENT_VERSION
+- [済] ソースの`game_slug`は`namioshi`
+- [済] 共通`submit_score` RPCを使用する送信関数が存在する
+- [済] `apikey`ヘッダーを設定している
+- [失敗] `Authorization: Bearer`が残っている。Phase 5Bで削除する
+- [済] ソースにsecret keyがない
+- [済] ソースにservice_role keyがない
+- [済] `p_display_name`、`p_game_slug`、`p_score`、`p_client_version`の4項目を本文へ入れている
+- [済] `CLIENT_VERSION`を定義し、RPC側も`client_version`を保存する
 - [未確認] 公式だけ送信
 - [未確認] 1プレイ1送信
 - [未確認] playId
 - [未確認] タイムアウト
-- [済] 送信失敗でも結果画面が使える
+- [未確認] 送信失敗でも結果画面が使える送信経路
 - [未確認] 旧スコアとv3スコアを混ぜない
 - [未確認] 実RPC疎通を推測で済にしない
-- [未確認] public.games登録を推測で済にしない
+- [失敗] `public.games`に`namioshi`の登録がない
+
+- [済] Phase 5A監査を実施し、正式Project URL、RPC、RLS、権限、`namioshi`の既存件数を確認した
+- [済] `namioshi`の`score_runs`、`game_scores`、`game_play_events`は0件
+- [未確認] コード内Publishable keyと正式Project URLの完全な組み合わせ
+- [未確認] v3と旧版を分離する方法のユーザー承認
+
+監査記録: [`docs/SUPABASE_AUDIT_v3.md`](SUPABASE_AUDIT_v3.md)
 
 ## 自動確認: 描画と性能
 
