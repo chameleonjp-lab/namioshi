@@ -15,6 +15,7 @@ v3は段階的に実装しています。文書があることだけを完成の
 - 公式配置の選定記録: [`docs/OFFICIAL_LAYOUT_SELECTION_v3.md`](docs/OFFICIAL_LAYOUT_SELECTION_v3.md)
 - Phase 3Cマージ後監査: [`docs/POST_PHASE3C_AUDIT.md`](docs/POST_PHASE3C_AUDIT.md)
 - レビュー・公開確認: [`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)
+- Supabase Phase 5A監査: [`docs/SUPABASE_AUDIT_v3.md`](docs/SUPABASE_AUDIT_v3.md)
 
 v3では3MBを受け入れ上限にしません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を優先します。複数ファイルとES Modulesを正式に使用します。
 
@@ -83,6 +84,6 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 ## 確認状態
 
-Phase 1と1.1で画面状態と共有処理を修正し、Phase 2A・2BでJavaScript正本、再現可能なbuild、依存0件、容量報告専用化を完了しました。Phase 3Aの固定論理座標、Phase 3Bの候補分析、Phase 3B.1の判断資料、Phase 3Cの候補C固定と練習分離を実装済みです。Phase 3C follow-upのPull Request #29に加え、Pull Request #31〜#35で初期無音の任意効果音、判定別の音、音声の停止と復帰、反射元の二重通知防止、10秒未満の早期終了防止をmainへ反映しました。Pull Request #37で、30秒・6タップ、初回の時間制限なし案内、反射板の視覚説明、最高候補だけを採用する得点台帳、結果画面の得点内訳を追加し、mainへマージしました。Pull Request #39でPhase 4Aの有限線分・親子波・寿命継承をmainへマージしました。現在はPhase 4Cの固定更新、単調増加時計、画面休止時の停止と復帰を実装中です。
+Phase 1と1.1で画面状態と共有処理を修正し、Phase 2A・2BでJavaScript正本、再現可能なbuild、依存0件、容量報告専用化を完了しました。Phase 3Aの固定論理座標、Phase 3Bの候補分析、Phase 3B.1の判断資料、Phase 3Cの候補C固定と練習分離を実装済みです。Phase 3C follow-upのPull Request #29に加え、Pull Request #31〜#35で初期無音の任意効果音、判定別の音、音声の停止と復帰、反射元の二重通知防止、10秒未満の早期終了防止をmainへ反映しました。Pull Request #37で、30秒・6タップ、初回の時間制限なし案内、反射板の視覚説明、最高候補だけを採用する得点台帳、結果画面の得点内訳を追加し、mainへマージしました。Pull Request #39でPhase 4Aの有限線分・親子波・寿命継承をmainへマージし、Pull Request #40でPhase 4Cの固定更新、単調増加時計、画面休止時の停止と復帰をmainへ統合しました。現在はPhase 5AのSupabaseと旧ランキング監査を進めています。
 
 320×568相当のローカルChromiumでは、rootと`dist`の両方で公式・練習・公式の往復、名前保持、不透明な開始前画面、ランキング通信0件を確認しました。自動試験では、30秒の終了条件、6タップ、最高候補への差し替え、得点内訳、有限線分、端点距離、親子波の寿命、反射エネルギー、波IDと24波上限、固定更新の60Hz/120Hz一致、長時間停止後の累積破棄、単調増加時計を確認しています。一方、iPad、Codeberg Pages、実Supabase通信、iPhoneの実機休止復帰、WebGLコンテキスト復帰は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
