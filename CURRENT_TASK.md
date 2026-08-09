@@ -12,6 +12,8 @@
 - 基準ブランチ: `main`
 - 基準コミット: `c9ddd8e468af347567a5628de7f658aa91f7824b`
 - Pull Request #41までmainへ統合済み
+- 対応ブランチ: `agent/physics-score-integrity-recovery`
+- Draft Pull Request: #42
 - G4「物理と得点」は敵対的検証により再開・不合格
 - G5「ランキング」はG4再合格まで停止
 - mainへ直接変更せず、Draft Pull Requestで提出する
@@ -43,6 +45,7 @@
 
 - 基準main: 既存50件成功
 - 現在: 67件成功
+- GitHub Actions Run #59: Node.js 18、20、22を含め成功
 - 既知のbeacon-b GLASS 168点を拒否
 - 有効な有限ガラス反射を維持
 - 採用した反射得点の全交点が有限区間内
@@ -60,7 +63,6 @@
 
 ## 未確認・未解決
 
-- GitHub ActionsのNode.js 18、20、22
 - iPhone 17 Proで6入力と最大波場面
 - Node診断の6同時入力はピーク318波。iPhone描画性能は未確認
 - 20/30/60/120Hzの時刻付き入力結果は不一致を再現済み・未解決
@@ -79,7 +81,7 @@
 
 ## 次に渡す担当
 
-実装担当とは別の独立コードレビューへ渡す。必須修正がなく、GitHub Actionsが成功した後、ユーザーのiPhone短期確認へ渡す。
+実装担当とは別の独立コードレビューは合格し、GitHub Actionsも成功した。DraftのままユーザーのiPhone短期確認へ渡す。
 
 ## 戻し方
 

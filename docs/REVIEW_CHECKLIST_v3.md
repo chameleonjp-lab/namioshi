@@ -263,7 +263,7 @@
 - [済] PLAYING中の画面非表示で物理更新と描画を止め、復帰時に締切を再判定するコードを確認した
 - [未確認] iPhone Safariでバックグラウンド移動と復帰を10回繰り返す
 - [未確認] iPhone Safariで締切超過後の復帰を確認する
-- [未確認] GitHub ActionsのNode.js 18、20、22で物理・得点整合性の67件を確認する
+- [済] Draft Pull Request #42のGitHub Actions Run #59で、Node.js 18、20、22の物理・得点整合性67件を確認した
 - [未確認] iPhone 17 Proで6入力、既知の幽霊反射、最大波場面を確認する
 
 ## 自動確認: 画面
