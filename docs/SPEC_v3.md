@@ -54,9 +54,11 @@
 
 ## 波の識別
 
-各プレイヤータップに `rootTapId` を付ける。各波は最低限、`waveId`、`rootTapId`、`parentWaveId`、`originX`、`originY`、`radius`、`width`、`speed`、`age`、`lifetime`、`energy`、`reflectionDepth`、`reflectedBy`、`surfaceHistory`、`hitCandidates` を持つ。
+各プレイヤータップに `rootTapId` を付ける。各波は最低限、`waveId`、`rootTapId`、`parentWaveId`、`originX`、`originY`、`previousRadius`、`radius`、`width`、`speed`、`age`、`lifetime`、`energy`、`reflectionDepth`、`reflectedBy`、`surfaceHistory`、`hitCandidates` を持つ。
 
 反射回数は最大2回とする。同じ波が、反射元の壁またはガラス片で次のフレームに即座に再反射しないようにする。反射元を `surfaceHistory` へ記録し、十分な移動距離を消費するまで同じ面で再反射させない。
+
+同じ面の再判定距離は18論理ピクセルとする。波の半径が前回接触時から18論理ピクセル未満しか進んでいない間は、同じ面を再判定しない。
 
 ## 反射とエネルギー
 

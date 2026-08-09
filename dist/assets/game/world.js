@@ -1,4 +1,15 @@
-import {LOGICAL_HEIGHT,LOGICAL_WIDTH,MAX_TAPS,PLAY_SECONDS} from '../config.js';
+import {
+  GLASS_REFLECTION_ENERGY,
+  LOGICAL_HEIGHT,
+  LOGICAL_WIDTH,
+  MAX_REFLECTIONS,
+  MAX_TAPS,
+  MAX_WAVES,
+  PLAY_SECONDS,
+  REFLECTION_SURFACE_CLEARANCE,
+  WALL_REFLECTION_ENERGY,
+  WAVE_LIFETIME
+} from '../config.js';
 import {judgementFromPrecision} from './judgement.js';
 import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
@@ -6,7 +17,6 @@ import {candidateScore,scoreCategory} from './scoring.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const OFFICIAL_RANDOM_SEED=0xfc71e804;
-let waveSequence=1;
 
 function seededRandom(seed){
   let state=seed>>>0;
@@ -34,6 +44,7 @@ export class World{
   particles=[];
   reflectionEffects=[];
   bestHits=new Map();
+  waveSequence=1;
   onHit=()=>{};
   onReflect=()=>{};
 
@@ -66,39 +77,66 @@ export class World{
     this.particles=[];
     this.reflectionEffects=[];
     this.bestHits=new Map();
+    this.waveSequence=1;
     this.beacons=layout.beacons;
     this.glass=layout.glass;
   }
 
   tap(x,y){
     if(this.taps>=MAX_TAPS)return false;
-    this.taps++;
-    this.addWave(x,y,0,'direct',{rootTapId:`tap-${this.taps}`});
+    const tapNumber=this.taps+1;
+    const wave=this.addWave(x,y,0,'direct',{rootTapId:`tap-${tapNumber}`});
+    if(!wave)return false;
+    this.taps=tapNumber;
     return true;
   }
 
-  addWave(x,y,reflections,kind,{rootTapId=null,parentWaveId=null,surfaceHistory=[]}={}){
+  addWave(x,y,reflections,kind,{
+    rootTapId=null,
+    parentWaveId=null,
+    surfaceHistory=[],
+    surfaceCooldowns=new Map(),
+    edges=[],
+    glass=[],
+    radius=1,
+    width=9,
+    speed=165,
+    age=0,
+    lifetime=WAVE_LIFETIME,
+    energy=1,
+    reflectedBy=null,
+    previousRadius=radius
+  }={}){
+    if(this.waves.length>=MAX_WAVES)return null;
+    const id=this.waveSequence++;
+    const reflectionDepth=Math.max(0,Number.isFinite(reflections)?reflections:0);
     const wave={
-      id:waveSequence++,
-      rootTapId:rootTapId??`manual-${waveSequence}`,
+      id,
+      waveId:id,
+      rootTapId:rootTapId??`manual-${id}`,
       parentWaveId,
       originX:x,
       originY:y,
-      radius:1,
-      width:9,
-      speed:165,
-      age:0,
-      life:3,
-      reflections,
+      previousRadius,
+      radius,
+      width,
+      speed,
+      age,
+      lifetime,
+      life:lifetime,
+      energy,
+      reflections:reflectionDepth,
+      reflectionDepth,
       kind,
+      reflectedBy,
       hit:new Set(),
-      edges:new Set(),
-      glass:new Set(),
+      edges:new Set(edges),
+      glass:new Set(glass),
       surfaceHistory:new Set(surfaceHistory),
+      surfaceCooldowns:new Map(surfaceCooldowns),
       hitCandidates:new Map()
     };
     this.waves.push(wave);
-    while(this.waves.length>24)this.waves.shift();
     return wave;
   }
 
@@ -114,9 +152,11 @@ export class World{
 
     for(let index=this.waves.length-1;index>=0;index--){
       const wave=this.waves[index];
+      const previousRadius=wave.radius;
+      wave.previousRadius=previousRadius;
       wave.age+=dt;
       wave.radius+=wave.speed*dt;
-      this.reflect(wave);
+      this.reflect(wave,previousRadius);
       for(const beacon of this.beacons){
         if(wave.hit.has(beacon.id))continue;
         const distance=Math.hypot(wave.originX-beacon.x,wave.originY-beacon.y);
@@ -152,7 +192,7 @@ export class World{
           }
         }
       }
-      if(wave.age>wave.life)this.waves.splice(index,1);
+      if(wave.age>wave.lifetime)this.waves.splice(index,1);
     }
 
     for(let index=this.particles.length-1;index>=0;index--){
@@ -170,65 +210,155 @@ export class World{
     }
   }
 
-  reflect(wave){
-    if(wave.reflections>=2)return;
+  surfaceIsCooling(wave,surfaceKey){
+    const contactRadius=wave.surfaceCooldowns?.get(surfaceKey);
+    return Number.isFinite(contactRadius)&&wave.radius-contactRadius<REFLECTION_SURFACE_CLEARANCE;
+  }
+
+  crossedRadius(startRadius,endRadius,targetRadius){
+    const epsilon=1e-7;
+    return targetRadius>epsilon&&startRadius-epsilon<=targetRadius&&endRadius+epsilon>=targetRadius;
+  }
+
+  createReflection(wave,{
+    kind,
+    surfaceKey,
+    surfaceId,
+    originX,
+    originY,
+    contactX,
+    contactY,
+    normalX,
+    normalY,
+    energyMultiplier
+  }){
+    if(this.waves.length>=MAX_WAVES)return null;
+    const surfaceHistory=new Set(wave.surfaceHistory);
+    surfaceHistory.add(surfaceKey);
+    const surfaceCooldowns=new Map(wave.surfaceCooldowns);
+    surfaceCooldowns.set(surfaceKey,wave.radius);
+    const edges=new Set(wave.edges);
+    const glass=new Set(wave.glass);
+    if(kind==='wall')edges.add(surfaceId);
+    else glass.add(surfaceId);
+    const depth=(wave.reflectionDepth??wave.reflections??0)+1;
+    const reflected=this.addWave(originX,originY,depth,kind,{
+      rootTapId:wave.rootTapId,
+      parentWaveId:wave.waveId??wave.id,
+      surfaceHistory,
+      surfaceCooldowns,
+      edges,
+      glass,
+      radius:wave.radius,
+      width:wave.width,
+      speed:wave.speed,
+      age:wave.age,
+      lifetime:wave.lifetime,
+      energy:wave.energy*energyMultiplier,
+      reflectedBy:surfaceKey
+    });
+    if(!reflected)return null;
+    wave.surfaceHistory.add(surfaceKey);
+    wave.surfaceCooldowns.set(surfaceKey,wave.radius);
+    if(kind==='wall')wave.edges.add(surfaceId);
+    else wave.glass.add(surfaceId);
+    this.addReflectionEffect(contactX,contactY,normalX,normalY,kind);
+    this.onReflect({
+      kind,
+      reflections:reflected.reflections,
+      reflectionDepth:reflected.reflectionDepth,
+      waveId:reflected.id,
+      parentWaveId:wave.id,
+      surfaceKey,
+      x:contactX,
+      y:contactY,
+      normalX,
+      normalY,
+      energy:reflected.energy
+    });
+    return reflected;
+  }
+
+  reflect(wave,previousRadius=null){
+    const depth=wave.reflectionDepth??wave.reflections??0;
+    if(depth>=MAX_REFLECTIONS)return;
+    const startRadius=Number.isFinite(previousRadius)
+      ?previousRadius
+      :Number.isFinite(wave.previousRadius)
+        ?wave.previousRadius
+        :Math.max(0,wave.radius-(wave.speed||0)/60);
+    const endRadius=wave.radius;
     const sides=[
-      ['l',-wave.originX,wave.originY],
-      ['r',2*this.w-wave.originX,wave.originY],
-      ['t',wave.originX,-wave.originY],
-      ['b',wave.originX,2*this.h-wave.originY]
+      {side:'l',distance:Math.abs(wave.originX),along:wave.originY,originX:-wave.originX,originY:wave.originY,normalX:1,normalY:0,contactX:0,contactY:wave.originY},
+      {side:'r',distance:Math.abs(this.w-wave.originX),along:wave.originY,originX:2*this.w-wave.originX,originY:wave.originY,normalX:-1,normalY:0,contactX:this.w,contactY:wave.originY},
+      {side:'t',distance:Math.abs(wave.originY),along:wave.originX,originX:wave.originX,originY:-wave.originY,normalX:0,normalY:1,contactX:wave.originX,contactY:0},
+      {side:'b',distance:Math.abs(this.h-wave.originY),along:wave.originX,originX:wave.originX,originY:2*this.h-wave.originY,normalX:0,normalY:-1,contactX:wave.originX,contactY:this.h}
     ];
-    for(const[side,x,y]of sides){
-      const distance=side==='l'?wave.originX:side==='r'?this.w-wave.originX:side==='t'?wave.originY:this.h-wave.originY;
-      if(wave.radius>distance&&!wave.edges.has(side)){
-        wave.edges.add(side);
-        const normalX=side==='l'?1:side==='r'?-1:0;
-        const normalY=side==='t'?1:side==='b'?-1:0;
-        const contactX=side==='l'?0:side==='r'?this.w:clamp(wave.originX,0,this.w);
-        const contactY=side==='t'?0:side==='b'?this.h:clamp(wave.originY,0,this.h);
-        const surfaceKey=`wall:${side}`;
-        wave.surfaceHistory.add(surfaceKey);
-        const reflected=this.addWave(x,y,wave.reflections+1,'wall',{
-          rootTapId:wave.rootTapId,
-          parentWaveId:wave.id,
-          surfaceHistory:wave.surfaceHistory
-        });
-        reflected.edges.add(side);
-        reflected.surfaceHistory.add(surfaceKey);
-        this.addReflectionEffect(contactX,contactY,normalX,normalY,'wall');
-        this.onReflect({kind:'wall',reflections:reflected.reflections,x:contactX,y:contactY,normalX,normalY});
-      }
+    for(const side of sides){
+      const surfaceKey=`wall:${side.side}`;
+      const withinSegment=side.along>=0&&side.along<=((side.side==='l'||side.side==='r')?this.h:this.w);
+      if(!withinSegment||!this.crossedRadius(startRadius,endRadius,side.distance)||this.surfaceIsCooling(wave,surfaceKey))continue;
+      this.createReflection(wave,{
+        kind:'wall',
+        surfaceKey,
+        surfaceId:side.side,
+        originX:side.originX,
+        originY:side.originY,
+        contactX:side.contactX,
+        contactY:side.contactY,
+        normalX:side.normalX,
+        normalY:side.normalY,
+        energyMultiplier:WALL_REFLECTION_ENERGY
+      });
     }
 
     for(const piece of this.glass){
-      if(wave.glass.has(piece.id))continue;
       const vx=piece.x2-piece.x1;
       const vy=piece.y2-piece.y1;
       const lengthSquared=vx*vx+vy*vy;
-      const position=clamp(((wave.originX-piece.x1)*vx+(wave.originY-piece.y1)*vy)/lengthSquared,0,1);
-      const pointX=piece.x1+vx*position;
-      const pointY=piece.y1+vy*position;
-      const perpendicular=(wave.originX-pointX)*piece.nx+(wave.originY-pointY)*piece.ny;
-      if(Math.abs(Math.abs(perpendicular)-wave.radius)<9){
-        wave.glass.add(piece.id);
-        const surfaceKey=`glass:${piece.id}`;
-        wave.surfaceHistory.add(surfaceKey);
-        const reflected=this.addWave(
-          wave.originX-2*perpendicular*piece.nx,
-          wave.originY-2*perpendicular*piece.ny,
-          wave.reflections+1,
-          'glass',
-          {
-            rootTapId:wave.rootTapId,
-            parentWaveId:wave.id,
-            surfaceHistory:wave.surfaceHistory
-          }
-        );
-        reflected.glass.add(piece.id);
-        reflected.surfaceHistory.add(surfaceKey);
-        this.addReflectionEffect(pointX,pointY,piece.nx,piece.ny,'glass');
-        this.onReflect({kind:'glass',reflections:reflected.reflections,x:pointX,y:pointY,normalX:piece.nx,normalY:piece.ny});
+      if(lengthSquared<=0)continue;
+      const segmentLength=Math.sqrt(lengthSquared);
+      const position=((wave.originX-piece.x1)*vx+(wave.originY-piece.y1)*vy)/lengthSquared;
+      let pointX;
+      let pointY;
+      let normalX;
+      let normalY;
+      let distance;
+      if(position>=0&&position<=1){
+        pointX=piece.x1+vx*position;
+        pointY=piece.y1+vy*position;
+        const rawNormalX=Number.isFinite(piece.nx)?piece.nx:-vy/segmentLength;
+        const rawNormalY=Number.isFinite(piece.ny)?piece.ny:vx/segmentLength;
+        const normalLength=Math.hypot(rawNormalX,rawNormalY)||1;
+        normalX=rawNormalX/normalLength;
+        normalY=rawNormalY/normalLength;
+        distance=Math.abs((wave.originX-pointX)*normalX+(wave.originY-pointY)*normalY);
+      }else{
+        const endpoint=position<0?[piece.x1,piece.y1]:[piece.x2,piece.y2];
+        pointX=endpoint[0];
+        pointY=endpoint[1];
+        const dx=wave.originX-pointX;
+        const dy=wave.originY-pointY;
+        distance=Math.hypot(dx,dy);
+        if(distance<=1e-7)continue;
+        normalX=dx/distance;
+        normalY=dy/distance;
       }
+      const perpendicular=(wave.originX-pointX)*normalX+(wave.originY-pointY)*normalY;
+      const surfaceKey=`glass:${piece.id}`;
+      if(!this.crossedRadius(startRadius,endRadius,distance)||this.surfaceIsCooling(wave,surfaceKey))continue;
+      this.createReflection(wave,{
+        kind:'glass',
+        surfaceKey,
+        surfaceId:piece.id,
+        originX:wave.originX-2*perpendicular*normalX,
+        originY:wave.originY-2*perpendicular*normalY,
+        contactX:pointX,
+        contactY:pointY,
+        normalX,
+        normalY,
+        energyMultiplier:GLASS_REFLECTION_ENERGY
+      });
     }
   }
 

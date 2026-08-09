@@ -73,6 +73,32 @@ test('a reflected wave does not report its source wall twice',()=>{
   assert.equal(reflected.edges.has('l'),true);
 });
 
+test('reflected waves inherit the parent timing and lose reflection energy',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const root=world.addWave(10,200,0,'direct',{rootTapId:'root-timing'});
+  root.radius=11;
+  root.age=1.25;
+  root.energy=1;
+  const reflections=[];
+  world.onReflect=value=>reflections.push(value);
+
+  world.reflect(root);
+  const child=world.waves.at(-1);
+
+  assert.equal(child.radius,root.radius);
+  assert.equal(child.age,root.age);
+  assert.equal(child.lifetime,root.lifetime);
+  assert.equal(child.life,root.life);
+  assert.equal(child.energy,.72);
+  assert.equal(child.reflectionDepth,1);
+  assert.equal(child.reflectedBy,'wall:l');
+  assert.equal(reflections[0].waveId,child.id);
+});
+
 test('a reflected wave does not report its source glass twice',()=>{
   const world=new World({random:()=>.5});
   world.reset();
@@ -93,6 +119,42 @@ test('a reflected wave does not report its source glass twice',()=>{
   assert.equal(reflected.glass.has('test-glass'),true);
 });
 
+test('finite glass segments do not reflect from their extension',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.waves=[];
+  world.glass=[{id:'short-glass',x1:100,y1:0,x2:100,y2:40,nx:1,ny:0}];
+  const root=world.addWave(80,100,0,'direct');
+  root.radius=20;
+  const reflections=[];
+  world.onReflect=value=>reflections.push(value);
+
+  world.reflect(root);
+
+  assert.equal(reflections.length,0);
+  assert.equal(world.waves.length,1);
+});
+
+test('finite glass segments reflect at an endpoint only after the endpoint distance is reached',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.waves=[];
+  world.glass=[{id:'short-glass',x1:100,y1:0,x2:100,y2:40,nx:1,ny:0}];
+  const root=world.addWave(80,100,0,'direct');
+  root.radius=64;
+  const reflections=[];
+  world.onReflect=value=>reflections.push(value);
+
+  world.reflect(root);
+
+  assert.equal(reflections.length,1);
+  assert.equal(reflections[0].kind,'glass');
+  assert.equal(reflections[0].x,100);
+  assert.equal(reflections[0].y,40);
+});
+
 test('reflected waves keep their root, parent, and source surface history',()=>{
   const world=new World({random:()=>.5});
   world.reset();
@@ -108,6 +170,53 @@ test('reflected waves keep their root, parent, and source surface history',()=>{
   assert.equal(child.rootTapId,'root-identity');
   assert.equal(child.parentWaveId,root.id);
   assert.equal(child.surfaceHistory.has('wall:l'),true);
+});
+
+test('reset restarts wave IDs inside the world',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const first=world.addWave(100,100,0,'direct');
+  assert.equal(first.id,1);
+  world.reset();
+  const second=world.addWave(100,100,0,'direct');
+  assert.equal(second.id,1);
+});
+
+test('wave capacity rejects a new wave without shifting existing waves',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.waves=[];
+  const waves=Array.from({length:24},(_,index)=>world.addWave(index,100,0,'direct'));
+  const ids=waves.map(wave=>wave.id);
+  assert.equal(world.addWave(200,100,0,'direct'),null);
+  assert.deepEqual(world.waves.map(wave=>wave.id),ids);
+});
+
+test('one accepted tap creates one root wave and reflection depth stops at two',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  assert.equal(world.tap(100,100),true);
+  assert.equal(world.waves.length,1);
+  assert.equal(world.waves[0].parentWaveId,null);
+  assert.equal(world.waves[0].reflectionDepth,0);
+
+  const depthTwo=world.addWave(10,200,2,'wall');
+  depthTwo.radius=11;
+  world.reflect(depthTwo);
+  assert.equal(world.waves.filter(wave=>wave.parentWaveId===depthTwo.waveId).length,0);
+});
+
+test('the reflection surface clearance is measured in logical pixels',async()=>{
+  const {REFLECTION_SURFACE_CLEARANCE}=await import(new URL('../src/config.js',import.meta.url));
+  const world=new World({random:()=>.5});
+  world.reset();
+  const wave=world.addWave(10,200,1,'wall',{surfaceCooldowns:new Map([['wall:l',10]])});
+  wave.radius=10+REFLECTION_SURFACE_CLEARANCE-0.01;
+  assert.equal(world.surfaceIsCooling(wave,'wall:l'),true);
+  wave.radius=10+REFLECTION_SURFACE_CLEARANCE;
+  assert.equal(world.surfaceIsCooling(wave,'wall:l'),false);
 });
 
 test('the same tap and beacon keep only the highest candidate score',()=>{
