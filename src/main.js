@@ -1,7 +1,8 @@
 import {World} from './game/world.js';
-import {shouldFinishPlay} from './game/session.js';
+import {createPlayDeadline,FixedStepRunner,remainingPlaySeconds,shouldFinishPlay} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
+import {PLAY_SECONDS} from './config.js';
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
@@ -112,7 +113,6 @@ let selectedMode=GAME_MODE.OFFICIAL;
 const world=new World();
 const canvas=$('game');
 let view;
-let last=0;
 let frames=[];
 let viewport=createViewport(1,1);
 let lastHudScore=-1;
@@ -122,6 +122,9 @@ let countdownTimer=0;
 let countdownId=0;
 let tutorialMode=false;
 let guideCompletedInMemory=false;
+const fixedSteps=new FixedStepRunner();
+let playDeadline=null;
+let lastRenderTimestamp=null;
 
 const GUIDE_STORAGE_KEY='namioshi.guide.completed';
 
@@ -155,6 +158,24 @@ function clearCountdown(){
     clearTimeout(countdownTimer);
     countdownTimer=0;
   }
+}
+
+function monotonicNow(){
+  return performance.now();
+}
+
+function resetPlayClock(){
+  const start=monotonicNow();
+  fixedSteps.reset(start);
+  playDeadline=tutorialMode?null:createPlayDeadline(start,PLAY_SECONDS);
+}
+
+function updatePlayTime(timestamp){
+  if(tutorialMode){
+    world.time=Number.POSITIVE_INFINITY;
+    return;
+  }
+  world.time=remainingPlaySeconds(playDeadline,timestamp);
 }
 
 function resize(){
@@ -217,6 +238,7 @@ function updateSoundControl(){
 function beginCountdown(){
   if(state==='COUNTDOWN')return;
   clearCountdown();
+  fixedSteps.suspend();
   const id=++countdownId;
   const sequence=[['3',600],['2',600],['1',600],['START',400]];
   let index=0;
@@ -243,7 +265,7 @@ function startGuide(){
   clearCountdown();
   tutorialMode=true;
   world.reset({mode:selectedMode});
-  world.time=Number.POSITIVE_INFINITY;
+  resetPlayClock();
   const presentation=modePresentation(world.mode);
   $('modeHud').textContent=presentation.label+'・案内';
   lastHudScore=-1;
@@ -257,6 +279,8 @@ function leaveGuide(startGame){
   if(state!=='PLAYING'||!tutorialMode)return;
   markGuideCompleted();
   tutorialMode=false;
+  fixedSteps.suspend();
+  playDeadline=null;
   if(startGame)beginCountdown();
   else setState('HOME');
 }
@@ -265,6 +289,7 @@ function play(){
   clearCountdown();
   tutorialMode=false;
   world.reset({mode:selectedMode});
+  resetPlayClock();
   const presentation=modePresentation(world.mode);
   $('modeHud').textContent=presentation.label;
   lastHudScore=-1;
@@ -277,6 +302,9 @@ function play(){
 function finish(){
   if(state!=='PLAYING')return;
   clearCountdown();
+  fixedSteps.suspend();
+  playDeadline=null;
+  world.time=0;
   const presentation=modePresentation(world.mode);
   const policy=rankingPolicy(world.mode);
   setState('RESULT');
@@ -318,16 +346,32 @@ function degrade(average){
 }
 
 function loop(timestamp){
-  const dt=Math.min(.033,(timestamp-last)/1000||0);
-  last=timestamp;
+  const now=Number.isFinite(timestamp)?timestamp:monotonicNow();
+  const frameSeconds=lastRenderTimestamp===null
+    ?0
+    :Math.max(0,(now-lastRenderTimestamp)/1000);
+  lastRenderTimestamp=now;
+
+  if(document.hidden){
+    fixedSteps.suspend();
+    lastRenderTimestamp=null;
+    frames=[];
+    requestAnimationFrame(loop);
+    return;
+  }
+
   if(state==='PLAYING'){
-    world.step(dt,{countTime:!tutorialMode});
+    updatePlayTime(now);
+    if(tutorialMode||!shouldFinishPlay(world.time)){
+      fixedSteps.advance(now,step=>world.step(step,{countTime:false}));
+      updatePlayTime(now);
+    }
     const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
     if(!tutorialMode&&shouldFinishPlay(world.time))finish();
   }
-  view?.render(world,timestamp,quality);
-  frames.push(1/dt);
+  view?.render(world,now,quality);
+  if(frameSeconds>0)frames.push(1/frameSeconds);
   if(frames.length>90){
     degrade(frames.reduce((sum,value)=>sum+value,0)/frames.length);
     frames=[];
@@ -361,7 +405,25 @@ function returnToModeSelection(){
 }
 
 function syncAudioVisibility(){
+  const now=monotonicNow();
   void setAudioActive(!document.hidden);
+  if(document.hidden){
+    fixedSteps.suspend();
+    lastRenderTimestamp=null;
+    frames=[];
+    if(state==='COUNTDOWN'){
+      clearCountdown();
+      setState('HOME');
+    }
+    return;
+  }
+
+  fixedSteps.resume(now);
+  lastRenderTimestamp=now;
+  if(state==='PLAYING'){
+    updatePlayTime(now);
+    if(!tutorialMode&&shouldFinishPlay(world.time))finish();
+  }
 }
 
 world.onReflect=reflection=>playCue(reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT');
@@ -383,7 +445,12 @@ $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
 $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('gesturestart',event=>event.preventDefault());
 document.addEventListener('visibilitychange',syncAudioVisibility);
-addEventListener('pagehide',()=>{void setAudioActive(false)});
+addEventListener('pagehide',()=>{
+  fixedSteps.suspend();
+  lastRenderTimestamp=null;
+  frames=[];
+  void setAudioActive(false);
+});
 addEventListener('pageshow',syncAudioVisibility);
 syncAudioVisibility();
 updateSoundControl();
