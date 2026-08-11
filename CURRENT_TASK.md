@@ -22,7 +22,7 @@ Pull Request #45の回復Cがmainへ統合されたため、回復計画のま�
 - 同じplay IDの同時送信と成功後の再送を拒否し、失敗時だけ明示的な再試行を許可する
 - リクエストを10秒で中断し、応答にはplay IDを付ける
 - Authorization: BearerへPublishable keyを送らず、apikeyだけを使う
-- 結果画面から送信する将来の処理に、現在のplay IDと画面状態を確認する古い応答抑制を入れる
+- 送信結果にplay IDを付け、将来の結果画面統合で古い応答を判定できるようにする（現行mainからは送信を呼ばない）
 - srcからdistを同期する
 
 ## 変更しない範囲
@@ -42,7 +42,7 @@ Pull Request #45の回復Cがmainへ統合されたため、回復計画のま�
 - HTTP失敗後は同じplay IDを明示的に再試行できる
 - 10秒経過時にAbortSignalで中断し、タイムアウトとして扱う
 - リクエストヘッダーにAuthorizationがなく、本文のゲームslugとclient versionが固定される
-- 古いplayの応答は、現在のRESULT画面を書き換えない
+- 送信結果へplay IDを付け、現行mainでは送信を呼ばないことを確認する
 - npm test、npm run build、npm run verify、配置確認、容量報告、差分検査、GitHub Actionsを通す
 
 ## 未確認・保留
