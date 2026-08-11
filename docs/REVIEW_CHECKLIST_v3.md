@@ -393,3 +393,17 @@
 - [済] GitHub Actions Run #73でNode.js 18・20・22が成功した
 - [済] Run #73のnpm test 96/96とverify成功を確認した
 - [済] RPC契約前はmain.jsからランキング送信を呼ばない既存条件を維持した
+
+## 回復D D2 サーバー契約案チェック（2026-08-11）
+
+- [x] `RANKING_SERVICE_STATE.enabled=false`を維持
+- [x] クライアント本文へ `play_id`、rule version、seasonを固定
+- [x] サーバーSQLは未適用の提案ファイルとして分離
+- [x] 既存4引数RPCと共有public記録へ書き込まない設計
+- [x] privateテーブルのRLS、公開ロール権限、SECURITY DEFINERのsearch_pathを確認
+- [x] 同一play_idの冪等性、競合、頻度制限、スコア上限を契約化
+- [x] self-reportedを競技性の証明として扱わないことを文書化
+- [x] ローカル99テスト、build、verify、配置、SVG、サイズ、差分検査を実行
+- [ ] SQLを非本番へ適用して構文・RPC解決・拒否系を確認
+- [ ] 自己申告ランキングか競技版かをユーザーが決定
+- [ ] 本番適用・限定疎通・表示接続をユーザーが明示承認
