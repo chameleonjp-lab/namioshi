@@ -45,6 +45,14 @@ Pull Request #45の回復Cがmainへ統合されたため、回復計画のま�
 - 送信結果へplay IDを付け、現行mainでは送信を呼ばないことを確認する
 - npm test、npm run build、npm run verify、配置確認、容量報告、差分検査、GitHub Actionsを通す
 
+## 検証結果
+
+- ローカルランキング契約試験: 5/5成功
+- GitHub Actions Run #73（ID 31469136374）: Node.js 18・20・22の全ジョブ成功
+- GitHub Actions内のnpm test: 96/96成功
+- GitHub Actions内のverify: 成功
+- src/distのconfig、ranking、main一致を確認
+- 送信関数をmain.jsへ接続しない既存契約を維持
 ## 未確認・保留
 
 - 現在の共通submit_score RPCはp_play_idを受け取る契約へまだ変更していないため、ランキング送信は有効化できない
