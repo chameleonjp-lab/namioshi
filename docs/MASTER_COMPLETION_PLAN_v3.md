@@ -1757,3 +1757,8 @@ Pull Request #45の統合後、ランキングをまだ有効化しないまま�
 現在のDraftでは、公式モード限定、play ID、0〜6480点の整数範囲、名前検査、重複送信防止、10秒中断、apikeyのみのヘッダー、古い結果の画面反映抑制を実装する。Supabase SQL、RPC、RLS、public.games、本番データ、ランキング有効化は変更しない。
 
 p_play_idを含むサーバー側契約、許可version・rule version・season、異常隔離、頻度制限、入力再計算または自己申告表示は未完了である。クライアント側の検査だけでは競技性を証明できないため、サーバー提案とユーザー判断を経るまで公開ランキングを再開しない。
+
+
+## 2.3 回復D第一段階の検証結果（2026-08-11）
+
+Draft Pull Request #46を作成し、GitHub Actions Run #73でNode.js 18・20・22、npm test 96/96、verifyを成功させた。ランキングは未有効化で、Supabase SQL、RPC、RLS、public.games、本番データは変更していない。現行main.jsから送信を呼ばない既存契約も維持した。
