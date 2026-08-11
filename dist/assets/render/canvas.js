@@ -1,7 +1,6 @@
 import {createViewport} from '../game/viewport.js';
 import {QUALITY} from '../config.js';
 import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from './reflection-arcs.js';
-
 export class CanvasView{
   constructor(canvas){
     this.canvas=canvas;
@@ -23,6 +22,37 @@ export class CanvasView{
     return[90,235,255];
   }
 
+  waveVisualWidth(wave){
+    if(wave.reflections>=2)return Math.max(6,wave.width*.90);
+    if(wave.kind==='glass')return Math.max(4,wave.width*.58);
+    if(wave.kind==='wall')return Math.max(4,wave.width*.64);
+    return Math.max(3,wave.width*.46);
+  }
+
+  wavePath(context,wave){
+    context.beginPath();
+    if((wave.reflectionDepth??wave.reflections??0)>0){
+      const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
+      for(let point=0;point<pointCount;point+=4){
+        context.moveTo(this.arcPoints[point],this.arcPoints[point+1]);
+        context.lineTo(this.arcPoints[point+2],this.arcPoints[point+3]);
+      }
+    }else{
+      context.arc(wave.originX,wave.originY,wave.radius,0,Math.PI*2);
+    }
+  }
+
+  strokeWaveBand(context,wave,red,green,blue,alpha,width){
+    this.wavePath(context,wave);
+    context.strokeStyle='rgba('+red+','+green+','+blue+','+Math.min(1,alpha+.20)+')';
+    context.lineWidth=width+4;
+    context.stroke();
+    this.wavePath(context,wave);
+    context.strokeStyle='rgba('+red+','+green+','+blue+','+alpha+')';
+    context.lineWidth=width;
+    context.stroke();
+  }
+
   resize(width,height,quality='MID',viewport=createViewport(width,height)){
     this.quality=quality;
     const dpr=Math.min(devicePixelRatio||1,QUALITY[quality]?.dpr??QUALITY.MID.dpr);
@@ -40,13 +70,28 @@ export class CanvasView{
     const context=this.ctx;
     const viewport=this.viewport;
     context.setTransform(this.dpr,0,0,this.dpr,0,0);
-    context.fillStyle='#020813';
+    const sky=context.createLinearGradient(0,0,0,this.screenHeight);
+    sky.addColorStop(0,'#020813');
+    sky.addColorStop(.52,'#071d31');
+    sky.addColorStop(1,'#01050d');
+    context.fillStyle=sky;
+    context.fillRect(0,0,this.screenWidth,this.screenHeight);
+    const light=context.createRadialGradient(this.screenWidth*.5,this.screenHeight*.34,4,this.screenWidth*.5,this.screenHeight*.34,this.screenWidth*.72);
+    light.addColorStop(0,'rgba(24,144,184,.18)');
+    light.addColorStop(1,'rgba(2,8,19,0)');
+    context.fillStyle=light;
     context.fillRect(0,0,this.screenWidth,this.screenHeight);
     context.strokeStyle='rgba(110,230,255,.035)';
     context.lineWidth=1;
     for(let y=16;y<this.screenHeight;y+=22){
       context.beginPath();
       for(let x=0;x<=this.screenWidth;x+=24)context.lineTo(x,y+Math.sin(x*.025+time*.0015+y)*2);
+      context.stroke();
+    }
+    context.strokeStyle='rgba(184,245,255,.022)';
+    for(let y=27;y<this.screenHeight;y+=34){
+      context.beginPath();
+      for(let x=0;x<=this.screenWidth;x+=30)context.lineTo(x,y+Math.sin(x*.019-time*.001+y)*1.5);
       context.stroke();
     }
 
@@ -59,7 +104,11 @@ export class CanvasView{
 
     const width=world.w;
     const height=world.h;
-    context.fillStyle='#03101f';
+    const surface=context.createRadialGradient(width*.5,height*.34,18,width*.5,height*.48,Math.max(width,height)*.76);
+    surface.addColorStop(0,'#0b3d56');
+    surface.addColorStop(.42,'#05243a');
+    surface.addColorStop(1,'#020b18');
+    context.fillStyle=surface;
     context.fillRect(0,0,width,height);
     context.strokeStyle='rgba(110,230,255,.10)';
     context.lineWidth=1;
@@ -91,6 +140,13 @@ export class CanvasView{
       context.lineTo(midX+glass.nx*10,midY+glass.ny*10);
       context.stroke();
       for(const point of [[glass.x1,glass.y1],[glass.x2,glass.y2]]){
+        context.strokeStyle='rgba(222,205,255,.42)';
+        context.lineWidth=5;
+        context.beginPath();
+        context.arc(point[0],point[1],5,0,Math.PI*2);
+        context.stroke();
+        context.strokeStyle='rgba(255,250,224,.82)';
+        context.lineWidth=1.5;
         context.beginPath();
         context.arc(point[0],point[1],4,0,Math.PI*2);
         context.stroke();
@@ -112,32 +168,35 @@ export class CanvasView{
     }
     for(const wave of world.waves){
       const [red,green,blue]=this.waveStroke(wave);
-      context.strokeStyle=`rgba(${red},${green},${blue},${(1-wave.age/wave.life)*.86})`;
-      context.lineWidth=wave.reflections>=2?4:3;
-      context.beginPath();
-      if((wave.reflectionDepth??wave.reflections??0)>0){
-        const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
-        for(let point=0;point<pointCount;point+=4){
-          context.moveTo(this.arcPoints[point],this.arcPoints[point+1]);
-          context.lineTo(this.arcPoints[point+2],this.arcPoints[point+3]);
-        }
-      }else{
-        context.arc(wave.originX,wave.originY,wave.radius,0,Math.PI*2);
-      }
-      context.stroke();
+      const alpha=Math.max(0,1-wave.age/wave.life)*.78;
+      this.strokeWaveBand(context,wave,red,green,blue,alpha,this.waveVisualWidth(wave));
     }
     for(const beacon of world.beacons){
-      const glow=context.createRadialGradient(beacon.x,beacon.y,2,beacon.x,beacon.y,beacon.radius*3);
-      glow.addColorStop(0,'#ffffe0');
+      const flash=beacon.flash||0;
+      const pulse=.5+.5*Math.sin(time*.004+String(beacon.id).length);
+      const glowRadius=beacon.radius*(3+flash*1.2);
+      const glow=context.createRadialGradient(beacon.x,beacon.y,2,beacon.x,beacon.y,glowRadius);
+      glow.addColorStop(0,'rgba(255,255,224,.94)');
+      glow.addColorStop(.35,'rgba(110,238,255,.38)');
       glow.addColorStop(1,'rgba(80,230,255,0)');
       context.fillStyle=glow;
       context.beginPath();
-      context.arc(beacon.x,beacon.y,beacon.radius*3,0,Math.PI*2);
+      context.arc(beacon.x,beacon.y,glowRadius,0,Math.PI*2);
       context.fill();
+      context.strokeStyle='rgba(145,242,255,'+(.34+pulse*.28+flash*.18)+')';
+      context.lineWidth=2;
+      context.beginPath();
+      context.arc(beacon.x,beacon.y,beacon.radius*(1.35+pulse*.28+flash*.55),0,Math.PI*2);
+      context.stroke();
       context.fillStyle='#eaffff';
       context.beginPath();
-      context.arc(beacon.x,beacon.y,beacon.radius,0,Math.PI*2);
+      context.arc(beacon.x,beacon.y,beacon.radius*(.96+flash*.12),0,Math.PI*2);
       context.fill();
+      context.strokeStyle='rgba(255,250,194,.78)';
+      context.lineWidth=1.5;
+      context.beginPath();
+      context.arc(beacon.x,beacon.y,beacon.radius*1.12,0,Math.PI*2);
+      context.stroke();
     }
     const particleCount=Math.min(QUALITY[quality]?.particles??world.particles.length,world.particles.length);
     for(let index=0;index<particleCount;index++){
