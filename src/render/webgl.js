@@ -1,5 +1,6 @@
 import {LOGICAL_HEIGHT,LOGICAL_WIDTH,QUALITY} from '../config.js';
 import {createViewport} from '../game/viewport.js';
+import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from './reflection-arcs.js';
 
 const MAX_BACKGROUND_WAVES=12;
 const MAX_PARTICLES=90;
@@ -45,6 +46,7 @@ export class WebGLView{
   viewport=createViewport(1,1);
   ring=new Float32Array((SEGMENTS+1)*2);
   circle=new Float32Array((SEGMENTS+2)*2);
+  arcPoints=new Float32Array(REFLECTION_ARC_SEGMENTS*4);
   tmp=new Float32Array(1024);
   quad=new Float32Array([-1,-1,1,-1,-1,1,1,1]);
   waveData=new Float32Array(MAX_BACKGROUND_WAVES*4);
@@ -58,19 +60,30 @@ export class WebGLView{
 
   constructor(canvas){
     this.canvas=canvas;
-    const gl=canvas.getContext('webgl',{alpha:false,antialias:false,powerPreference:'high-performance'})||canvas.getContext('experimental-webgl',{alpha:false});
+    this.initializeContext();
+  }
+
+  initializeContext(){
+    const gl=this.canvas.getContext('webgl',{alpha:false,antialias:false,powerPreference:'high-performance'})||this.canvas.getContext('experimental-webgl',{alpha:false});
     if(!gl)throw Error('WebGL unavailable');
-    this.gl=gl;
-    this.bg=program(gl,backgroundVertex,backgroundFragment);
-    this.color=program(gl,vertex2d,colorFragment);
-    this.point=program(gl,pointVertex,colorFragment);
+    const background=program(gl,backgroundVertex,backgroundFragment);
+    const color=program(gl,vertex2d,colorFragment);
+    const point=program(gl,pointVertex,colorFragment);
     const buffer=gl.createBuffer();
     if(!buffer)throw Error('WebGL buffer unavailable');
+    this.gl=gl;
+    this.bg=background;
+    this.color=color;
+    this.point=point;
     this.buf=buffer;
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
     gl.disable(gl.DEPTH_TEST);
     this.selfTest();
+  }
+
+  restore(){
+    this.initializeContext();
   }
 
   selfTest(){
@@ -192,13 +205,18 @@ export class WebGLView{
       this.drawLine(this.tmp,2,[1,.86,.4,alpha],gl.LINES,2);
     }
     for(const wave of world.waves){
+      const fade=Math.max(0,1-wave.age/wave.life);
+      if((wave.reflectionDepth??wave.reflections??0)>0){
+        const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
+        if(pointCount>0)this.drawLine(this.arcPoints,pointCount/2,this.waveColor(wave,fade),gl.LINES,wave.reflections>=2?3:2);
+        continue;
+      }
       for(let i=0;i<=SEGMENTS;i++){
         const angle=i/SEGMENTS*Math.PI*2;
         const offset=i*2;
         this.ring[offset]=wave.originX+Math.cos(angle)*wave.radius;
         this.ring[offset+1]=wave.originY+Math.sin(angle)*wave.radius;
       }
-      const fade=Math.max(0,1-wave.age/wave.life);
       this.drawLine(this.ring,SEGMENTS+1,this.waveColor(wave,fade),gl.LINE_STRIP,wave.reflections>=2?3:2);
     }
     for(const beacon of world.beacons){

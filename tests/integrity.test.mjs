@@ -134,51 +134,80 @@ test('two finite reflections inside one fixed step are both generated',()=>{
   assert.equal(world.bestHits.get('tap-1:same-step-target')?.category,'double');
 });
 
-test('an early virtual contact keeps a later valid two-surface route',()=>{
+test('an early virtual contact keeps a later valid two-surface route without false feedback',()=>{
   const world=new World({random:()=>.5});
   world.reset();
-  let earlyContactReachable=null;
-  let laterTrace=null;
+  const events=[];
+  const effects=[];
+  const addEffect=world.addReflectionEffect.bind(world);
+  world.addReflectionEffect=(...args)=>{
+    effects.push(args);
+    return addEffect(...args);
+  };
+  let laterChild=null;
   world.onReflect=event=>{
     const parent=world.waves.find(wave=>wave.id===event.parentWaveId);
-    if(parent?.reflectedBy!=='glass:glass-c1'||event.surfaceKey!=='wall:l')return;
-    const child=world.waves.find(wave=>wave.id===event.waveId);
-    earlyContactReachable=world.waveCanReach(parent,event.x,event.y);
-    laterTrace=world.traceWavePath(child,0,275.2);
+    events.push({surfaceKey:event.surfaceKey,parentReflectedBy:parent?.reflectedBy});
   };
   assert.equal(world.tap(0,80),true);
-  for(let step=0;step<180;step++)world.step(1/60);
+  for(let step=0;step<180;step++){
+    world.step(1/60);
+    laterChild=world.waves.find(wave=>
+      wave.reflectedBy==='wall:l'&&
+      wave.reflectionPath?.previous?.surfaceKey==='glass:glass-c1'
+    )||laterChild;
+  }
 
-  assert.equal(earlyContactReachable,false);
-  assert.equal(laterTrace?.valid,true);
+  assert.ok(laterChild);
+  const laterTrace=world.traceWavePath(laterChild,0,275.2);
+  assert.equal(laterTrace.valid,true);
   assert.deepEqual(
-    laterTrace?.intersections.map(intersection=>intersection.surfaceKey),
+    laterTrace.intersections.map(intersection=>intersection.surfaceKey),
     ['wall:l','glass:glass-c1']
   );
+  assert.equal(events.some(event=>(
+    event.parentReflectedBy==='glass:glass-c1'&&event.surfaceKey==='wall:l'
+  )),false);
+  assert.equal(effects.length,events.length);
 });
 
-test('a new child keeps valid routes whose virtual minimum is already behind it',()=>{
+test('a new child keeps valid routes whose virtual minimum is already behind it without false feedback',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   world.beacons=[];
-  let laterTrace=null;
-  let activation=null;
+  const events=[];
+  const effects=[];
+  const addEffect=world.addReflectionEffect.bind(world);
+  world.addReflectionEffect=(...args)=>{
+    effects.push(args);
+    return addEffect(...args);
+  };
+  let laterChild=null;
   world.onReflect=event=>{
     const parent=world.waves.find(wave=>wave.id===event.parentWaveId);
-    if(parent?.reflectedBy!=='glass:glass-c2'||event.surfaceKey!=='wall:r')return;
-    const child=world.waves.find(wave=>wave.id===event.waveId);
-    activation={contactRadius:event.contactRadius,activationRadius:event.activationRadius};
-    laterTrace=world.traceWavePath(child,360,345.6);
+    events.push({surfaceKey:event.surfaceKey,parentReflectedBy:parent?.reflectedBy});
   };
   assert.equal(world.tap(0,180),true);
-  for(let step=0;step<180;step++)world.step(1/60);
+  for(let step=0;step<180;step++){
+    world.step(1/60);
+    laterChild=world.waves.find(wave=>
+      wave.reflectedBy==='wall:r'&&
+      wave.reflectionPath?.previous?.surfaceKey==='glass:glass-c2'
+    )||laterChild;
+  }
 
-  assert.ok(activation.contactRadius<activation.activationRadius);
-  assert.equal(laterTrace?.valid,true);
+  assert.ok(laterChild);
+  const laterTrace=world.traceWavePath(laterChild,360,345.6);
+  assert.ok(laterChild.previousRadius>0);
+  assert.equal(laterTrace.valid,true);
   assert.deepEqual(
-    laterTrace?.intersections.map(intersection=>intersection.surfaceKey),
+    laterTrace.intersections.map(intersection=>intersection.surfaceKey),
     ['wall:r','glass:glass-c2']
   );
+  assert.equal(events.some(event=>(
+    event.parentReflectedBy==='glass:glass-c2'&&event.surfaceKey==='wall:r'
+  )),false);
+  assert.equal(effects.length,events.length);
 });
 
 test('a valid finite-glass route still upgrades a direct score',()=>{

@@ -1,8 +1,8 @@
-# CURRENT_TASK: Pull Request #43後の締切・画面休止境界補修
+# CURRENT_TASK: 回復C 有効反射弧・WebGL復旧・安全なCanvas切替
 
 ## 今回の目的
 
-Pull Request #43で時刻付き入力、30秒締切精算、最接近得点をmainへ統合した後の独立検証で見つかった、締切時の保留命中、画面休止前の可視accumulator、締切直前入力、二重復帰通知の境界抜けを補修する。
+Pull Request #42〜#44で物理・得点・時刻境界をmainへ統合した後の回復工程として、有限経路だけを表示する反射弧、WebGLコンテキスト消失からの復帰、復帰不能時の新canvasによるCanvas 2D切替を実装する。無効な仮想接触は子波の潜在経路を保持しつつ、反射光・音通知を発生させない。
 
 対応の実行順と停止条件は[`docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md`](docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md)で管理する。ゲーム仕様の唯一の正本は`docs/SPEC_v3.md`である。
 
@@ -10,14 +10,14 @@ Pull Request #43で時刻付き入力、30秒締切精算、最接近得点をma
 
 - 対象: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
-- 基準コミット: `81c82f8ac75b32ba9a7e139f0e70a152f00fca91`
-- Pull Request #43までmainへ統合済み
-- 対応ブランチ: `agent/deadline-visibility-followup`
+- 基準コミット: `7178828b7534dcec3fdfe650f9bd3cf2909d6602`
+- Pull Request #44までmainへ統合済み
+- 対応ブランチ: `agent/recovery-c-rendering`
 - 対応提案: mainへ直接変更せず、このブランチからDraft Pull Requestで提出する
 - G4「物理と得点」は敵対的検証により再開・不合格
 - G5「ランキング」はG4再合格まで停止
 
-## 統合済みの前段（Pull Request #42・#43）
+## 統合済みの前段（Pull Request #42〜#44）
 
 - 反射波へ有限面と反射順序を記録し、得点前に逆順で経路を検査する
 - 経路情報のない反射波を得点対象から外す
@@ -31,29 +31,31 @@ Pull Request #43で時刻付き入力、30秒締切精算、最接近得点をma
 - 可視中の未処理fixed-stepを捨てず、30秒締切をまたぐ場合も締切時刻まで精算する
 - 命中帯ごとに最小error候補を保留し、帯通過または寿命最終sliceで確定する
 - 公式fixtureを5481点、台帳18件、1800stepでgolden固定する
+- 締切と画面休止の境界を冪等に精算し、時刻付き入力の結果を描画速度から分離する
 
-## 今回の変更
+## 今回の変更（回復C）
 
-- 画面非表示前の可視時間と入力を保持し、締切前後と締切精算中の残stepを復帰後も失わない
-- 30秒までに観測したpending命中を、物理を先へ進めず一度だけ確定する
-- 画面休止で次の固定境界が締切後へ移っても、締切未満の受理済み入力を締切終端で一度だけ適用する
-- `visibilitychange`と`pageshow`の二重復帰通知を冪等化し、復帰通知内で物理stepを排出しない
-- 6件の敵対的境界再現を回帰試験へ追加する
+- 反射波の表示を有限経路の有効弧へ限定し、反射前の子波を全円で表示しない
+- 親の有限経路で到達不能な仮想接触では子波を保持するが、反射光・音通知を出さない
+- `webglcontextlost`で既存のゲーム状態を保持したまま入力と描画を停止する
+- `webglcontextrestored`でシェーダー、プログラム、バッファを再初期化し、失敗時は新canvasへ差し替えてCanvas 2Dへ切り替える
+- WebGL描画中の復帰不能エラーにも新canvasのCanvas 2D切替を適用する
+- 有効弧、反射通知、WebGL復旧、Canvas切替の回帰試験を追加する
 - `src`から`dist`を再生成する
-- 計画、現状、確認表を現在の事実へ同期する
+- 計画、現状、仕様、確認表を現在の事実へ同期する
 
 ## 変更しない範囲
 
 - 30秒、6入力、得点基礎値、公式配置
-- WebGL context lost/restoredとcanvas交換
+- 30秒締切、時刻付き入力、画面休止境界
 - Supabase URL、key、SQL、RPC、RLS、`public.games`
 - ランキング有効化と本番送信
 - 本番公開、Ready化、マージ
 
 ## 自動確認
 
-- 基準main: 既存79件成功
-- 現在: 85件成功
+- 基準main: 既存85件成功
+- 現在: 91件成功
 - Pull Request #43最終head `dd8761c`のGitHub Actions Run #62（ID `31321372362`）: Node.js 18、20、22を含め成功。今回補修のActionsはDraft作成後に確認する
 - 既知のbeacon-b GLASS 168点を拒否
 - 有効な有限ガラス反射を維持
@@ -78,26 +80,27 @@ Pull Request #43で時刻付き入力、30秒締切精算、最接近得点をma
 - `visibilitychange`と`pageshow`の二重復帰通知を冪等化し、復帰通知内では物理stepを排出せず、残stepの排出を描画ループへ限定
 - 締切直前の公式fixture `(0,110,27025ms)` を20/30/60/120Hzで確定前358点、最終589点へ一致
 - 公式fixtureの実到達例5481点（直接0、壁239、反射板429、2回反射4813）と6480 hard ceilingを確認
+- 有効反射弧の点列が有限経路を通る部分だけを含み、反射前は0本になることを確認
+- WebGL消失時の停止、復帰再初期化、新canvas切替の実装契約を確認
+- `npm run build`、`npm run verify`、`npm run analyze:layouts`、`npm run render:layouts`、`npm run size`、`git diff --check`が成功
 
 ## 未確認・未解決
 
 - iPhone 17 Proで6入力と最大波場面
 - Node診断の6同時入力はピーク318波。iPhone描画性能は未確認
-- WebGL消失とCanvas切替
-- 反射波の全円表示を有効な弧へ直す工程
-- 親の有限経路で到達不能な最初の接触に出る反射光・音通知を、有効弧生成と一緒に直す工程
+- 実ブラウザでの強制WebGL消失・復帰とCanvas切替
 - 修正後のiPhone実到達得点分布と最大波場面
 - 長時間、反復、発熱
 - 可視中に1秒以上止まった後の入力反応は100msを超え得るため、実機性能検収前は公開しない
 
 ## 後続停止条件
 
-まとまりA/BのNode自動検査は完了したが、iPhone短期確認とまとまりCが未完了である。A、B、Cがすべて合格するまでランキング作業を再開しない。
+まとまりA/B/CのNode自動検査は完了したが、今回のDraftに対するGitHub Actions、iPhone短期確認、実ブラウザの強制WebGL消失試験が未完了である。A、B、Cがすべて合格するまでランキング作業を再開しない。
 
 ## 次に渡す担当
 
-実装担当とは別の独立コードレビューは合格した。今回補修のGitHub Actions合格を条件に、DraftのままユーザーのiPhone短期確認へ渡す。
+実装担当とは別の読み取り専用レビューと今回補修のGitHub Actions合格を条件に、DraftのままユーザーのiPhone短期確認へ渡す。
 
 ## 戻し方
 
-このPull Request #43後の補修提案だけをrevertする。Supabase、本番データ、SQL、ランキング状態は変更していない。
+この回復CのDraft Pull Requestだけをrevertする。Supabase、本番データ、SQL、ランキング状態は変更していない。

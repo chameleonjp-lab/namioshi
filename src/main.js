@@ -111,8 +111,10 @@ let quality='MID';
 let player='';
 let selectedMode=GAME_MODE.OFFICIAL;
 const world=new World();
-const canvas=$('game');
+let canvas=$('game');
 let view;
+let rendererKind='webgl';
+let rendererSuspended=false;
 let frames=[];
 let viewport=createViewport(1,1);
 let lastHudScore=-1;
@@ -226,33 +228,119 @@ function resize(){
   view?.resize(width,height,quality,viewport);
 }
 
+function replaceGameCanvas(){
+  const previous=canvas;
+  const next=document.createElement('canvas');
+  next.id='game';
+  next.className=previous.className;
+  next.style.cssText=previous.style.cssText;
+  for(const name of ['aria-label','role']){
+    const value=previous.getAttribute(name);
+    if(value!==null)next.setAttribute(name,value);
+  }
+  previous.replaceWith(next);
+  canvas=next;
+  return next;
+}
+
+function bindCanvasInput(){
+  const target=canvas;
+  target.addEventListener('pointerdown',event=>{
+    if(!event.isPrimary)return;
+    event.preventDefault();
+    const audioReady=wake();
+    if(state!=='PLAYING'||rendererSuspended)return;
+    const inputTimestamp=monotonicNow();
+    if(playDeadline!==null&&inputTimestamp>=playDeadline){
+      timedInputs.closeBefore(playDeadline);
+      return;
+    }
+    const point=clientToLogical(event.clientX,event.clientY,target.getBoundingClientRect(),viewport);
+    if(point&&timedInputs.enqueueWithinLimit({
+      x:point.x,
+      y:point.y,
+      timestamp:inputTimestamp
+    },{accepted:world.taps,maximum:MAX_TAPS})){
+      void audioReady.then(ready=>{if(ready&&state==='PLAYING'&&!rendererSuspended)playCue('TAP')});
+    }
+  },{passive:false});
+  target.addEventListener('pointercancel',event=>{
+    if(event.isPrimary)event.preventDefault();
+  },{passive:false});
+}
+
+function resumeRendererPause(now){
+  if(!rendererSuspended)return;
+  rendererSuspended=false;
+  if(state!=='PLAYING')return;
+  const resumeAt=!tutorialMode&&playDeadline!==null&&now>=playDeadline
+    ?playDeadline
+    :now;
+  const pausedDuration=fixedSteps.resume(resumeAt);
+  if(pausedDuration>0){
+    timedInputs.shiftPendingTimestamps(pausedDuration,{
+      before:tutorialMode?Number.POSITIVE_INFINITY:playDeadline
+    });
+  }
+  lastRenderTimestamp=now;
+  updatePlayTime(now);
+}
+
+function suspendForRendererLoss(now){
+  if(rendererSuspended)return;
+  rendererSuspended=true;
+  if(state==='PLAYING')suspendVisiblePlay(now);
+  lastRenderTimestamp=null;
+  frames=[];
+  if(state==='COUNTDOWN'){
+    clearCountdown();
+    setState('HOME');
+  }
+}
+
+function switchToCanvas({resume=true}={}){
+  const wasSuspended=rendererSuspended;
+  replaceGameCanvas();
+  view=new CanvasView(canvas);
+  rendererKind='canvas';
+  bindCanvasInput();
+  resize();
+  if(resume&&wasSuspended)resumeRendererPause(monotonicNow());
+}
+
+function handleWebGLContextLost(event){
+  event.preventDefault();
+  suspendForRendererLoss(monotonicNow());
+}
+
+function handleWebGLContextRestored(){
+  if(!(view instanceof WebGLView)||rendererKind!=='webgl')return;
+  try{
+    view.restore();
+    resize();
+    resumeRendererPause(monotonicNow());
+  }catch{
+    switchToCanvas();
+  }
+}
+
+function bindWebGLRecovery(){
+  canvas.addEventListener('webglcontextlost',handleWebGLContextLost,{passive:false});
+  canvas.addEventListener('webglcontextrestored',handleWebGLContextRestored);
+}
+
 function boot(){
   try{
-    try{view=new WebGLView(canvas)}catch{view=new CanvasView(canvas)}
+    try{
+      view=new WebGLView(canvas);
+      rendererKind='webgl';
+      bindWebGLRecovery();
+      bindCanvasInput();
+    }catch{
+      switchToCanvas({resume:false});
+    }
     resize();
     addEventListener('resize',resize);
-    canvas.addEventListener('pointerdown',event=>{
-      if(!event.isPrimary)return;
-      event.preventDefault();
-      const audioReady=wake();
-      if(state!=='PLAYING')return;
-      const inputTimestamp=monotonicNow();
-      if(playDeadline!==null&&inputTimestamp>=playDeadline){
-        timedInputs.closeBefore(playDeadline);
-        return;
-      }
-      const point=clientToLogical(event.clientX,event.clientY,canvas.getBoundingClientRect(),viewport);
-      if(point&&timedInputs.enqueueWithinLimit({
-        x:point.x,
-        y:point.y,
-        timestamp:inputTimestamp
-      },{accepted:world.taps,maximum:MAX_TAPS})){
-        void audioReady.then(ready=>{if(ready&&state==='PLAYING')playCue('TAP')});
-      }
-    },{passive:false});
-    canvas.addEventListener('pointercancel',event=>{
-      if(event.isPrimary)event.preventDefault();
-    },{passive:false});
     requestAnimationFrame(loop);
   }catch(error){
     clearCountdown();
@@ -403,6 +491,19 @@ function degrade(average){
   if(old!==quality)resize();
 }
 
+function renderCurrentFrame(now){
+  try{
+    view?.render(world,now,quality);
+  }catch(error){
+    if(rendererKind!=='webgl')throw error;
+    // A runtime WebGL failure may occur without a usable restored event. A
+    // fresh canvas is the only safe way to obtain a 2D context after WebGL
+    // has been acquired on the old canvas.
+    switchToCanvas();
+    view.render(world,now,quality);
+  }
+}
+
 function loop(timestamp){
   const now=Number.isFinite(timestamp)?timestamp:monotonicNow();
   const frameSeconds=lastRenderTimestamp===null
@@ -418,6 +519,13 @@ function loop(timestamp){
     return;
   }
 
+  if(rendererSuspended){
+    lastRenderTimestamp=null;
+    frames=[];
+    requestAnimationFrame(loop);
+    return;
+  }
+
   if(state==='PLAYING'){
     updatePlayTime(now);
     const playFrame=rememberPlayFrame(advanceSimulation(now));
@@ -426,7 +534,7 @@ function loop(timestamp){
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
     if(playFrame.shouldFinish)finish();
   }
-  view?.render(world,now,quality);
+  renderCurrentFrame(now);
   if(frameSeconds>0)frames.push(1/frameSeconds);
   if(frames.length>90){
     degrade(frames.reduce((sum,value)=>sum+value,0)/frames.length);
@@ -473,6 +581,8 @@ function syncAudioVisibility(){
     }
     return;
   }
+
+  if(rendererSuspended)return;
 
   if(state==='PLAYING'&&deadlineSettlementActive){
     fixedSteps.resume(playDeadline,{shiftTimeline:false});

@@ -103,6 +103,56 @@ export function traceReflectionPath(originX,originY,targetX,targetY,path){
   return{valid:true,intersections,reason:null};
 }
 
-export function reflectionPathReaches(originX,originY,targetX,targetY,path){
-  return traceReflectionPath(originX,originY,targetX,targetY,path).valid;
+function finiteSurfaceIntersectionInto(originX,originY,targetX,targetY,surface,output){
+  const rayX=targetX-originX;
+  const rayY=targetY-originY;
+  const surfaceX=surface.x2-surface.x1;
+  const surfaceY=surface.y2-surface.y1;
+  const denominator=cross(rayX,rayY,surfaceX,surfaceY);
+  if(Math.abs(denominator)<=EPSILON)return false;
+
+  const offsetX=surface.x1-originX;
+  const offsetY=surface.y1-originY;
+  const pathT=cross(offsetX,offsetY,surfaceX,surfaceY)/denominator;
+  const segmentT=cross(offsetX,offsetY,rayX,rayY)/denominator;
+  if(pathT<-EPSILON||pathT>1+EPSILON||segmentT<-EPSILON||segmentT>1+EPSILON)return false;
+
+  const normalizedPathT=clamp01(pathT);
+  output.x=originX+rayX*normalizedPathT;
+  output.y=originY+rayY*normalizedPathT;
+  return true;
+}
+
+export function reflectionPathReaches(originX,originY,targetX,targetY,path,scratch=null){
+  if(!Number.isFinite(originX)||!Number.isFinite(originY)||!Number.isFinite(targetX)||!Number.isFinite(targetY))return false;
+  const output=scratch??{x:0,y:0};
+  let currentOriginX=originX;
+  let currentOriginY=originY;
+  let currentTargetX=targetX;
+  let currentTargetY=targetY;
+  let currentPath=path;
+
+  while(currentPath){
+    if(Math.hypot(
+      currentOriginX-currentPath.childOriginX,
+      currentOriginY-currentPath.childOriginY
+    )>EPSILON)return false;
+    for(let previous=currentPath.previous;previous;previous=previous.previous){
+      if(previous.surfaceKey===currentPath.surfaceKey)return false;
+    }
+    if(!finiteSurfaceIntersectionInto(
+      currentOriginX,
+      currentOriginY,
+      currentTargetX,
+      currentTargetY,
+      currentPath,
+      output
+    ))return false;
+    currentTargetX=output.x;
+    currentTargetY=output.y;
+    currentOriginX=currentPath.parentOriginX;
+    currentOriginY=currentPath.parentOriginY;
+    currentPath=currentPath.previous;
+  }
+  return true;
 }
