@@ -12,7 +12,7 @@
 
 ## RPC契約
 
-既存の4項目版`submit_score`は残す。次の7項目版を同じRPC名へ追加し、PostgRESTが本文の項目数と名前で区別できる形にする。
+既存の4引数版`submit_score`は残す。7引数版は専用RPC名`submit_namioshi_score_v1`で追加し、同名の関数を引数だけで重ねない。Supabase公式資料では、関数名の重複（オーバーロード）はRPCで扱えないためである。
 
 ```json
 {
@@ -39,6 +39,12 @@
 - 同じ名前からの送信回数が設定値を超えていないか
 
 既存の共有4項目版や既存作品のデータは、この提案の対象外である。
+
+## RPC名の安全条件
+
+`public.submit_namioshi_score_v1`だけをこの提案の新規RPCとして追加する。既存の`public.submit_score`と同じ名前へ別引数の関数を追加しない。
+
+参考: https://supabase.com/docs/guides/database/functions
 
 ## 自己申告と競技性
 
