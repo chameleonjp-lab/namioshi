@@ -1,6 +1,8 @@
 import{
   CLIENT_VERSION,
   GAME_SLUG,
+  OFFICIAL_RULE_VERSION,
+  RANKING_SEASON,
   SCORE_HARD_CEILING,
   SUPABASE_PUBLISHABLE_KEY,
   SUPABASE_URL
@@ -31,8 +33,8 @@ function normalizePlayerName(playerName){
 }
 
 function normalizePlayId(playId){
-  if(typeof playId!=='string'||playId.length<1||playId.length>128){
-    throw rankingError('RANKING_INVALID_PLAY_ID','play ID must contain 1 to 128 characters');
+  if(typeof playId!=='string'||playId.length<1||playId.length>128||!/^[A-Za-z0-9_-]+$/.test(playId)){
+    throw rankingError('RANKING_INVALID_PLAY_ID','play ID must contain 1 to 128 safe characters');
   }
   return playId;
 }
@@ -61,6 +63,11 @@ function createRequestController(timeoutMs,outerSignal){
       outerSignal?.removeEventListener('abort',abort);
     }
   };
+}
+
+function responseAccepted(data){
+  const first=Array.isArray(data)?data[0]:data;
+  return first?.accepted===true;
 }
 
 export function createRankingService({
@@ -105,7 +112,9 @@ export function createRankingService({
           p_game_slug:GAME_SLUG,
           p_score:normalizedScore,
           p_client_version:CLIENT_VERSION,
-          p_play_id:normalizedPlayId
+          p_play_id:normalizedPlayId,
+          p_rule_version:OFFICIAL_RULE_VERSION,
+          p_season:RANKING_SEASON
         })
       });
       if(!response?.ok){
@@ -115,6 +124,7 @@ export function createRankingService({
       if(typeof response.json==='function'){
         try{data=await response.json()}catch{}
       }
+      if(!responseAccepted(data))throw rankingError('RANKING_SERVER_REJECTED','ranking server rejected this play');
       submittedPlayIds.add(normalizedPlayId);
       return{accepted:true,playId:normalizedPlayId,data};
     }catch(error){
