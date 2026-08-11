@@ -1762,3 +1762,9 @@ p_play_idを含むサーバー側契約、許可version・rule version・season�
 ## 2.3 回復D第一段階の検証結果（2026-08-11）
 
 Draft Pull Request #46を作成し、GitHub Actions Run #73でNode.js 18・20・22、npm test 96/96、verifyを成功させた。ランキングは未有効化で、Supabase SQL、RPC、RLS、public.games、本番データは変更していない。現行main.jsから送信を呼ばない既存契約も維持した。
+
+## 2026-08-11 回復D D2進捗
+
+回復D第一段階PR #46の統合後、サーバー側の安全契約を未適用SQLとして追加した。既存の共有4引数RPCとpublic記録を変更せず、namioshi専用のprivate記録、設定、頻度制限、7引数RPC、ランキング取得RPCを提案している。初期設定は無効かつself-reportedで、クライアントのランキング送信も無効のままである。
+
+ローカル検証は99/99テスト、build、verify、レイアウト分析、SVG確認、サイズ報告、差分検査まで成功した。次のゲートはDraft PRのActions、読み取り専用レビュー、非本番でのSQL検証、自己申告か競技版かの判断である。Supabase本番への適用、限定疎通、ランキング表示接続は未承認かつ未実施とする。

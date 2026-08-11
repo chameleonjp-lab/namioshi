@@ -1,65 +1,49 @@
-# CURRENT_TASK: 回復D クライアントランキング安全化（未有効化）
-
-## 今回の目的
-
-Pull Request #45の回復Cがmainへ統合されたため、回復計画のまとまりDへ進む。ランキングを有効化せず、クライアント側の送信契約を安全に整える。SupabaseのSQL、RPC、RLS、public.games、本番データは変更しない。
+# CURRENT_TASK: 回復D D2 サーバーランキング契約案（未適用・未有効化）
 
 ## 基準
 
-- 対象: chameleonjp-lab/namioshi
-- 基準ブランチ: main
-- 基準コミット: 9ce1aba6655178eb23156a5c89fde45eeb1ce9ab（Pull Request #45マージ後）
-- 対応ブランチ: agent/recovery-d-ranking-safety-client
-- RANKING_SERVICE_STATE.enabled=falseを維持する
-- Ready化、マージ、本番公開はこのDraftの範囲外
+- 対象: `chameleonjp-lab/namioshi`
+- 基準main: `2ceb5a439b0dd240d9fccda077906d3f95dc542a`（回復D第一段階PR #46の統合後）
+- 対応ブランチ: `agent/recovery-d-ranking-safety-server-contract`
+- この作業で作るPull RequestはDraftのままにする
+- `RANKING_SERVICE_STATE.enabled=false`を維持する
+
+## 目的
+
+回復D第一段階で整えたクライアント送信契約に対応する、サーバー側の共通安全契約を提案する。既存作品の共有ランキング記録へ書き込まず、`namioshi`だけを分離した未適用SQLとしてレビュー可能にする。
 
 ## 今回の変更
 
-- Supabase URLを、読み取り専用確認で一致した正式Project URLへ更新する
-- コード内のPublishable keyが同じProjectの有効なキーであることを確認する。キーの実値は文書へ記録しない
-- 公式モード以外の送信をクライアント入口で拒否する
-- 名前、play ID、整数スコア、0〜6480点の範囲を送信前に検査する
-- 同じplay IDの同時送信と成功後の再送を拒否し、失敗時だけ明示的な再試行を許可する
-- リクエストを10秒で中断し、応答にはplay IDを付ける
-- Authorization: BearerへPublishable keyを送らず、apikeyだけを使う
-- 送信結果にplay IDを付け、将来の結果画面統合で古い応答を判定できるようにする（現行mainからは送信を呼ばない）
-- srcからdistを同期する
+- クライアント本文へ `play_id`、許可したrule version、seasonを固定して送る
+- RPC応答の `accepted` を確認し、拒否された送信を成功済みとして記録しない
+- `play_id`、名前、整数スコア、0〜6480点、公式モードを送信前に検査する
+- `private`スキーマの設定・記録・頻度制限テーブルと、7引数版RPC、ランキング取得RPCをSQL提案として追加する
+- privateテーブルのRLS、公開ロールの権限縮小、SECURITY DEFINERの空search_path、同一play_idの冪等性と競合直列化を定義する
+- SQL提案と契約説明を `docs/` に記録し、サーバー契約の静的テストを追加する
 
 ## 変更しない範囲
 
-- RANKING_SERVICE_STATE.enabledの有効化
-- Supabase SQL、RPC定義、RLS、public.games、ランキング記録
-- 本番スコア送信、ランキング表示、競技版公開
-- サーバー側のplay ID一意制約、版・season分離、異常隔離、頻度制限
-- iPhone実機、強制WebGL消失、長時間・発熱の確認
-
-## 検証契約
-
-- 無効状態ではネットワークを呼ばない
-- 公式モードの正常値だけを送信契約へ通す
-- 練習モード、不正な名前、範囲外・小数スコア、空のplay IDを送信前に拒否する
-- 成功済みplay IDの再送と同時送信を拒否する
-- HTTP失敗後は同じplay IDを明示的に再試行できる
-- 10秒経過時にAbortSignalで中断し、タイムアウトとして扱う
-- リクエストヘッダーにAuthorizationがなく、本文のゲームslugとclient versionが固定される
-- 送信結果へplay IDを付け、現行mainでは送信を呼ばないことを確認する
-- npm test、npm run build、npm run verify、配置確認、容量報告、差分検査、GitHub Actionsを通す
+- SQLをSupabase本番または非本番へ適用しない
+- 既存の4引数版 `public.submit_score`、既存共有テーブル、`public.games` を変更しない
+- `namioshi`を `public.games`へ登録しない
+- クライアントのランキング送信、ランキング表示、結果画面接続を有効化しない
+- self-reportedを競技性のあるランキングと主張しない
+- iPhone実機、強制WebGLコンテキスト消失、長時間継続の未確認を確認済みと扱わない
 
 ## 検証結果
 
-- ローカルランキング契約試験: 5/5成功
-- GitHub Actions Run #73（ID 31469136374）: Node.js 18・20・22の全ジョブ成功
-- GitHub Actions内のnpm test: 96/96成功
-- GitHub Actions内のverify: 成功
-- src/distのconfig、ranking、main一致を確認
-- 送信関数をmain.jsへ接続しない既存契約を維持
-## 未確認・保留
+- `npm test`: 99/99
+- `npm run build`: 成功
+- `npm run verify`: 成功
+- `npm run analyze:layouts`: human-decision-pendingを維持
+- `npm run render:layouts`: 成功
+- `npm run size`: 102,492 bytes（固定上限ではなく報告値）
+- `git diff --check`: 成功
+- Supabaseは読み取り専用監査のみ。SQL適用、書き込み、ランキング疎通は未実施
+- GitHub ActionsはDraft PR作成後に確認する
 
-- 現在の共通submit_score RPCはp_play_idを受け取る契約へまだ変更していないため、ランキング送信は有効化できない
-- サーバー側での許可版、rule version、season、play ID一意性、再送冪等性、頻度制限、異常スコア隔離は別提案が必要
-- URLの正式性は今回読み取り専用で確認したが、本番通信は実行していない
-- iPhone実機と強制WebGL消失は未確認
+## 次の判断
 
-## 次に渡す担当
-
-独立レビューで、送信停止を保ったままクライアント契約の抜けを確認する。次のサーバー側提案ではSQL/RPCの変更範囲と、自己申告ランキングと競技ランキングのどちらを採用するかをユーザー判断へ渡す。
+1. Draft PRのActionsと読み取り専用レビューを確認する。
+2. 自己申告ランキングを採用するか、サーバー発行プレイ情報・入力記録・再計算を含む競技版を設計するかを決める。
+3. SQLの非本番検証、本番適用、限定疎通、ランキング表示接続は、ユーザーの明示承認後に別工程で行う。
