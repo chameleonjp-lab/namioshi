@@ -6,7 +6,6 @@ import {MAX_TAPS,PLAY_SECONDS} from './config.js';
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
-import {isCurrentSubmission,submitScore} from './services/ranking.js';
 import {isSoundEnabled,playCue,playHitSound,setAudioActive,setSoundEnabled,wake} from './core/audio.js';
 
 const app=document.querySelector('#app');
@@ -130,8 +129,6 @@ const timedInputs=new TimedInputQueue();
 let playDeadline=null;
 let lastRenderTimestamp=null;
 let deadlineSettlementActive=false;
-let currentPlayId=null;
-let playSequence=0;
 
 const GUIDE_STORAGE_KEY='namioshi.guide.completed';
 
@@ -169,12 +166,6 @@ function clearCountdown(){
 
 function monotonicNow(){
   return performance.now();
-}
-
-function createPlayId(){
-  playSequence++;
-  const uuid=globalThis.crypto?.randomUUID?.();
-  return uuid?`namioshi-play-${uuid}`:`namioshi-play-${Date.now()}-${playSequence}`;
 }
 
 function resetPlayClock(){
@@ -434,7 +425,6 @@ function play(){
   clearCountdown();
   tutorialMode=false;
   world.reset({mode:selectedMode});
-  currentPlayId=createPlayId();
   resetPlayClock();
   const presentation=modePresentation(world.mode);
   $('modeHud').textContent=presentation.label;
@@ -473,19 +463,6 @@ function finish(){
   $('scoreGlass').textContent=String(breakdown.glass);
   $('scoreDouble').textContent=String(breakdown.double);
   $('rank').textContent=policy.statusText;
-  const finishedPlayId=currentPlayId;
-  if(policy.submitNow){
-    void submitScore(player,world.score,{playId:finishedPlayId,mode:world.mode})
-      .then(result=>{
-        if(state!=='RESULT'||currentPlayId!==finishedPlayId||!isCurrentSubmission(result,finishedPlayId))return;
-        $('rank').textContent='ランキングへ送信しました。';
-      })
-      .catch(()=>{
-        if(state==='RESULT'&&currentPlayId===finishedPlayId){
-          $('rank').textContent='ランキング送信に失敗しました。結果は保持されています。';
-        }
-      });
-  }
   $('resultShareStatus').textContent='';
   $('shareText').style.display='none';
   playCue('RESULT');
