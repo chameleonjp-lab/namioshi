@@ -76,3 +76,9 @@
 - Actions内のnpm testは96/96、verifyも成功した。
 - 既存テストが要求する「RPC契約前はmain.jsから送信を呼ばない」条件を維持した。
 - ランキング送信、SQL、RPC、RLS、public.games、本番データは変更していない。
+
+57. 回復D D2では、既存共有ランキングを変更せず、namioshiの記録をprivateスキーマへ分離する未適用SQLをレビュー対象とする。
+58. 7引数版の同名submit_score RPCを提案するが、既存4引数版は変更せず、PostgRESTのオーバーロード解決は非本番で確認するまで未確定とする。
+59. D2の初期設定はenabled=false、season=prelaunch-v1、verification_status=self_reportedとし、self-reported記録を競技性の証明と扱わない。
+60. play_idは同一内容の再送を冪等化し、異なる内容の再送を拒否する。競合直列化と名前単位の頻度制限を置くが、本人性・不正防止の証明とは扱わない。
+61. SQL適用、本番限定疎通、ランキング表示接続は、非本番検証とユーザーの明示承認を経た別工程とする。
