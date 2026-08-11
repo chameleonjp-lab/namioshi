@@ -1,53 +1,51 @@
-# CURRENT_TASK: 回復D D2.1 RPC名の一意化（未適用・未有効化）
+# CURRENT_TASK: Phase 6A 端末内保存と結果画面（Draft・未統合）
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 基準main: `adeb9a75e80b937f1720440095bc2321dcd9b569`（回復D D2 PR #47の統合後）
-- 対応ブランチ: `agent/recovery-d-ranking-rpc-name`
-- この作業で作るPull RequestはDraftのままにする
+- 基準main: `a3d7150d729175526bd0e81cedba1db4e8c8b51a`（回復D D2.1 PR #48の統合後）
+- 対応ブランチ: `agent/phase6a-result-storage`
+- このPull RequestはDraftのままにする
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
 
 ## 目的
 
-回復D第一段階で整えたクライアント送信契約に対応する、サーバー側の共通安全契約を提案する。既存作品の共有ランキング記録へ書き込まず、`namioshi`だけを分離した未適用SQLとしてレビュー可能にする。
+Supabase連携を再開せず、Phase 6Aの端末内保存と結果画面を先に完成させる。通信がなくても結果を理解でき、公式と練習の記録が混ざらず、保存できない環境でもゲームを続けられる状態にする。
 
-## 今回の変更
+## 今回の実装
 
-- クライアント本文へ `play_id`、許可したrule version、seasonを固定して送る
-- RPC応答の `accepted` を確認し、拒否された送信を成功済みとして記録しない
-- `play_id`、名前、整数スコア、0〜6480点、公式モードを送信前に検査する
-- `private`スキーマの設定・記録・頻度制限テーブルと、専用名`submit_namioshi_score_v1`の7引数RPC、ランキング取得RPCをSQL提案として追加する
-- privateテーブルのRLS、公開ロールの権限縮小、SECURITY DEFINERの空search_path、同一play_idの冪等性と競合直列化を定義する
-- SQL提案と契約説明を `docs/` に記録し、サーバー契約の静的テストを追加する
+- `namioshi.displayName`へ名前を保存し、次回起動時に復元する
+- `namioshi.bestScore`へ公式モードの端末ベストだけを保存する
+- `namioshi.playCount`へ公式・練習を分けた回数を保存する
+- `namioshi.lastClientVersion`を結果保存時に記録する
+- 保存失敗時は保存済みと表示せず、結果画面の利用を継続する
+- RESULTへNEW BEST、端末ベスト、モード別プレイ回数、保存可否を表示する
+- 詳細ランキングは準備中の無効表示に留め、ランキング通信を追加しない
+- RESULTから再挑戦、モード選択、ゲーム終了、実験場への移動を使えるようにする
 
 ## 変更しない範囲
 
-- SQLをSupabase本番または非本番へ適用しない
-- 既存の4引数版 `public.submit_score`、既存共有テーブル、`public.games` を変更しない
-- `namioshi`を `public.games`へ登録しない
-- クライアントのランキング送信、ランキング表示、結果画面接続を有効化しない
-- self-reportedを競技性のあるランキングと主張しない
-- iPhone実機、強制WebGLコンテキスト消失、長時間継続の未確認を確認済みと扱わない
+- Supabase URL、Publishable key、SQL、RPC、RLS、本番データを変更しない
+- ランキング送信、ランキング表示、ランキング有効化を行わない
+- 公式の得点式、配置、30秒制限、6タップ、反射ルールを変更しない
+- iPhone実機、実ブラウザの強制WebGL消失、長時間継続を自動試験済みと扱わない
+- Ready化、マージ、公開を行わない
 
 ## 検証結果
 
-- `npm test`: 99/99
+- ローカル `npm test`: 103/103
 - `npm run build`: 成功
 - `npm run verify`: 成功
-- `npm run analyze:layouts`: human-decision-pendingを維持
+- `npm run analyze:layouts`: 成功（`human-decision-pending`を維持）
 - `npm run render:layouts`: 成功
-- `npm run size`: 102,492 bytes（固定上限ではなく報告値）
+- `npm run size`: 108,986 bytes（固定上限ではなく報告値）
 - `git diff --check`: 成功
-- Supabaseは読み取り専用監査のみ。SQL適用、書き込み、ランキング疎通は未実施
-- GitHub Actions Run #78: Node.js 18・20・22の全ジョブ成功、npm test 99/99、build、verify、配置・SVG・サイズ検査成功
+- D2.1のランキング契約試験を含め、Supabaseへの通信・書き込みは実施していない
 
-## D2.1で確認した問題
+## 未完了
 
-Supabase公式資料で、関数名だけが同じで引数が異なるRPC（オーバーロード）は使用できないことを確認した。D2の初案にあった同名7引数`submit_score`は未適用であり、既存の4引数RPCへ影響する前に専用名へ修正する。
-
-## 次の判断
-
-1. Draft PRのActionsと読み取り専用レビューを確認する。
-2. 自己申告ランキングを採用するか、サーバー発行プレイ情報・入力記録・再計算を含む競技版を設計するかを決める。
-3. SQLの非本番検証、本番適用、限定疎通、ランキング表示接続は、ユーザーの明示承認後に別工程で行う。
+- GitHub Actionsの最終確認
+- iPhone・iPad実機確認
+- 実ブラウザでの保存拒否・強制WebGL消失確認
+- 詳細ランキングとSupabase連携
+- Phase 6Bのsafe-area、横画面、アクセシビリティ補修
