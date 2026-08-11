@@ -23,9 +23,9 @@ test('a play session ends only when its thirty-second timer expires',()=>{
 
 test('using all taps and clearing all waves cannot end play early',()=>{
   const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
-  assert.match(main,/const playFrame=advanceSimulation\(now\)[\s\S]*?if\(playFrame\.shouldFinish\)finish\(\)/);
+  assert.match(main,/const playFrame=rememberPlayFrame\(advanceSimulation\(now\)\)[\s\S]*?if\(playFrame\.shouldFinish\)finish\(\)/);
   assert.match(main,/function finish\(\){\s*if\(state!=='PLAYING'\)return/);
-  assert.match(main,/function finish\(\)[\s\S]*?timedInputs\.clear\(\)/);
+  assert.match(main,/function finish\(\)[\s\S]*?timedInputs\.drainThrough\(playDeadline,applyTimedInput\)[\s\S]*?world\.finalizePendingHits\(\)[\s\S]*?timedInputs\.clear\(\)/);
   assert.match(main,/timedInputs\.reset\(start\)/);
   assert.doesNotMatch(main,/world\.taps\s*>=|world\.waves\.length\s*===\s*0/);
 });
@@ -192,32 +192,186 @@ test('a 29.9 to 30.05 second crossing supplies all six deadline steps',()=>{
   assert.equal(queue.length,0);
 });
 
-test('visibility suspension discards backlog and excludes hidden elapsed time',()=>{
+test('visibility suspension preserves visible backlog and excludes hidden elapsed time',()=>{
   const runner=new FixedStepRunner();
   runner.reset(0);
   const queue=new TimedInputQueue();
   queue.reset(0);
-  assert.equal(queue.enqueue({x:1,y:1,timestamp:29999}),true);
+  assert.equal(queue.enqueue({x:1,y:1,timestamp:1000}),true);
   let steps=0;
-  advancePlayFrame({timestamp:1000,deadline:30000,runner,inputQueue:queue,update:()=>{steps++}});
+  let deliveredAt=null;
+  const update=(step,{boundaryTimestamp})=>{
+    steps++;
+    queue.drainThrough(boundaryTimestamp,()=>{deliveredAt=boundaryTimestamp});
+  };
+  advancePlayFrame({timestamp:1000,deadline:30000,runner,inputQueue:queue,update});
   const pendingBefore=runner.accumulator;
   assert.ok(pendingBefore>.9);
-  runner.suspend();
-  runner.resume(31000);
-  assert.equal(runner.accumulator,0);
-  assert.equal(runner.lastTimestamp,31000);
-  assert.equal(runner.processedBoundaryTimestamp,31000);
-  const resumed=advancePlayFrame({timestamp:31000,deadline:30000,runner,inputQueue:queue,update:()=>{steps++}});
-  assert.equal(resumed.steps,0);
-  assert.equal(resumed.shouldFinish,true);
-  assert.equal(steps,3);
-  assert.equal(runner.processedBoundaryTimestamp,31000);
-  assert.equal(queue.isClosed,true);
-  queue.clear();
+  runner.suspend(1000);
+  const hiddenDuration=runner.resume(11000);
+  assert.equal(hiddenDuration,10000);
+  assert.equal(runner.accumulator,pendingBefore);
+  assert.equal(queue.shiftPendingTimestamps(hiddenDuration,{before:30000}),0);
+  while(runner.hasPendingSteps())runner.advance(11000,update);
+  assert.equal(steps,60);
+  assert.ok(Math.abs(deliveredAt-11000)<1e-6);
+  assert.equal(queue.length,0);
+  assert.equal(runner.processedBoundaryTimestamp,11000);
+
+  assert.equal(queue.enqueue({x:2,y:2,timestamp:29999}),true);
+  assert.equal(queue.shiftPendingTimestamps(2,{before:30000}),1);
   assert.equal(queue.length,0);
   queue.reset(32000);
   assert.equal(queue.length,0);
   assert.equal(queue.isClosed,false);
+});
+
+test('deadline settlement survives a visibility interruption between render frames',()=>{
+  const runner=new FixedStepRunner();
+  runner.reset(29900);
+  const queue=new TimedInputQueue();
+  queue.reset(29900);
+  assert.equal(queue.enqueue({x:1,y:1,timestamp:29999}),true);
+  let steps=0;
+  let delivered=0;
+  const update=(step,{boundaryTimestamp})=>{
+    steps++;
+    queue.drainThrough(boundaryTimestamp,()=>{delivered++});
+  };
+  const first=advancePlayFrame({timestamp:30050,deadline:30000,runner,inputQueue:queue,update});
+  assert.equal(first.steps,3);
+  assert.equal(first.shouldFinish,false);
+  const pending=runner.accumulator;
+  runner.suspend(30050);
+  runner.resume(30000,{shiftTimeline:false});
+  assert.equal(runner.accumulator,pending);
+  const second=advancePlayFrame({timestamp:31000,deadline:30000,runner,inputQueue:queue,update});
+  assert.equal(second.steps,3);
+  assert.equal(second.shouldFinish,true);
+  assert.equal(steps,6);
+  assert.equal(delivered,1);
+  assert.equal(queue.length,0);
+  assert.ok(Math.abs(runner.processedBoundaryTimestamp-30000)<1e-6);
+});
+
+test('visible backlog is settled when a hidden page resumes after the deadline',()=>{
+  const run=(refreshRate,{settleBacklog=true}={})=>{
+    const world=new World();
+    world.reset({mode:GAME_MODE.OFFICIAL});
+    const queue=new TimedInputQueue();
+    queue.reset(0);
+    assert.equal(queue.enqueue({x:0,y:110,timestamp:27025}),true);
+    const runner=new FixedStepRunner();
+    runner.reset(0);
+    const update=(step,{boundaryTimestamp})=>{
+      world.step(step,{countTime:false});
+      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+    };
+
+    for(let frame=1;frame<=Math.round(refreshRate*29.8);frame++){
+      advancePlayFrame({
+        timestamp:frame*1000/refreshRate,
+        deadline:30000,
+        runner,
+        inputQueue:queue,
+        update
+      });
+    }
+    const hiddenFrame=advancePlayFrame({
+      timestamp:29900,
+      deadline:30000,
+      runner,
+      inputQueue:queue,
+      update
+    });
+    assert.equal(hiddenFrame.steps,3);
+    assert.equal(runner.stepCount,1791);
+    assert.equal(runner.hasPendingSteps(),true);
+    runner.suspend(29900);
+
+    if(settleBacklog){
+      // The page returns at 31s. Only the hidden interval up to the 30s
+      // deadline shifts the paused timeline; the three visible steps already
+      // accumulated before suspension are then drained at that deadline.
+      const hiddenUntilDeadline=runner.resume(30000);
+      assert.equal(hiddenUntilDeadline,100);
+      queue.shiftPendingTimestamps(hiddenUntilDeadline,{before:30000});
+      const settled=advancePlayFrame({
+        timestamp:30000,
+        deadline:30000,
+        runner,
+        inputQueue:queue,
+        update
+      });
+      assert.equal(settled.steps,3);
+      assert.equal(settled.shouldFinish,true);
+      assert.equal(runner.stepCount,1794);
+      assert.equal(runner.hasPendingSteps(),false);
+    }
+
+    world.finalizePendingHits();
+    return{
+      score:world.score,
+      breakdown:world.getScoreBreakdown(),
+      stepCount:runner.stepCount,
+      queueLength:queue.length
+    };
+  };
+
+  assert.equal(run(60,{settleBacklog:false}).score,502);
+  const results=[20,30,60,120].map(refreshRate=>run(refreshRate));
+  for(const result of results.slice(1))assert.deepEqual(result,results[0]);
+  assert.deepEqual(results[0],{
+    score:566,
+    breakdown:{direct:24,wall:0,glass:215,double:327},
+    stepCount:1794,
+    queueLength:0
+  });
+});
+
+test('a pre-deadline input is applied at the terminal boundary after a visibility shift',()=>{
+  const world=new World();
+  world.reset({mode:GAME_MODE.OFFICIAL});
+  const queue=new TimedInputQueue();
+  queue.reset(0);
+  const runner=new FixedStepRunner();
+  runner.reset(0);
+  const update=(step,{boundaryTimestamp})=>{
+    world.step(step,{countTime:false});
+    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+  };
+
+  for(let stepIndex=1;stepIndex<=1799;stepIndex++){
+    runner.advance(stepIndex*1000/60,update);
+  }
+  assert.equal(runner.stepCount,1799);
+  assert.equal(queue.enqueue({x:0,y:110,timestamp:29990}),true);
+  runner.suspend(29990);
+  const hiddenDuration=runner.resume(29995);
+  assert.equal(hiddenDuration,5);
+  assert.equal(queue.shiftPendingTimestamps(hiddenDuration,{before:30000}),0);
+
+  const deadlineFrame=advancePlayFrame({
+    timestamp:30000,
+    deadline:30000,
+    runner,
+    inputQueue:queue,
+    update
+  });
+  assert.equal(deadlineFrame.steps,0);
+  assert.equal(deadlineFrame.shouldFinish,true);
+  assert.equal(queue.length,1);
+  assert.equal(world.taps,0);
+
+  queue.closeBefore(30000);
+  assert.equal(queue.drainThrough(30000,input=>world.tap(input.x,input.y)),1);
+  world.finalizePendingHits();
+  assert.equal(queue.length,0);
+  assert.equal(world.taps,1);
+  assert.equal(world.waves.length,1);
+  assert.equal(world.waves[0].age,0);
+  assert.equal(world.waves[0].radius,1);
+  assert.equal(world.score,0);
 });
 
 test('timestamped input results are identical across render rates and long frames',()=>{
@@ -319,16 +473,101 @@ test('timestamped input results are identical across render rates and long frame
   }
 });
 
+test('deadline finalization keeps late official hits deterministic across render rates',()=>{
+  const run=refreshRate=>{
+    const world=new World();
+    world.reset({mode:GAME_MODE.OFFICIAL});
+    const queue=new TimedInputQueue();
+    queue.reset(0);
+    assert.equal(queue.enqueue({x:0,y:110,timestamp:27025}),true);
+    const runner=new FixedStepRunner();
+    runner.reset(0);
+    let hitCount=0;
+    world.onHit=()=>{hitCount++};
+    let scoreBeforeFinalization=null;
+    let finished=false;
+    const update=(step,{boundaryTimestamp})=>{
+      world.step(step,{countTime:false});
+      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+    };
+    for(let frame=1;frame<=refreshRate*32&&!finished;frame++){
+      const playFrame=advancePlayFrame({
+        timestamp:frame*1000/refreshRate,
+        deadline:30000,
+        runner,
+        inputQueue:queue,
+        update
+      });
+      if(playFrame.shouldFinish){
+        scoreBeforeFinalization=world.score;
+        world.finalizePendingHits();
+        finished=true;
+      }
+    }
+    assert.equal(finished,true);
+    const physicalState=world.waves.map(wave=>[wave.waveId,wave.age,wave.radius,wave.previousRadius]);
+    const finalizedHitCount=hitCount;
+    world.finalizePendingHits();
+    assert.equal(hitCount,finalizedHitCount);
+    assert.deepEqual(world.waves.map(wave=>[wave.waveId,wave.age,wave.radius,wave.previousRadius]),physicalState);
+    return{
+      scoreBeforeFinalization,
+      score:world.score,
+      breakdown:world.getScoreBreakdown(),
+      ledger:[...world.bestHits].sort(([left],[right])=>left.localeCompare(right)).map(([key,hit])=>[key,hit.category,hit.score,hit.waveId]),
+      stepCount:runner.stepCount,
+      queueLength:queue.length,
+      hitCount
+    };
+  };
+  const results=[20,30,60,120].map(run);
+  for(const result of results.slice(1))assert.deepEqual(result,results[0]);
+  assert.equal(results[0].scoreBeforeFinalization,358);
+  assert.equal(results[0].score,589);
+  assert.equal(results[0].stepCount,1800);
+  assert.equal(results[0].queueLength,0);
+  assert.equal(Object.values(results[0].breakdown).reduce((sum,value)=>sum+value,0),589);
+});
+
 test('suspending and resuming a fixed-step runner does not fast-forward the world',()=>{
   const runner=new FixedStepRunner();
   runner.reset(0);
   let steps=0;
 
   assert.equal(runner.advance(1000/60,()=>{steps++}),1);
-  runner.suspend();
-  runner.resume(10000);
+  runner.suspend(1000/60);
+  assert.ok(Math.abs(runner.resume(10000)-(10000-1000/60))<1e-6);
   assert.equal(runner.advance(10000+1000/60,()=>{steps++}),1);
   assert.equal(steps,2);
+  assert.ok(Math.abs(runner.processedBoundaryTimestamp-(10000+1000/60))<1e-6);
+});
+
+test('duplicate visibility restoration does not resume or advance twice',()=>{
+  const runner=new FixedStepRunner();
+  runner.reset(0);
+  let steps=0;
+  runner.advance(1000,()=>{steps++});
+  assert.equal(steps,3);
+  assert.equal(runner.hasPendingSteps(),true);
+  runner.suspend(1000);
+  assert.equal(runner.resume(11000),10000);
+  const resumedState={
+    lastTimestamp:runner.lastTimestamp,
+    boundaryOriginTimestamp:runner.boundaryOriginTimestamp,
+    processedBoundaryTimestamp:runner.processedBoundaryTimestamp,
+    accumulator:runner.accumulator,
+    steps
+  };
+  assert.equal(runner.resume(11001),0);
+  assert.deepEqual({
+    lastTimestamp:runner.lastTimestamp,
+    boundaryOriginTimestamp:runner.boundaryOriginTimestamp,
+    processedBoundaryTimestamp:runner.processedBoundaryTimestamp,
+    accumulator:runner.accumulator,
+    steps
+  },resumedState);
+  assert.equal(runner.advance(11000,()=>{steps++}),3);
+  assert.equal(steps,6);
 });
 
 test('play deadline uses monotonic timestamps and never becomes negative',()=>{
@@ -348,5 +587,13 @@ test('main uses fixed updates, a monotonic deadline, and visibility suspension r
   assert.match(main,/if\(document\.hidden\)/);
   assert.match(main,/state==='COUNTDOWN'[\s\S]*?setState\('HOME'\)/);
   assert.match(main,/addEventListener\('pagehide',[\s\S]*?state==='COUNTDOWN'[\s\S]*?setState\('HOME'\)/);
-  assert.match(main,/fixedSteps\.resume\(now\)/);
+  assert.match(main,/fixedSteps\.resume\(resumeAt\)/);
+  assert.match(main,/timedInputs\.shiftPendingTimestamps\(hiddenDuration/);
+  assert.match(main,/fixedSteps\.resume\(playDeadline,\{shiftTimeline:false\}\)/);
+  assert.match(main,/const resumeAt=state==='PLAYING'&&!tutorialMode&&now>=playDeadline/);
+  const visibilityHandler=main.slice(
+    main.indexOf('function syncAudioVisibility()'),
+    main.indexOf('world.onReflect=')
+  );
+  assert.doesNotMatch(visibilityHandler,/advanceSimulation\(/);
 });

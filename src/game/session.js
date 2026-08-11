@@ -44,6 +44,20 @@ export class TimedInputQueue{
     this.entries=[];
   }
 
+  /**
+   * Keep queued input aligned with a simulation clock that paused while the
+   * document was hidden. Inputs whose new application time reaches the play
+   * deadline can no longer affect that play and are discarded.
+   */
+  shiftPendingTimestamps(milliseconds,{before=Number.POSITIVE_INFINITY}={}){
+    if(!Number.isFinite(milliseconds)||milliseconds<0)return 0;
+    const previousLength=this.entries.length;
+    this.entries=this.entries
+      .map(entry=>({...entry,timestamp:entry.timestamp+milliseconds}))
+      .filter(entry=>!Number.isFinite(before)||entry.timestamp<before);
+    return previousLength-this.entries.length;
+  }
+
   enqueue(inputOrX,y=null,timestamp=null){
     const input=inputOrX&&typeof inputOrX==='object'
       ?inputOrX
@@ -135,6 +149,7 @@ export class FixedStepRunner{
   processedBoundaryTimestamp=null;
   simulationTime=0;
   stepCount=0;
+  suspendedAt=null;
 
   reset(timestamp=null){
     this.accumulator=0;
@@ -145,25 +160,39 @@ export class FixedStepRunner{
     this.processedBoundaryTimestamp=Number.isFinite(timestamp)?timestamp:null;
     this.simulationTime=0;
     this.stepCount=0;
+    this.suspendedAt=null;
   }
 
-  suspend(){
-    // Visibility suspension intentionally does not fast-forward the world.
-    // This is the explicit visibility/pagehide exception: discard the
-    // partial accumulator, then resume() re-anchors the boundary clock.
-    this.accumulator=0;
+  suspend(timestamp=null){
+    // Keep already accumulated visible time. resume() shifts the fixed
+    // boundary clock by the hidden duration so hidden time itself is never
+    // supplied to physics.
+    if(this.suspendedAt===null&&Number.isFinite(timestamp))this.suspendedAt=timestamp;
     this.lastTimestamp=null;
   }
 
-  resume(timestamp){
-    this.accumulator=0;
+  resume(timestamp,{shiftTimeline=true}={}){
+    // visibilitychange and pageshow can both report the same restoration.
+    // Once resumed, a duplicate event must not move the wall-clock cursor or
+    // shift the simulation timeline a second time.
+    if(this.suspendedAt===null&&this.lastTimestamp!==null)return 0;
+    const hiddenDuration=Number.isFinite(timestamp)&&Number.isFinite(this.suspendedAt)
+      ?Math.max(0,timestamp-this.suspendedAt)
+      :0;
+    if(shiftTimeline&&hiddenDuration>0){
+      if(Number.isFinite(this.originTimestamp))this.originTimestamp+=hiddenDuration;
+      if(Number.isFinite(this.boundaryOriginTimestamp))this.boundaryOriginTimestamp+=hiddenDuration;
+      if(Number.isFinite(this.processedBoundaryTimestamp))this.processedBoundaryTimestamp+=hiddenDuration;
+    }
     this.lastTimestamp=Number.isFinite(timestamp)?timestamp:null;
-    if(Number.isFinite(timestamp)){
+    if(Number.isFinite(timestamp)&&this.boundaryOriginTimestamp===null){
       this.originTimestamp=timestamp;
       this.boundaryOriginTimestamp=timestamp;
       this.boundaryStepIndex=0;
       this.processedBoundaryTimestamp=timestamp;
     }
+    this.suspendedAt=null;
+    return hiddenDuration;
   }
 
   advance(timestamp,update){
