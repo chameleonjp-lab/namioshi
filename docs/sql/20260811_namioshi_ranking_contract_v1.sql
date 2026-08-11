@@ -77,7 +77,7 @@ revoke all on private.namioshi_ranking_config from public, anon, authenticated;
 revoke all on private.namioshi_score_submissions from public, anon, authenticated;
 revoke all on private.namioshi_rate_limits from public, anon, authenticated;
 
-create or replace function public.submit_score(
+create or replace function public.submit_namioshi_score_v1(
   p_display_name text,
   p_game_slug text,
   p_score integer,
@@ -304,8 +304,8 @@ as $function$
   order by rank_no;
 $function$;
 
-revoke execute on function public.submit_score(text, text, integer, text, text, text, text) from PUBLIC;
-grant execute on function public.submit_score(text, text, integer, text, text, text, text) to anon;
+revoke execute on function public.submit_namioshi_score_v1(text, text, integer, text, text, text, text) from PUBLIC;
+grant execute on function public.submit_namioshi_score_v1(text, text, integer, text, text, text, text) to anon;
 revoke execute on function public.get_namioshi_ranking_v1(integer) from PUBLIC;
 grant execute on function public.get_namioshi_ranking_v1(integer) to anon;
 

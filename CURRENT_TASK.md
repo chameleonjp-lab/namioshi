@@ -1,10 +1,10 @@
-# CURRENT_TASK: 回復D D2 サーバーランキング契約案（未適用・未有効化）
+# CURRENT_TASK: 回復D D2.1 RPC名の一意化（未適用・未有効化）
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 基準main: `2ceb5a439b0dd240d9fccda077906d3f95dc542a`（回復D第一段階PR #46の統合後）
-- 対応ブランチ: `agent/recovery-d-ranking-safety-server-contract`
+- 基準main: `adeb9a75e80b937f1720440095bc2321dcd9b569`（回復D D2 PR #47の統合後）
+- 対応ブランチ: `agent/recovery-d-ranking-rpc-name`
 - この作業で作るPull RequestはDraftのままにする
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
 
@@ -17,7 +17,7 @@
 - クライアント本文へ `play_id`、許可したrule version、seasonを固定して送る
 - RPC応答の `accepted` を確認し、拒否された送信を成功済みとして記録しない
 - `play_id`、名前、整数スコア、0〜6480点、公式モードを送信前に検査する
-- `private`スキーマの設定・記録・頻度制限テーブルと、7引数版RPC、ランキング取得RPCをSQL提案として追加する
+- `private`スキーマの設定・記録・頻度制限テーブルと、専用名`submit_namioshi_score_v1`の7引数RPC、ランキング取得RPCをSQL提案として追加する
 - privateテーブルのRLS、公開ロールの権限縮小、SECURITY DEFINERの空search_path、同一play_idの冪等性と競合直列化を定義する
 - SQL提案と契約説明を `docs/` に記録し、サーバー契約の静的テストを追加する
 
@@ -40,7 +40,11 @@
 - `npm run size`: 102,492 bytes（固定上限ではなく報告値）
 - `git diff --check`: 成功
 - Supabaseは読み取り専用監査のみ。SQL適用、書き込み、ランキング疎通は未実施
-- GitHub ActionsはDraft PR作成後に確認する
+- GitHub Actions Run #78: Node.js 18・20・22の全ジョブ成功、npm test 99/99、build、verify、配置・SVG・サイズ検査成功
+
+## D2.1で確認した問題
+
+Supabase公式資料で、関数名だけが同じで引数が異なるRPC（オーバーロード）は使用できないことを確認した。D2の初案にあった同名7引数`submit_score`は未適用であり、既存の4引数RPCへ影響する前に専用名へ修正する。
 
 ## 次の判断
 

@@ -100,7 +100,7 @@ export function createRankingService({
     inFlightPlayIds.add(normalizedPlayId);
     const request=createRequestController(timeoutMs,signal);
     try{
-      const response=await fetchImpl(`${url}/rest/v1/rpc/submit_score`,{
+      const response=await fetchImpl(`${url}/rest/v1/rpc/submit_namioshi_score_v1`,{
         method:'POST',
         headers:{
           apikey:apiKey,
