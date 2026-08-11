@@ -438,23 +438,30 @@ export class World{
     });
     if(!reflected)return null;
     wave.emittedSurfaces.add(surfaceKey);
-    this.addReflectionEffect(contactX,contactY,normalX,normalY,kind);
-    this.onReflect({
-      kind,
-      reflections:reflected.reflections,
-      reflectionDepth:reflected.reflectionDepth,
-      waveId:reflected.id,
-      parentWaveId:wave.id,
-      surfaceKey,
-      x:contactX,
-      y:contactY,
-      normalX,
-      normalY,
-      contactAge,
-      contactRadius,
-      activationRadius,
-      energy:reflected.energy
-    });
+    // The child is intentionally kept even when this particular contact is
+    // outside the parent's finite route.  A later point on the child can be
+    // a valid two-surface route, which the physics and score path must retain.
+    // Feedback, however, must not announce a reflection that the finite
+    // surfaces could not physically produce.
+    if(this.waveCanReach(reflected,contactX,contactY)){
+      this.addReflectionEffect(contactX,contactY,normalX,normalY,kind);
+      this.onReflect({
+        kind,
+        reflections:reflected.reflections,
+        reflectionDepth:reflected.reflectionDepth,
+        waveId:reflected.id,
+        parentWaveId:wave.id,
+        surfaceKey,
+        x:contactX,
+        y:contactY,
+        normalX,
+        normalY,
+        contactAge,
+        contactRadius,
+        activationRadius,
+        energy:reflected.energy
+      });
+    }
     return reflected;
   }
 

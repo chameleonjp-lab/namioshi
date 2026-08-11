@@ -3,7 +3,7 @@
 作成日: 2026-08-09
 基準リポジトリ: `chameleonjp-lab/namioshi`
 敵対的再現基準: `c9ddd8e468af347567a5628de7f658aa91f7824b`
-進捗反映基準: `81c82f8ac75b32ba9a7e139f0e70a152f00fca91`（Pull Request #43マージ後のmain）
+進捗反映基準: `7178828b7534dcec3fdfe650f9bd3cf2909d6602`（Pull Request #44マージ後のmain）
 
 ## 1. 結論
 
@@ -11,7 +11,7 @@
 
 競技版・完成版としての公開とランキング再開は停止する。既存の公開先を残す場合も開発中プレビューとして扱う。Supabaseの本番データ、SQL、RPC、RLS、`public.games`は、この計画では変更しない。
 
-まとまりAはPull Request #42、まとまりBの中核はPull Request #43でmainへ統合した。現在は独立検証で見つかった締切確定と画面休止境界を別の補修提案で閉じる。WebGL消失復旧とランキングは原因が異なるため、まとまりC以降で扱う。
+まとまりAはPull Request #42、まとまりBはPull Request #43・#44でmainへ統合した。現在はまとまりCの有効反射弧、WebGL消失復旧、安全なCanvas切替を別のDraft Pull Requestで閉じる。ランキングはまとまりCの自動・実機確認が終わるまで停止する。
 
 ## 2. 敵対的検証で確定した事実
 
@@ -126,11 +126,23 @@
 - 得点基礎値、公式配置、30秒、6回のバランス変更
 - Supabase URL、key、Bearer、SQL、RPC、RLS、`public.games`
 - ランキング送信の有効化と本番スコア送信
-- WebGL context lost/restored、canvas交換、描画全面改修
+- WebGL描画の全面的な見た目改修、波の帯状表現、音、画面全体の作り直し
 - safe-area、結果画面、保存、音、画面全体の作り直し
 - 本番公開、Ready化、マージ
 
-まとまりA後も反射波の前景は全円であり、有限経路として無効な部分まで視覚上は伸びる。親の有限経路で到達不能な最初の接触にも、正しい後続二面経路を保持するための子波、反射光、音通知が作られる。得点は有限経路検査で拒否するが、見た目・音と判定の完全一致ではないため、まとまりCで有効な反射弧と接触通知を一緒に生成するまで競技版公開を停止する。通常操作で多数の波が同時に存在し得るため、iPhone最大波性能の実測前も公開しない。
+まとまりA/B後に残った「有限経路として無効な反射波の全円表示」「親の有限経路で到達不能な仮想接触の反射通知」「WebGL消失後の描画停止・復帰不能」をまとまりCで扱う。通常操作で多数の波が同時に存在し得るため、iPhone最大波性能の実測前も公開しない。
+
+## 7.5 まとまりC: 有効反射弧・WebGL復旧・安全なCanvas切替
+
+まとまりCでは、物理・得点の有限経路契約を表示とフィードバックへそろえる。反射深度がある波は、`traceReflectionPath`で各有限面を通ることを角度点列の中点で確認し、有効な区間だけを独立線分として描画する。直接波は従来どおり全円を描画する。96分割は描画サンプリングの解像度であり、物理の波数・入力数・反射数の上限ではない。
+
+親の有限経路で到達不能な最初の仮想接触では、後続の有効な二面経路を失わないよう子波を保持する。ただし、`waveCanReach`が真になる接触だけへ反射光と`onReflect`通知を出し、無効な接触を画面・音へ公開しない。
+
+WebGLでは`webglcontextlost`で`preventDefault()`を呼び、可視時間を精算してから入力と描画ループを一時停止する。`webglcontextrestored`ではシェーダー、プログラム、バッファを再初期化する。復帰初期化または描画中のWebGL処理が失敗した場合は、同じcanvasで2D contextを取得せず、UI属性を引き継いだ新canvasへ差し替えてCanvas 2Dへ移行する。ゲームWorld、スコア、入力キューは保持する。
+
+ローカルではNode自動試験91件、`npm run build`、`npm run verify`、`npm run analyze:layouts`、`npm run render:layouts`、`npm run size`、`git diff --check`が成功した。自動試験は有限弧の点列、反射前の空弧、無効接触の通知抑制、WebGL復帰契約、新canvas切替、src/dist整合性を確認する。Node試験だけでは実ブラウザの強制コンテキスト消失、iPhone描画性能、長時間反復を確認済みとはしない。
+
+まとまりCの自動確認は完了扱いとするが、Draft後のGitHub Actions、実ブラウザでの強制WebGL消失・復帰またはCanvas切替、iPhone短期確認が残る。これらを満たすまでランキングと競技版公開は停止する。
 
 ## 8. まとまりB: 時刻・入力・得点再検証
 
@@ -173,17 +185,18 @@
 
 ## 11. 戻し方
 
-Pull Request #43後の境界補修提案だけをrevertする。Supabase、本番データ、SQL、ランキング状態には変更を加えないため、データの戻し作業は不要である。
+まとまりCのDraft Pull Requestだけをrevertする。Supabase、本番データ、SQL、ランキング状態には変更を加えないため、データの戻し作業は不要である。
 
 ## 12. 現在位置
 
 | 項目 | 状態 |
 |---|---|
 | 敵対的検証 | 完了 |
-| 対応計画 | Pull Request #42のまとまりA、Pull Request #43のまとまりB中核はmainへ統合済み。境界補修を別Draft Pull Requestで提出する |
+| 対応計画 | Pull Request #42〜#44のまとまりA/Bはmainへ統合済み。まとまりCを別Draft Pull Requestで提出する |
 | まとまりA 実装 | 完了（Node自動試験） |
-| まとまりA/B ローカル自動試験 | 85件成功、build/verify成功 |
-| GitHub Actions | Pull Request #43最終head `dd8761c`のRun #62は成功。今回補修はDraft作成後に確認する |
+| まとまりA/B/C ローカル自動試験 | 91件成功、build/verify/配置確認/容量確認成功 |
+| GitHub Actions | Pull Request #45 head `537baf6`のRun #66（ID `31467312854`）はNode.js 18、20、22の全ジョブが成功 |
 | iPhone短期確認 | 未確認 |
-| まとまりB | Pull Request #43統合済み。境界補修はNode自動試験完了、iPhone実機未確認 |
-| まとまりC〜E | 未着手 |
+| まとまりB | Pull Request #43・#44統合済み。iPhone実機未確認 |
+| まとまりC | ローカル実装・自動確認・Run #66完了。実ブラウザの強制WebGL消失は未確認 |
+| まとまりD〜E | 未着手 |

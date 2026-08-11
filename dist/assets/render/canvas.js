@@ -1,4 +1,5 @@
 import {createViewport} from '../game/viewport.js';
+import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from './reflection-arcs.js';
 
 export class CanvasView{
   constructor(canvas){
@@ -10,6 +11,7 @@ export class CanvasView{
     this.screenWidth=1;
     this.screenHeight=1;
     this.viewport=createViewport(1,1);
+    this.arcPoints=new Float32Array(REFLECTION_ARC_SEGMENTS*4);
   }
 
   waveStroke(wave){
@@ -110,7 +112,15 @@ export class CanvasView{
       context.strokeStyle=`rgba(${red},${green},${blue},${(1-wave.age/wave.life)*.86})`;
       context.lineWidth=wave.reflections>=2?4:3;
       context.beginPath();
-      context.arc(wave.originX,wave.originY,wave.radius,0,Math.PI*2);
+      if((wave.reflectionDepth??wave.reflections??0)>0){
+        const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
+        for(let point=0;point<pointCount;point+=4){
+          context.moveTo(this.arcPoints[point],this.arcPoints[point+1]);
+          context.lineTo(this.arcPoints[point+2],this.arcPoints[point+3]);
+        }
+      }else{
+        context.arc(wave.originX,wave.originY,wave.radius,0,Math.PI*2);
+      }
       context.stroke();
     }
     for(const beacon of world.beacons){
