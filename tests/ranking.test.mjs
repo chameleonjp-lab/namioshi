@@ -6,6 +6,7 @@ import{
   isCurrentSubmission,
   submitScore
 }from'../src/services/ranking.js';
+import{SUPABASE_PUBLISHABLE_KEY,SUPABASE_URL}from'../src/config.js';
 
 function response({ok=true,status=200,body={accepted:true}}={}){
   return{ok,status,json:async()=>body};
@@ -40,9 +41,9 @@ test('enabled service accepts official scores once and sends only the apikey hea
   assert.equal(result.accepted,true);
   assert.equal(result.playId,'play-1');
   assert.equal(requests.length,1);
-  assert.equal(requests[0].url,'https://mlpnjgezrnhdxsxolyzj.supabase.co/rest/v1/rpc/submit_score');
+  assert.equal(requests[0].url,`${SUPABASE_URL}/rest/v1/rpc/submit_score`);
   assert.deepEqual(requests[0].init.headers,{
-    apikey:'sb_publishable_test',
+    apikey:SUPABASE_PUBLISHABLE_KEY,
     'Content-Type':'application/json'
   });
   assert.equal(Object.hasOwn(requests[0].init.headers,'Authorization'),false);
