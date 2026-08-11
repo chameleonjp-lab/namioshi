@@ -21,6 +21,7 @@ export const LOGICAL_HEIGHT=640;
 export const OFFICIAL_LAYOUT_ID='candidate-c-open-harbor';
 export const OFFICIAL_LAYOUT_FINGERPRINT='fnv1a-fc71e804';
 export const OFFICIAL_RULE_VERSION='namioshi-v3-layout-study-001';
+export const RANKING_SEASON='prelaunch-v1';
 export const SUPABASE_URL='https://mlpnjgezrnhdxsxolyzj.supabase.co';
 export const SUPABASE_PUBLISHABLE_KEY='sb_publishable_drzcy0v97knU6FgjqSgBHw_0A9XPdFM';
 export const QUALITY={
