@@ -46,7 +46,7 @@ test('enabled service accepts official scores once and sends the versioned contr
   assert.equal(result.accepted,true);
   assert.equal(result.playId,'play-1');
   assert.equal(requests.length,1);
-  assert.equal(requests[0].url,`${SUPABASE_URL}/rest/v1/rpc/submit_score`);
+  assert.equal(requests[0].url,`${SUPABASE_URL}/rest/v1/rpc/submit_namioshi_score_v1`);
   assert.deepEqual(requests[0].init.headers,{
     apikey:SUPABASE_PUBLISHABLE_KEY,
     'Content-Type':'application/json'
