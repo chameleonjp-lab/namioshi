@@ -6,7 +6,12 @@ import{
   isCurrentSubmission,
   submitScore
 }from'../src/services/ranking.js';
-import{SUPABASE_PUBLISHABLE_KEY,SUPABASE_URL}from'../src/config.js';
+import{
+  OFFICIAL_RULE_VERSION,
+  RANKING_SEASON,
+  SUPABASE_PUBLISHABLE_KEY,
+  SUPABASE_URL
+}from'../src/config.js';
 
 function response({ok=true,status=200,body={accepted:true}}={}){
   return{ok,status,json:async()=>body};
@@ -27,7 +32,7 @@ test('default ranking service stays disabled without a network request',async()=
   }
 });
 
-test('enabled service accepts official scores once and sends only the apikey header',async()=>{
+test('enabled service accepts official scores once and sends the versioned contract',async()=>{
   const requests=[];
   const service=createRankingService({
     enabled:true,
@@ -52,7 +57,9 @@ test('enabled service accepts official scores once and sends only the apikey hea
     p_game_slug:'namioshi',
     p_score:100,
     p_client_version:'namioshi-v3.1.0-official002',
-    p_play_id:'play-1'
+    p_play_id:'play-1',
+    p_rule_version:OFFICIAL_RULE_VERSION,
+    p_season:RANKING_SEASON
   });
   await assert.rejects(
     service.submitScore('player',100,{playId:'play-1'}),
@@ -60,13 +67,32 @@ test('enabled service accepts official scores once and sends only the apikey hea
   );
 });
 
-test('practice mode, invalid values, and scores over the hard ceiling are rejected before fetch',async()=>{
+test('server rejection is not recorded as a successful play and can be retried',async()=>{
+  let calls=0;
+  const service=createRankingService({
+    enabled:true,
+    fetchImpl:async()=>{
+      calls++;
+      return response({body:calls===1?[{accepted:false,status:'rate_limited'}]:[{accepted:true}]});
+    }
+  });
+
+  await assert.rejects(
+    service.submitScore('player',100,{playId:'retry-server'}),
+    error=>error.code==='RANKING_SERVER_REJECTED'
+  );
+  const retried=await service.submitScore('player',100,{playId:'retry-server'});
+  assert.equal(retried.accepted,true);
+  assert.equal(calls,2);
+});
+
+test('practice mode, invalid values, and unsafe play IDs are rejected before fetch',async()=>{
   let calls=0;
   const service=createRankingService({enabled:true,fetchImpl:async()=>{calls++;return response()}});
   await assert.rejects(service.submitScore('player',100,{playId:'practice',mode:'practice'}),error=>error.code==='RANKING_MODE_REJECTED');
   await assert.rejects(service.submitScore('player',6481,{playId:'too-high'}),error=>error.code==='RANKING_INVALID_SCORE');
   await assert.rejects(service.submitScore('',100,{playId:'empty-name'}),error=>error.code==='RANKING_INVALID_NAME');
-  await assert.rejects(service.submitScore('player',100,{}),error=>error.code==='RANKING_INVALID_PLAY_ID');
+  await assert.rejects(service.submitScore('player',100,{playId:'not safe'}),error=>error.code==='RANKING_INVALID_PLAY_ID');
   assert.equal(calls,0);
 });
 
