@@ -20,7 +20,9 @@ p{line-height:1.55;color:#bad9e8}
 .modeCard .btn{margin-top:9px}
 .modeCard .small{margin:7px 2px 0}
 .modeResult{margin:2px 0 8px;padding:8px 10px;border:1px solid rgba(142,229,255,.22);border-radius:12px;background:rgba(88,240,255,.07);font-size:13px}
+.resultStatus{margin:6px 0;color:#d9f8ff;font-size:14px;line-height:1.45}
 .link{display:block;color:#9fecff;margin-top:10px}
+.btnLink{display:block;text-decoration:none;text-align:center}
 .hud{position:absolute;z-index:2;left:0;right:0;top:env(safe-area-inset-top);display:none;justify-content:space-between;gap:4px;padding:10px;font-weight:800;pointer-events:none}
 .hud.show{display:flex}
 .pill{font-size:12px;padding:8px 8px;border-radius:999px;background:rgba(0,0,0,.32);border:1px solid rgba(142,229,255,.18);white-space:nowrap}

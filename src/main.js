@@ -6,6 +6,7 @@ import {MAX_TAPS,PLAY_SECONDS} from './config.js';
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
+import {readPlayerState,recordPlayResult,saveDisplayName} from './services/local-progress.js';
 import {isSoundEnabled,playCue,playHitSound,setAudioActive,setSoundEnabled,wake} from './core/audio.js';
 
 const app=document.querySelector('#app');
@@ -84,6 +85,8 @@ app.innerHTML=`
     <h1 id="resultTitle" class="sectionTitle">公式結果</h1>
     <p id="resultMode" class="modeResult"></p>
     <p><b id="fs">0</b> 点</p>
+    <p id="resultBestStatus" class="resultStatus" aria-live="polite"></p>
+    <p id="resultPlayCount" class="resultStatus" aria-live="polite"></p>
     <div class="breakdown" aria-label="得点内訳">
       <p>直接 <b id="scoreDirect">0</b>点</p>
       <p>壁反射 <b id="scoreWall">0</b>点</p>
@@ -94,7 +97,12 @@ app.innerHTML=`
     <button id="share" class="btn">シェア</button>
     <button id="again" class="btn secondary">同じモードでもう一度</button>
     <button id="changeMode" class="btn secondary">モードを選び直す</button>
+    <button id="rankingDetails" class="btn secondary" type="button" disabled aria-disabled="true">詳細ランキング（準備中）</button>
+    <button id="endGame" class="btn secondary" type="button">ゲーム終了</button>
+    <a class="btn secondary btnLink" href="https://chameleonjp.codeberg.page/" target="_blank" rel="noreferrer">実験場へ戻る</a>
+    <p id="resultStorageStatus" class="small" aria-live="polite"></p>
     <p id="resultShareStatus" class="small"></p>
+    <p id="resultExitStatus" class="small"></p>
     <textarea id="shareText" class="shareText" readonly></textarea>
   </div>
 </section>
@@ -106,6 +114,8 @@ app.innerHTML=`
 </section>`;
 
 const $=id=>document.getElementById(id);
+const storedPlayerState=readPlayerState();
+if(storedPlayerState.displayName)$('name').value=storedPlayerState.displayName;
 let state='HOME';
 let quality='MID';
 let player='';
@@ -358,6 +368,7 @@ function start(mode){
     return;
   }
   $('msg').textContent='';
+  saveDisplayName(player);
   $('name').blur();
   void wake();
   if(!hasCompletedGuide())startGuide();
@@ -435,6 +446,29 @@ function play(){
   hud(true);
 }
 
+function updateResultPersistence(result){
+  const official=world.mode===GAME_MODE.OFFICIAL;
+  if(!result.saved){
+    $('resultBestStatus').textContent=official
+      ?'端末ベストは利用できません（この環境では保存できません）。'
+      :'練習結果です。公式の端末ベストは更新しません。';
+    $('resultPlayCount').textContent='プレイ回数はこの環境では保存できません。';
+    $('resultStorageStatus').textContent='この環境では結果を端末に保存できません。結果は画面に表示します。';
+    return;
+  }
+  if(official){
+    $('resultBestStatus').textContent=result.isNewBest
+      ?`NEW BEST（端末ベスト：${result.bestScore}点）`
+      :`端末ベスト：${result.bestScore}点`;
+    $('resultPlayCount').textContent=`公式プレイ回数：${result.playCount}回`;
+    $('resultStorageStatus').textContent='結果を端末に保存しました。';
+  }else{
+    $('resultBestStatus').textContent='練習結果です。公式の端末ベストは更新しません。';
+    $('resultPlayCount').textContent=`練習プレイ回数：${result.playCount}回`;
+    $('resultStorageStatus').textContent='練習結果を端末に保存しました。';
+  }
+}
+
 function finish(){
   if(state!=='PLAYING')return;
   clearCountdown();
@@ -462,8 +496,14 @@ function finish(){
   $('scoreWall').textContent=String(breakdown.wall);
   $('scoreGlass').textContent=String(breakdown.glass);
   $('scoreDouble').textContent=String(breakdown.double);
+  updateResultPersistence(recordPlayResult({
+    mode:world.mode,
+    score:world.score,
+    displayName:player
+  }));
   $('rank').textContent=policy.statusText;
   $('resultShareStatus').textContent='';
+  $('resultExitStatus').textContent='';
   $('shareText').style.display='none';
   playCue('RESULT');
 }
@@ -563,9 +603,16 @@ function returnToModeSelection(){
   if(state!=='RESULT')return;
   clearCountdown();
   $('resultShareStatus').textContent='';
+  $('resultExitStatus').textContent='';
   $('shareText').value='';
   $('shareText').style.display='none';
   setState('HOME');
+}
+
+function endGame(){
+  if(state!=='RESULT')return;
+  returnToModeSelection();
+  $('msg').textContent='ゲームを終了しました。もう一度遊ぶ場合はモードを選んでください。';
 }
 
 function syncAudioVisibility(){
@@ -617,6 +664,7 @@ $('rule').onclick=()=>{if(state==='HOME')setState('RULES')};
 $('closeRules').onclick=()=>setState('HOME');
 $('again').onclick=()=>{if(state==='RESULT')beginCountdown()};
 $('changeMode').onclick=returnToModeSelection;
+$('endGame').onclick=endGame;
 $('guideContinue').onclick=()=>leaveGuide(true);
 $('guideHome').onclick=()=>leaveGuide(false);
 $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
