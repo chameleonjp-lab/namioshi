@@ -82,3 +82,6 @@
 59. D2の初期設定はenabled=false、season=prelaunch-v1、verification_status=self_reportedとし、self-reported記録を競技性の証明と扱わない。
 60. play_idは同一内容の再送を冪等化し、異なる内容の再送を拒否する。競合直列化と名前単位の頻度制限を置くが、本人性・不正防止の証明とは扱わない。
 61. SQL適用、本番限定疎通、ランキング表示接続は、非本番検証とユーザーの明示承認を経た別工程とする。
+
+
+62. 回復D D2の7引数RPCは、SupabaseのRPCで関数名のオーバーロードが使えないため、既存の4引数`public.submit_score`を変更せず、専用名`public.submit_namioshi_score_v1`へ修正する。クライアントの送信先とSQL提案・検査を同じ専用名へそろえ、SQL適用とランキング有効化は引き続き未承認・未実施とする。
