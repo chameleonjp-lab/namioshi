@@ -178,7 +178,7 @@ Pull Request #45の回復C統合後、クライアントのランキング送信
 - 名前、play ID、整数スコア、0〜6480点を送信前に検査する
 - play ID単位で同時送信と成功後の再送を止め、失敗後の明示的な再試行だけを許可する
 - 10秒のAbortSignal、apikeyヘッダー、Authorization不使用を固定する
-- RESULT画面ではplay IDと画面状態が現在のものか確認し、古い応答を表示へ反映しない
+- 送信結果にはplay IDを付ける。現行mainからの送信呼び出しとRESULT画面統合は、サーバー契約後の別工程に残す
 - SQL、RPC、RLS、public.games、本番スコア、ランキング有効化は行わない
 
 クライアント側の検査は不正利用者が回避できるため、競技性の証明にはならない。サーバー側の許可version、rule version、season、play ID一意性、入力再計算または自己申告表示の選択は別工程とする。
