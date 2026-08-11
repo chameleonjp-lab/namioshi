@@ -96,3 +96,8 @@ Supabaseの非本番検証は後回しにし、依存しないPhase 6Aの端末�
 PR #49の統合後は、Supabase連携を後回しにしたままPhase 6Bの画面・支援機能を進める。safe-area、横画面、読み上げの意味づけ、フォーカス表示、`prefers-reduced-motion`を対象とし、ゲームルール、得点、物理、描画方式、端末保存、ランキングは変更しない。
 
 safe-areaと横画面はCSSで余白と配置を調整し、画面回転や`visualViewport`の変更では360×640のWorldを作り直さず、viewportと描画サイズだけを再計算する。実機での表示確認は自動検査と分け、iPhone・iPadでのsafe-area、横画面、キーボード、VoiceOver、外部キーボードは未確認として残す。
+
+
+## 2026-08-12 Phase 7Aの描画土台
+
+63. WebGLの品質設定は背景波と粒子へ適用し、得点対象の前景波はHIGH・MID・LOWのいずれでも隠さない。attribute・uniform位置、単位円のsin/cos、動的頂点バッファは初期化時に準備する。プレイ中の品質は変更せず、HOME・RULES・COUNTDOWN・RESULT・ERRORは最大30fpsで描画する。これは描画負荷を抑える判断であり、ゲームルール、得点、物理、ランキング、Supabaseの契約を変更するものではない。

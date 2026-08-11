@@ -1,4 +1,5 @@
 import {createViewport} from '../game/viewport.js';
+import {QUALITY} from '../config.js';
 import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from './reflection-arcs.js';
 
 export class CanvasView{
@@ -12,6 +13,7 @@ export class CanvasView{
     this.screenHeight=1;
     this.viewport=createViewport(1,1);
     this.arcPoints=new Float32Array(REFLECTION_ARC_SEGMENTS*4);
+    this.quality='MID';
   }
 
   waveStroke(wave){
@@ -21,8 +23,9 @@ export class CanvasView{
     return[90,235,255];
   }
 
-  resize(width,height,_quality,viewport=createViewport(width,height)){
-    const dpr=Math.min(devicePixelRatio||1,1.25);
+  resize(width,height,quality='MID',viewport=createViewport(width,height)){
+    this.quality=quality;
+    const dpr=Math.min(devicePixelRatio||1,QUALITY[quality]?.dpr??QUALITY.MID.dpr);
     this.dpr=dpr;
     this.screenWidth=width;
     this.screenHeight=height;
@@ -33,7 +36,7 @@ export class CanvasView{
     this.canvas.style.height=height+'px';
   }
 
-  render(world,time){
+  render(world,time,quality=this.quality){
     const context=this.ctx;
     const viewport=this.viewport;
     context.setTransform(this.dpr,0,0,this.dpr,0,0);
@@ -136,7 +139,9 @@ export class CanvasView{
       context.arc(beacon.x,beacon.y,beacon.radius,0,Math.PI*2);
       context.fill();
     }
-    for(const particle of world.particles){
+    const particleCount=Math.min(QUALITY[quality]?.particles??world.particles.length,world.particles.length);
+    for(let index=0;index<particleCount;index++){
+      const particle=world.particles[index];
       context.fillStyle=`rgba(190,250,255,${1-particle.age/particle.life})`;
       context.fillRect(particle.x,particle.y,2,2);
     }

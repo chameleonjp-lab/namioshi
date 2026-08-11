@@ -25,7 +25,7 @@ export const RANKING_SEASON='prelaunch-v1';
 export const SUPABASE_URL='https://mlpnjgezrnhdxsxolyzj.supabase.co';
 export const SUPABASE_PUBLISHABLE_KEY='sb_publishable_drzcy0v97knU6FgjqSgBHw_0A9XPdFM';
 export const QUALITY={
-  HIGH:{dpr:1.5,waves:MAX_WAVES,particles:90},
-  MID:{dpr:1.25,waves:MAX_WAVES,particles:70},
-  LOW:{dpr:1,waves:MAX_WAVES,particles:45}
+  HIGH:{dpr:1.5,waves:12,particles:90},
+  MID:{dpr:1.25,waves:8,particles:60},
+  LOW:{dpr:1,waves:5,particles:30}
 };

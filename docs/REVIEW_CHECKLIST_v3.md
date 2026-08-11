@@ -383,6 +383,21 @@
 - [未確認] 実機未確認項目なし
 
 
+## Phase 7A 描画土台の自動確認（2026-08-12）
+
+- [済] WebGLのattribute位置を描画中に検索しない
+- [済] WebGLのuniform位置を描画中に検索しない
+- [済] 背景用静的バッファと動的頂点バッファを分ける
+- [済] 動的頂点バッファを`bufferSubData`で再利用する
+- [済] 単位円のsin/cosを初期化時に事前計算する
+- [済] 背景波と粒子へHIGH・MID・LOWの品質上限を適用する
+- [済] 品質を下げても得点対象の前景波を隠さない
+- [済] プレイ中に品質を変更しない
+- [済] HOME、RULES、COUNTDOWN、RESULT、ERRORの描画を最大30fpsへ抑える
+- [未確認] 実ブラウザのWebGL描画とCanvas 2D切替
+- [未確認] WebGLコンテキスト消失・復帰
+- [未確認] iPhone・iPadの継続30fps、入力反応、長時間動作
+
 ## 回復D第一段階の確認（ランキング未有効化）
 
 - [未確認] Supabaseの現行RPCがplay ID、許可version、rule version、seasonを受け取るサーバー契約へ更新される
