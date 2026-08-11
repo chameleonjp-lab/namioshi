@@ -8,9 +8,7 @@ import{
 
 export const RANKING_SERVICE_STATE=Object.freeze({
   enabled:false,
-  activationPhase:'Phase 5',
-  officialOnly:true,
-  serverContract:'pending'
+  activationPhase:'Phase 5'
 });
 
 export const RANKING_REQUEST_TIMEOUT_MS=10_000;
