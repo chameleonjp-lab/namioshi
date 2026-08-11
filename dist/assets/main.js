@@ -8,7 +8,6 @@ import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
 import {readPlayerState,recordPlayResult,saveDisplayName} from './services/local-progress.js';
 import {isSoundEnabled,playCue,playHitSound,setAudioActive,setSoundEnabled,wake} from './core/audio.js';
-
 const app=document.querySelector('#app');
 app.innerHTML=`
 <canvas id="game" role="img" aria-label="ゲーム盤面。プレイ中は画面をタップして波を出します。キーボード操作には対応していません。"></canvas>
@@ -18,6 +17,7 @@ app.innerHTML=`
   <div class="pill">残り <span id="tm">30.0</span></div>
   <div class="pill">タップ <span id="tp">0</span>/6</div>
 </div>
+<div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
 <div id="playLegend" class="playLegend" role="note" aria-live="polite">
   <span><b>反射板</b>：棒に波を当てると、波の向きが変わります</span>
   <span>得点　直接20 ／ 壁100 ／ 反射板180 ／ 2回反射300</span>
@@ -143,6 +143,7 @@ let lastRenderTimestamp=null;
 let lastStaticRenderTimestamp=null;
 let deadlineSettlementActive=false;
 const STATIC_RENDER_INTERVAL=1000/30;
+let hitFeedbackTimer=0;
 
 const GUIDE_STORAGE_KEY='namioshi.guide.completed';
 const STATE_FOCUS_TARGETS=Object.freeze({
@@ -183,6 +184,10 @@ function setState(nextState){
   }
   $('hud').classList.toggle('show',nextState==='PLAYING');
   $('playLegend').classList.toggle('show',nextState==='PLAYING');
+  if(nextState!=='PLAYING'){
+    $('hitFeedback').classList.remove('show');
+    if(hitFeedbackTimer){clearTimeout(hitFeedbackTimer);hitFeedbackTimer=0;}
+  }
   const guideVisible=nextState==='PLAYING'&&tutorialMode;
   $('guideOverlay').classList.toggle('show',guideVisible);
   $('guideOverlay').setAttribute('aria-hidden',String(!guideVisible));
@@ -685,8 +690,30 @@ function syncAudioVisibility(){
   if(state==='PLAYING')updatePlayTime(now);
 }
 
+const HIT_FEEDBACK_LABELS=Object.freeze({
+  direct:'DIRECT',
+  wall:'WALL',
+  glass:'GLASS',
+  double:'DOUBLE'
+});
+
+function showHitFeedback(hit){
+  if(!hit||!Number.isFinite(hit.points)||hit.points<=0)return;
+  const feedback=$('hitFeedback');
+  const label=HIT_FEEDBACK_LABELS[hit.category]??'HIT';
+  feedback.textContent='+'+hit.points+' '+label;
+  feedback.classList.remove('show');
+  void feedback.offsetWidth;
+  feedback.classList.add('show');
+  if(hitFeedbackTimer)clearTimeout(hitFeedbackTimer);
+  hitFeedbackTimer=setTimeout(()=>{
+    feedback.classList.remove('show');
+    hitFeedbackTimer=0;
+  },520);
+}
+
 world.onReflect=reflection=>playCue(reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT');
-world.onHit=hit=>playHitSound(hit);
+world.onHit=hit=>{playHitSound(hit);showHitFeedback(hit)};
 $('soundToggle').onclick=()=>{
   const enabled=setSoundEnabled(!isSoundEnabled());
   updateSoundControl();
