@@ -3,7 +3,7 @@
 作成日: 2026-08-09
 基準リポジトリ: `chameleonjp-lab/namioshi`
 敵対的再現基準: `c9ddd8e468af347567a5628de7f658aa91f7824b`
-進捗反映基準: `7178828b7534dcec3fdfe650f9bd3cf2909d6602`（Pull Request #44マージ後のmain）
+進捗反映基準: `9ce1aba6655178eb23156a5c89fde45eeb1ce9ab`（Pull Request #45マージ後のmain）
 
 ## 1. 結論
 
@@ -11,7 +11,7 @@
 
 競技版・完成版としての公開とランキング再開は停止する。既存の公開先を残す場合も開発中プレビューとして扱う。Supabaseの本番データ、SQL、RPC、RLS、`public.games`は、この計画では変更しない。
 
-まとまりAはPull Request #42、まとまりBはPull Request #43・#44でmainへ統合した。現在はまとまりCの有効反射弧、WebGL消失復旧、安全なCanvas切替を別のDraft Pull Requestで閉じる。ランキングはまとまりCの自動・実機確認が終わるまで停止する。
+まとまりAはPull Request #42、まとまりBはPull Request #43・#44、まとまりCはPull Request #45でmainへ統合した。現在はまとまりDのクライアント側ランキング安全化へ進む。ランキング送信と本番データ変更は引き続き停止する。
 
 ## 2. 敵対的検証で確定した事実
 
@@ -169,6 +169,20 @@ WebGLでは`webglcontextlost`で`preventDefault()`を呼び、可視時間を精
 
 本番1件の限定疎通はランキング公開や再開を意味しない。クライアントの`enabled=false`は、まとまりEの実機検収と同一候補版3回合格が終わり、ユーザーが再開を明示承認するまで維持する。
 
+## 9.5 まとまりD第一段階: クライアント側ランキング安全化（未有効化）
+
+Pull Request #45の回復C統合後、クライアントのランキング送信契約を先に整える。Supabaseの現行submit_score RPCはp_play_id、許可版、seasonを受け取る契約へまだ変更していないため、RANKING_SERVICE_STATE.enabled=falseを維持する。今回のコードは将来のサーバー契約へ渡す入力を検査するが、これだけで不正得点を防げるとは扱わない。
+
+- 正式Project URLとコード内Publishable keyの対応を読み取り専用で確認する
+- 公式モードだけを許可し、練習モードを送信しない
+- 名前、play ID、整数スコア、0〜6480点を送信前に検査する
+- play ID単位で同時送信と成功後の再送を止め、失敗後の明示的な再試行だけを許可する
+- 10秒のAbortSignal、apikeyヘッダー、Authorization不使用を固定する
+- RESULT画面ではplay IDと画面状態が現在のものか確認し、古い応答を表示へ反映しない
+- SQL、RPC、RLS、public.games、本番スコア、ランキング有効化は行わない
+
+クライアント側の検査は不正利用者が回避できるため、競技性の証明にはならない。サーバー側の許可version、rule version、season、play ID一意性、入力再計算または自己申告表示の選択は別工程とする。
+
 ## 10. 実機停止条件
 
 まとまりBの後、iPhone 17 Proで最低限次を確認する。
@@ -192,11 +206,11 @@ WebGLでは`webglcontextlost`で`preventDefault()`を呼び、可視時間を精
 | 項目 | 状態 |
 |---|---|
 | 敵対的検証 | 完了 |
-| 対応計画 | Pull Request #42〜#44のまとまりA/Bはmainへ統合済み。まとまりCを別Draft Pull Requestで提出する |
+| 対応計画 | Pull Request #42〜#45のまとまりA/B/Cはmainへ統合済み。まとまりD第一段階を別Draft Pull Requestで提出する |
 | まとまりA 実装 | 完了（Node自動試験） |
 | まとまりA/B/C ローカル自動試験 | 91件成功、build/verify/配置確認/容量確認成功 |
 | GitHub Actions | Pull Request #45 head `537baf6`のRun #66（ID `31467312854`）はNode.js 18、20、22の全ジョブが成功 |
 | iPhone短期確認 | 未確認 |
 | まとまりB | Pull Request #43・#44統合済み。iPhone実機未確認 |
-| まとまりC | ローカル実装・自動確認・Run #66完了。実ブラウザの強制WebGL消失は未確認 |
-| まとまりD〜E | 未着手 |
+| まとまりC | Pull Request #45がmainへ統合済み。実ブラウザの強制WebGL消失とiPhone確認は未確認 |
+| まとまりD〜E | D第一段階（クライアント契約）を着手。サーバー契約と実機検収は未着手 |
