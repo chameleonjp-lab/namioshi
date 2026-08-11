@@ -67,3 +67,12 @@
 - クライアントのランキング送信状態は enabled=false のまま維持する。
 - SQL、RPC、RLS、public.games、本番データは変更しない。
 - クライアント側へ公式モード限定、play ID、スコア範囲、重複防止、10秒中断、apikeyのみ、古い応答抑制を追加する。これらはサーバー検査の代わりにならない。
+
+
+## 2026-08-11 回復D第一段階の検証結果
+
+- Draft Pull Request #46を作成した。
+- GitHub Actions Run #73（ID 31469136374）はNode.js 18・20・22の全ジョブが成功した。
+- Actions内のnpm testは96/96、verifyも成功した。
+- 既存テストが要求する「RPC契約前はmain.jsから送信を呼ばない」条件を維持した。
+- ランキング送信、SQL、RPC、RLS、public.games、本番データは変更していない。
