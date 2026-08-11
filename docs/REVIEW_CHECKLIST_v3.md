@@ -301,7 +301,14 @@
 - [済] ERROR
 - [済] id重複なし
 - [済] 320×568相当のローカルChromiumでHOMEに横スクロールがない
-- [未確認] safe-area対応
+- [済] safe-area用のCSS変数を画面、HUD、プレイ中の説明、初回案内へ適用した
+- [済] 横画面用のパネル幅、モードカード、結果内訳の配置を追加した
+- [済] `resize`、`orientationchange`、`visualViewport.resize`で表示変換だけを再計算する
+- [済] 名前入力へlabelと入力補助を追加した
+- [済] 画面状態の`aria-hidden`、status、alert、シェア文labelを追加した
+- [済] RULES、RESULT、ERROR、初回案内の状態遷移後フォーカスを追加した
+- [済] `:focus-visible`でフォーカス位置を見えるようにした
+- [未確認] iPhone・iPad実機でsafe-areaと横画面の配置が崩れない
 - [済] 開始時に名前入力欄へblur()を実行する
 - [未確認] iPhone Safariで開始時にキーボードが閉じる
 - [未確認] 結果画面のボタンが見切れない
@@ -347,7 +354,8 @@
 - [未確認] 毎フレームlocation検索なし
 - [未確認] 描画資源が周回ごとに増えない
 - [未確認] WebGLコンテキスト消失対応
-- [未確認] reduced motion
+- [済] `prefers-reduced-motion`時にCSSのアニメーション、遷移、滑らかなスクロールを抑える
+- [未確認] reduced motionを有効にした実機での表示確認
 - [未確認] HIGH / MID / LOW
 - [済] 総容量は報告するが固定上限で落とさない実装になっている
 

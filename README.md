@@ -17,6 +17,7 @@ v3は段階的に実装しています。文書があることだけを完成の
 - レビュー・公開確認: [`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)
 - Supabase Phase 5A監査: [`docs/SUPABASE_AUDIT_v3.md`](docs/SUPABASE_AUDIT_v3.md)
 - 敵対的検証後の回復計画: [`docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md`](docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md)
+- Phase 6B 画面・支援機能: [`docs/PHASE6B_SCREEN_ACCESSIBILITY_REPORT.md`](docs/PHASE6B_SCREEN_ACCESSIBILITY_REPORT.md)
 
 v3では3MBを受け入れ上限にしません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を優先します。複数ファイルとES Modulesを正式に使用します。
 
@@ -57,7 +58,7 @@ npm run size
 
 ゲーム内部は360×640へ固定しています。端末画面には縦横比を保って拡大縮小し、余白は暗い水面背景で埋めます。
 
-Pointer入力は画面座標から360×640の座標へ変換し、余白上の入力を拒否します。画面回転やresizeでは描画範囲だけを更新し、進行中のWorld状態を作り直しません。
+Pointer入力は画面座標から360×640の座標へ変換し、余白上の入力を拒否します。画面回転やresizeでは描画範囲だけを更新し、進行中のWorld状態を作り直しません。画面のsafe-areaはUIの余白へ反映し、ゲーム内部座標へは反映しません。
 
 ## 公式配置と練習配置
 
@@ -85,11 +86,16 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 ## 確認状態
 
-Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45まではmainへ統合済みです。ただし、G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
+Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49まではmainへ統合済みです。ただし、G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
 
-現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替が統合済みです。次のDraftではランキングを有効化せず、クライアント側の送信安全契約を整えます。公式fixtureの実到達例は5481点（直接0、壁239、反射板429、2回反射4813）で、台帳合計・内訳合計・1800固定stepをgoldenとして固定し、6480はhard ceilingとして扱い探索最大値とは断定していません。実ブラウザの強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
+現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線まで統合済みです。公式fixtureの実到達例は5481点（直接0、壁239、反射板429、2回反射4813）で、台帳合計・内訳合計・1800固定stepをgoldenとして固定し、6480はhard ceilingとして扱い探索最大値とは断定していません。実ブラウザの強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
 
 
 ## 回復D D2.1の状態
 
 D2のサーバー契約案は未適用のまま、Supabase公式RPC契約に合わせて7引数RPCを`submit_namioshi_score_v1`という専用名へ修正しています。既存の4引数`submit_score`、Supabase本番、ランキング送信、ランキング表示は変更していません。
+
+
+## Phase 6A・6Bの状態
+
+Phase 6Aでは公式ベスト、公式・練習のプレイ回数、結果画面の保存状態と終了導線を追加しました。Phase 6Bではsafe-area、横画面、読み上げ用の状態情報、フォーカス表示、`prefers-reduced-motion`を追加しています。Supabaseとランキングは無効のままです。自動検査は通過していますが、iPhone・iPadの実機確認とVoiceOverの確認は未完了です。

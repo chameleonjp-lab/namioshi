@@ -11,57 +11,59 @@ import {isSoundEnabled,playCue,playHitSound,setAudioActive,setSoundEnabled,wake}
 
 const app=document.querySelector('#app');
 app.innerHTML=`
-<canvas id="game"></canvas>
-<div id="hud" class="hud">
+<canvas id="game" role="img" aria-label="ゲーム盤面。プレイ中は画面をタップして波を出します。キーボード操作には対応していません。"></canvas>
+<div id="hud" class="hud" role="group" aria-label="プレイ情報" aria-live="off">
   <div class="pill"><span id="modeHud">公式</span></div>
   <div class="pill">スコア <span id="s">0</span></div>
   <div class="pill">残り <span id="tm">30.0</span></div>
   <div class="pill">タップ <span id="tp">0</span>/6</div>
 </div>
-<div id="playLegend" class="playLegend" aria-live="polite">
+<div id="playLegend" class="playLegend" role="note" aria-live="polite">
   <span><b>反射板</b>：棒に波を当てると、波の向きが変わります</span>
   <span>得点　直接20 ／ 壁100 ／ 反射板180 ／ 2回反射300</span>
 </div>
-<div id="guideOverlay" class="guideOverlay" role="dialog" aria-labelledby="guideTitle" aria-describedby="guideText">
+<div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
   <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（棒）へ当ててみてください。反射板に触れると、波の向きが変わり、直接当てるより高得点になります。</p>
   <div class="guideButtons">
-    <button id="guideContinue" class="btn">案内を終えて本番へ</button>
-    <button id="guideHome" class="btn secondary">ホームへ戻る</button>
+    <button id="guideContinue" class="btn" type="button">案内を終えて本番へ</button>
+    <button id="guideHome" class="btn secondary" type="button">ホームへ戻る</button>
   </div>
 </div>
-<section id="HOME" class="screen freshStart show">
+<section id="HOME" class="screen freshStart show" aria-labelledby="homeTitle" aria-hidden="false">
   <div class="panel">
-    <h1>namioshi</h1>
+    <h1 id="homeTitle">namioshi</h1>
     <p>暗い水面に波を押し出し、壁や反射板で反射させて3つのビーコンへ波の線を重ねる30秒ゲームです。</p>
-    <input id="name" class="input" maxlength="20" placeholder="名前">
+    <label class="srOnly" for="name">名前</label>
+    <input id="name" class="input" maxlength="20" placeholder="名前" autocomplete="nickname" aria-describedby="nameHint">
+    <p id="nameHint" class="srOnly">公式結果と練習結果の表示に使います。</p>
     <div class="modeGrid" role="group" aria-label="ゲームモード">
       <div class="modeCard officialCard">
         <p class="modeTitle">公式モード</p>
         <p class="modeDescription">候補C・開港型。全員が同じ配置で遊びます。</p>
-        <button id="startOfficial" class="btn">公式モード開始</button>
+        <button id="startOfficial" class="btn" type="button">公式モード開始</button>
         <p class="small">ランキング送信はPhase 5で開始します。</p>
       </div>
       <div class="modeCard">
         <p class="modeTitle">練習モード</p>
         <p class="modeDescription">毎回変わるランダム配置で遊びます。</p>
-        <button id="startPractice" class="btn secondary">練習モード開始</button>
+        <button id="startPractice" class="btn secondary" type="button">練習モード開始</button>
         <p class="small">練習結果はランキングへ送信しません。</p>
       </div>
     </div>
     <button id="soundToggle" class="btn secondary" type="button" aria-pressed="false">効果音：なし</button>
-    <p id="soundStatus" class="small">効果音は初期設定で「なし」です。</p>
-    <button id="rule" class="btn secondary">ルールを見る</button>
-    <button id="homeShare" class="btn secondary">シェア</button>
-    <p id="homeShareStatus" class="small"></p>
-    <textarea id="homeShareText" class="shareText" readonly></textarea>
+    <p id="soundStatus" class="small" role="status" aria-live="polite">効果音は初期設定で「なし」です。</p>
+    <button id="rule" class="btn secondary" type="button">ルールを見る</button>
+    <button id="homeShare" class="btn secondary" type="button">シェア</button>
+    <p id="homeShareStatus" class="small" role="status" aria-live="polite"></p>
+    <textarea id="homeShareText" class="shareText" aria-label="ホーム画面のシェア文" readonly></textarea>
     <a class="link" href="https://chameleonjp.codeberg.page/" target="_blank" rel="noreferrer">実験場リンク</a>
-    <p id="msg" class="small warn" aria-live="polite"></p>
+    <p id="msg" class="small warn" role="status" aria-live="polite"></p>
   </div>
 </section>
-<section id="RULES" class="screen freshStart">
+<section id="RULES" class="screen freshStart" aria-labelledby="rulesTitle" aria-hidden="true">
   <div class="panel">
-    <h1 class="sectionTitle">RULES</h1>
+    <h1 id="rulesTitle" class="sectionTitle" tabindex="-1">RULES</h1>
     <ul class="rulesList">
       <li>タップは最大6回</li>
       <li>制限時間は30秒</li>
@@ -71,45 +73,45 @@ app.innerHTML=`
       <li>公式は候補Cの固定配置</li>
       <li>練習はランダム配置でランキング送信なし</li>
     </ul>
-    <button id="closeRules" class="btn secondary">閉じる</button>
+    <button id="closeRules" class="btn secondary" type="button">閉じる</button>
   </div>
 </section>
-<section id="COUNTDOWN" class="screen freshStart">
+<section id="COUNTDOWN" class="screen freshStart" aria-labelledby="countdownMode" aria-hidden="true">
   <div>
     <p id="countdownMode" class="countdownMode">公式モード</p>
-    <div id="countdownText">3</div>
+    <div id="countdownText" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1">3</div>
   </div>
 </section>
-<section id="RESULT" class="screen">
+<section id="RESULT" class="screen" aria-labelledby="resultTitle" aria-hidden="true">
   <div class="panel">
-    <h1 id="resultTitle" class="sectionTitle">公式結果</h1>
+    <h1 id="resultTitle" class="sectionTitle" tabindex="-1">公式結果</h1>
     <p id="resultMode" class="modeResult"></p>
-    <p><b id="fs">0</b> 点</p>
-    <p id="resultBestStatus" class="resultStatus" aria-live="polite"></p>
-    <p id="resultPlayCount" class="resultStatus" aria-live="polite"></p>
+    <p><span class="srOnly">最終得点：</span><b id="fs">0</b> 点</p>
+    <p id="resultBestStatus" class="resultStatus" role="status" aria-live="polite"></p>
+    <p id="resultPlayCount" class="resultStatus" role="status" aria-live="polite"></p>
     <div class="breakdown" aria-label="得点内訳">
       <p>直接 <b id="scoreDirect">0</b>点</p>
       <p>壁反射 <b id="scoreWall">0</b>点</p>
       <p>反射板 <b id="scoreGlass">0</b>点</p>
       <p>2回反射 <b id="scoreDouble">0</b>点</p>
     </div>
-    <p id="rank" class="small" aria-live="polite"></p>
-    <button id="share" class="btn">シェア</button>
-    <button id="again" class="btn secondary">同じモードでもう一度</button>
-    <button id="changeMode" class="btn secondary">モードを選び直す</button>
+    <p id="rank" class="small" role="status" aria-live="polite"></p>
+    <button id="share" class="btn" type="button">シェア</button>
+    <button id="again" class="btn secondary" type="button">同じモードでもう一度</button>
+    <button id="changeMode" class="btn secondary" type="button">モードを選び直す</button>
     <button id="rankingDetails" class="btn secondary" type="button" disabled aria-disabled="true">詳細ランキング（準備中）</button>
     <button id="endGame" class="btn secondary" type="button">ゲーム終了</button>
     <a class="btn secondary btnLink" href="https://chameleonjp.codeberg.page/" target="_blank" rel="noreferrer">実験場へ戻る</a>
-    <p id="resultStorageStatus" class="small" aria-live="polite"></p>
-    <p id="resultShareStatus" class="small"></p>
-    <p id="resultExitStatus" class="small"></p>
-    <textarea id="shareText" class="shareText" readonly></textarea>
+    <p id="resultStorageStatus" class="small" role="status" aria-live="polite"></p>
+    <p id="resultShareStatus" class="small" role="status" aria-live="polite"></p>
+    <p id="resultExitStatus" class="small" role="status" aria-live="polite"></p>
+    <textarea id="shareText" class="shareText" aria-label="結果画面のシェア文" readonly></textarea>
   </div>
 </section>
-<section id="ERROR" class="screen">
+<section id="ERROR" class="screen" aria-labelledby="errorTitle" aria-hidden="true">
   <div class="panel">
-    <h1>ERROR</h1>
-    <p id="err" class="warn"></p>
+    <h1 id="errorTitle" tabindex="-1">ERROR</h1>
+    <p id="err" class="warn" role="alert"></p>
   </div>
 </section>`;
 
@@ -141,6 +143,12 @@ let lastRenderTimestamp=null;
 let deadlineSettlementActive=false;
 
 const GUIDE_STORAGE_KEY='namioshi.guide.completed';
+const STATE_FOCUS_TARGETS=Object.freeze({
+  HOME:'name',
+  RULES:'closeRules',
+  RESULT:'share',
+  ERROR:'errorTitle'
+});
 
 function hasCompletedGuide(){
   if(guideCompletedInMemory)return true;
@@ -152,18 +160,34 @@ function markGuideCompleted(){
   try{localStorage.setItem(GUIDE_STORAGE_KEY,'yes')}catch{}
 }
 
+function focusStateTarget(nextState){
+  const targetId=nextState==='PLAYING'&&tutorialMode
+    ?'guideContinue'
+    :STATE_FOCUS_TARGETS[nextState];
+  if(!targetId)return;
+  queueMicrotask(()=>{
+    if(state!==nextState||nextState==='PLAYING'&&!tutorialMode)return;
+    $(targetId)?.focus?.({preventScroll:true});
+  });
+}
+
 function setState(nextState){
   state=nextState;
   for(const screen of ['HOME','RULES','COUNTDOWN','PLAYING','RESULT','ERROR']){
-    $(screen)?.classList?.toggle('show',screen===nextState);
+    const visible=screen===nextState;
+    $(screen)?.classList?.toggle('show',visible);
+    $(screen)?.setAttribute?.('aria-hidden',String(!visible));
   }
   $('hud').classList.toggle('show',nextState==='PLAYING');
   $('playLegend').classList.toggle('show',nextState==='PLAYING');
-  $('guideOverlay').classList.toggle('show',nextState==='PLAYING'&&tutorialMode);
+  const guideVisible=nextState==='PLAYING'&&tutorialMode;
+  $('guideOverlay').classList.toggle('show',guideVisible);
+  $('guideOverlay').setAttribute('aria-hidden',String(!guideVisible));
   const busy=nextState==='COUNTDOWN';
   $('startOfficial').disabled=busy;
   $('startPractice').disabled=busy;
   $('again').disabled=busy;
+  focusStateTarget(nextState);
 }
 
 function clearCountdown(){
@@ -351,6 +375,8 @@ function boot(){
     }
     resize();
     addEventListener('resize',resize);
+    addEventListener('orientationchange',resize);
+    globalThis.visualViewport?.addEventListener('resize',resize);
     requestAnimationFrame(loop);
   }catch(error){
     clearCountdown();
