@@ -40,7 +40,7 @@
 - `npm run size`: 102,492 bytes（固定上限ではなく報告値）
 - `git diff --check`: 成功
 - Supabaseは読み取り専用監査のみ。SQL適用、書き込み、ランキング疎通は未実施
-- GitHub ActionsはDraft PR作成後に確認する
+- GitHub Actions Run #78: Node.js 18・20・22の全ジョブ成功、npm test 99/99、build、verify、配置・SVG・サイズ検査成功
 
 ## D2.1で確認した問題
 
