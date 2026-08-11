@@ -1,10 +1,9 @@
 import {LOGICAL_HEIGHT,LOGICAL_WIDTH,QUALITY} from '../config.js';
 import {createViewport} from '../game/viewport.js';
 import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from './reflection-arcs.js';
-
 const MAX_BACKGROUND_WAVES=12;
 const MAX_PARTICLES=90;
-const MAX_DYNAMIC_FLOATS=1024;
+const MAX_DYNAMIC_FLOATS=2048;
 const SEGMENTS=96;
 const UNIT_CIRCLE_COS=new Float32Array(SEGMENTS+1);
 const UNIT_CIRCLE_SIN=new Float32Array(SEGMENTS+1);
@@ -12,6 +11,82 @@ for(let index=0;index<=SEGMENTS;index++){
   const angle=index/SEGMENTS*Math.PI*2;
   UNIT_CIRCLE_COS[index]=Math.cos(angle);
   UNIT_CIRCLE_SIN[index]=Math.sin(angle);
+}
+
+const VISUAL_WAVE_WIDTH={
+  direct:.46,
+  wall:.64,
+  glass:.58,
+  double:.90
+};
+
+function waveVisualWidth(wave){
+  const category=wave.reflections>=2
+    ?'double'
+    :wave.kind==='glass'
+      ?'glass'
+      :wave.kind==='wall'
+        ?'wall'
+        :'direct';
+  return Math.max(3,wave.width*VISUAL_WAVE_WIDTH[category]);
+}
+
+function fillRingBandPoints(target,wave){
+  const halfWidth=waveVisualWidth(wave)*.5;
+  const innerRadius=Math.max(0,wave.radius-halfWidth);
+  const outerRadius=wave.radius+halfWidth;
+  for(let index=0;index<=SEGMENTS;index++){
+    const offset=index*4;
+    const cos=UNIT_CIRCLE_COS[index];
+    const sin=UNIT_CIRCLE_SIN[index];
+    target[offset]=wave.originX+cos*innerRadius;
+    target[offset+1]=wave.originY+sin*innerRadius;
+    target[offset+2]=wave.originX+cos*outerRadius;
+    target[offset+3]=wave.originY+sin*outerRadius;
+  }
+  return (SEGMENTS+1)*2;
+}
+
+function fillArcBandPoints(source,pointCount,target,width){
+  const halfWidth=width*.5;
+  let vertexCount=0;
+  for(let offset=0;offset<pointCount;offset+=4){
+    const x1=source[offset];
+    const y1=source[offset+1];
+    const x2=source[offset+2];
+    const y2=source[offset+3];
+    const dx=x2-x1;
+    const dy=y2-y1;
+    const inverseLength=1/(Math.hypot(dx,dy)||1);
+    const normalX=-dy*inverseLength*halfWidth;
+    const normalY=dx*inverseLength*halfWidth;
+    let targetOffset=vertexCount*2;
+    target[targetOffset++]=x1+normalX;
+    target[targetOffset++]=y1+normalY;
+    target[targetOffset++]=x1-normalX;
+    target[targetOffset++]=y1-normalY;
+    target[targetOffset++]=x2+normalX;
+    target[targetOffset++]=y2+normalY;
+    target[targetOffset++]=x2+normalX;
+    target[targetOffset++]=y2+normalY;
+    target[targetOffset++]=x1-normalX;
+    target[targetOffset++]=y1-normalY;
+    target[targetOffset++]=x2-normalX;
+    target[targetOffset++]=y2-normalY;
+    vertexCount+=6;
+  }
+  return vertexCount;
+}
+
+function fillCirclePoints(target,x,y,radius){
+  target[0]=x;
+  target[1]=y;
+  for(let index=0;index<=SEGMENTS;index++){
+    const offset=(index+1)*2;
+    target[offset]=x+UNIT_CIRCLE_COS[index]*radius;
+    target[offset+1]=y+UNIT_CIRCLE_SIN[index]*radius;
+  }
+  return SEGMENTS+2;
 }
 
 function shader(gl,type,source){
@@ -47,7 +122,7 @@ function uniformLocation(gl,value,name){
 
 const vertex2d='attribute vec2 a;uniform vec2 uRes;void main(){vec2 p=a/uRes*2.0-1.0;gl_Position=vec4(p.x,-p.y,0,1);}';
 const backgroundVertex='attribute vec2 a;varying vec2 v;void main(){v=a*.5+.5;gl_Position=vec4(a,0,1);}';
-const backgroundFragment='precision mediump float;varying vec2 v;uniform float uTime;uniform vec2 uRes;uniform int uWaveCount;uniform vec4 uWaves[12];void main(){vec2 p=v*uRes;float w=0.0;for(int i=0;i<12;i++){if(i>=uWaveCount)break;vec4 a=uWaves[i];float d=distance(p,a.xy);w+=exp(-pow(abs(d-a.z)/(a.w+1.0),2.0))*.26;}float rip=sin(p.x*.045+uTime*1.4)*.025+sin(p.y*.055-uTime*1.1)*.018;vec3 col=mix(vec3(.006,.025,.055),vec3(.02,.16,.24),v.y+rip+w);col+=vec3(.06,.55,.75)*w;gl_FragColor=vec4(col,1.0);}';
+const backgroundFragment='precision mediump float;varying vec2 v;uniform float uTime;uniform vec2 uRes;uniform int uWaveCount;uniform vec4 uWaves[12];void main(){vec2 p=v*uRes;float w=0.0;for(int i=0;i<12;i++){if(i>=uWaveCount)break;vec4 a=uWaves[i];float d=distance(p,a.xy);w+=exp(-pow(abs(d-a.z)/(a.w+1.0),2.0))*.26;}float rippleA=sin(p.x*.045+uTime*1.35+sin(p.y*.018+uTime*.3))*.026;float rippleB=sin((p.x+p.y)*.031-uTime*.92)*.018+cos(p.y*.064+uTime*.72)*.012;float centerLight=exp(-distance(v,vec2(.5,.38))*2.4);float edge=smoothstep(.12,1.22,dot(v*2.0-1.0,v*2.0-1.0));float waterMix=clamp(.20+v.y*.42+rippleA+rippleB+w,0.0,1.0);vec3 deep=vec3(.004,.018,.045);vec3 surface=vec3(.018,.19,.28);vec3 col=mix(deep,surface,waterMix);col+=vec3(.035,.22,.32)*(centerLight*.7+w);col*=1.0-edge*.46;gl_FragColor=vec4(col,1.0);}';
 const colorFragment='precision mediump float;uniform vec4 uColor;void main(){gl_FragColor=uColor;}';
 const pointVertex='attribute vec2 a;uniform vec2 uRes;uniform float uSize;void main(){vec2 p=a/uRes*2.0-1.0;gl_Position=vec4(p.x,-p.y,0,1);gl_PointSize=uSize;}';
 
@@ -61,6 +136,8 @@ export class WebGLView{
   ring=new Float32Array((SEGMENTS+1)*2);
   circle=new Float32Array((SEGMENTS+2)*2);
   arcPoints=new Float32Array(REFLECTION_ARC_SEGMENTS*4);
+  ringBand=new Float32Array((SEGMENTS+1)*4);
+  arcBand=new Float32Array(REFLECTION_ARC_SEGMENTS*6*2);
   tmp=new Float32Array(MAX_DYNAMIC_FLOATS);
   quad=new Float32Array([-1,-1,1,-1,-1,1,1,1]);
   waveData=new Float32Array(MAX_BACKGROUND_WAVES*4);
@@ -243,9 +320,39 @@ export class WebGLView{
     gl.drawArrays(mode,0,count);
   }
 
-  drawWave(points,count,mode,lineWidth,wave,fade){
+  drawBand(points,count,mode,red,green,blue,alpha){
+    const gl=this.gl;
+    const info=this.programInfo.color;
+    this.setCommon(info);
+    gl.bufferSubData(gl.ARRAY_BUFFER,0,points);
+    gl.uniform4f(info.uniforms.color,red,green,blue,alpha);
+    gl.drawArrays(mode,0,count);
+  }
+
+  drawCircleFill(x,y,radius,red,green,blue,alpha){
+    const count=fillCirclePoints(this.circle,x,y,radius);
+    this.drawLine(this.circle,count,this.gl.TRIANGLE_FAN,1,red,green,blue,alpha);
+  }
+
+  drawCircleOutline(x,y,radius,red,green,blue,alpha){
+    const count=fillCirclePoints(this.circle,x,y,radius);
+    this.drawLine(this.circle,count,this.gl.LINE_STRIP,1,red,green,blue,alpha);
+  }
+
+  drawWave(wave,fade){
+    const gl=this.gl;
     const color=this.waveColor(wave,fade);
-    this.drawLine(points,count,mode,lineWidth,color[0],color[1],color[2],color[3]);
+    const width=waveVisualWidth(wave);
+    const depth=wave.reflectionDepth??wave.reflections??0;
+    if(depth>0){
+      const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
+      if(pointCount===0)return;
+      const vertexCount=fillArcBandPoints(this.arcPoints,pointCount,this.arcBand,width);
+      this.drawBand(this.arcBand,vertexCount,gl.TRIANGLES,color[0],color[1],color[2],color[3]);
+      return;
+    }
+    const vertexCount=fillRingBandPoints(this.ringBand,wave);
+    this.drawBand(this.ringBand,vertexCount,gl.TRIANGLE_STRIP,color[0],color[1],color[2],color[3]);
   }
 
   render(world,time,quality){
@@ -281,6 +388,8 @@ export class WebGLView{
       this.tmp[2]=midX+glass.nx*10;
       this.tmp[3]=midY+glass.ny*10;
       this.drawLine(this.tmp,2,gl.LINES,2,1,.86,.4,.9);
+      this.drawCircleOutline(glass.x1,glass.y1,5,.82,.74,1,.66);
+      this.drawCircleOutline(glass.x2,glass.y2,5,.82,.74,1,.66);
     }
     for(const effect of world.reflectionEffects){
       const progress=Math.min(1,effect.age/effect.life);
@@ -303,34 +412,17 @@ export class WebGLView{
     }
     for(const wave of world.waves){
       const fade=Math.max(0,1-wave.age/wave.life);
-      if((wave.reflectionDepth??wave.reflections??0)>0){
-        const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
-        if(pointCount>0)this.drawWave(this.arcPoints,pointCount/2,gl.LINES,wave.reflections>=2?3:2,wave,fade);
-        continue;
-      }
-      for(let i=0;i<=SEGMENTS;i++){
-        const offset=i*2;
-        this.ring[offset]=wave.originX+UNIT_CIRCLE_COS[i]*wave.radius;
-        this.ring[offset+1]=wave.originY+UNIT_CIRCLE_SIN[i]*wave.radius;
-      }
-      this.drawWave(this.ring,SEGMENTS+1,gl.LINE_STRIP,wave.reflections>=2?3:2,wave,fade);
+      this.drawWave(wave,fade);
     }
     for(const beacon of world.beacons){
-      this.circle[0]=beacon.x;
-      this.circle[1]=beacon.y;
-      const glowRadius=beacon.radius*(2.6+beacon.flash*.9);
-      for(let i=0;i<=SEGMENTS;i++){
-        const offset=(i+1)*2;
-        this.circle[offset]=beacon.x+UNIT_CIRCLE_COS[i]*glowRadius;
-        this.circle[offset+1]=beacon.y+UNIT_CIRCLE_SIN[i]*glowRadius;
-      }
-      this.drawLine(this.circle,SEGMENTS+2,gl.TRIANGLE_FAN,1,.35,.9,1,.20+beacon.flash*.25);
-      for(let i=0;i<=SEGMENTS;i++){
-        const offset=i*2;
-        this.ring[offset]=beacon.x+UNIT_CIRCLE_COS[i]*beacon.radius;
-        this.ring[offset+1]=beacon.y+UNIT_CIRCLE_SIN[i]*beacon.radius;
-      }
-      this.drawLine(this.ring,SEGMENTS+1,gl.TRIANGLE_FAN,1,1,1,.88,.95);
+      const flash=beacon.flash||0;
+      const pulse=.5+.5*Math.sin(time*.004+String(beacon.id).length);
+      const glowRadius=beacon.radius*(2.8+flash*1.2);
+      this.drawCircleFill(beacon.x,beacon.y,glowRadius,.18,.78,1,.15+pulse*.05+flash*.18);
+      const ringRadius=beacon.radius*(1.35+pulse*.28+flash*.55);
+      this.drawCircleOutline(beacon.x,beacon.y,ringRadius,.55,.92,1,.38+pulse*.25+flash*.22);
+      this.drawCircleFill(beacon.x,beacon.y,beacon.radius*(.96+flash*.12),1,1,.90,.94);
+      this.drawCircleOutline(beacon.x,beacon.y,beacon.radius*1.12,1,.98,.78,.72);
     }
     let count=0;
     const particleCount=Math.min(MAX_PARTICLES,QUALITY[quality].particles,world.particles.length);
