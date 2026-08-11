@@ -8,6 +8,7 @@ import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
 import {readPlayerState,recordPlayResult,saveDisplayName} from './services/local-progress.js';
 import {isSoundEnabled,playCue,playHitSound,setAudioActive,setSoundEnabled,wake} from './core/audio.js';
+import {isHapticsEnabled,isHapticsSupported,playHaptic,playHitHaptic,setHapticsActive,setHapticsEnabled} from './core/haptics.js';
 const app=document.querySelector('#app');
 app.innerHTML=`
 <canvas id="game" role="img" aria-label="ゲーム盤面。プレイ中は画面をタップして波を出します。キーボード操作には対応していません。"></canvas>
@@ -53,6 +54,8 @@ app.innerHTML=`
     </div>
     <button id="soundToggle" class="btn secondary" type="button" aria-pressed="false">効果音：なし</button>
     <p id="soundStatus" class="small" role="status" aria-live="polite">効果音は初期設定で「なし」です。</p>
+    <button id="hapticsToggle" class="btn secondary" type="button" aria-pressed="false">振動：なし</button>
+    <p id="hapticsStatus" class="small" role="status" aria-live="polite">振動は初期設定で「なし」です。</p>
     <button id="rule" class="btn secondary" type="button">ルールを見る</button>
     <button id="homeShare" class="btn secondary" type="button">シェア</button>
     <p id="homeShareStatus" class="small" role="status" aria-live="polite"></p>
@@ -303,6 +306,7 @@ function bindCanvasInput(){
       y:point.y,
       timestamp:inputTimestamp
     },{accepted:world.taps,maximum:MAX_TAPS})){
+      playHaptic('TAP');
       void audioReady.then(ready=>{if(ready&&state==='PLAYING'&&!rendererSuspended)playCue('TAP')});
     }
   },{passive:false});
@@ -414,6 +418,19 @@ function updateSoundControl(){
   $('soundToggle').textContent=`効果音：${enabled?'あり':'なし'}`;
   $('soundToggle').setAttribute('aria-pressed',String(enabled));
   $('soundStatus').textContent=enabled?'効果音を使います。設定はこの端末に保存されます。':'効果音は鳴りません。必要なときだけ「あり」に変更できます。';
+}
+
+function updateHapticsControl(){
+  const supported=isHapticsSupported();
+  const enabled=isHapticsEnabled();
+  const button=$('hapticsToggle');
+  button.disabled=!supported;
+  button.setAttribute('aria-disabled',String(!supported));
+  button.textContent=supported?`振動：${enabled?'あり':'なし'}`:'振動：非対応';
+  button.setAttribute('aria-pressed',String(enabled));
+  $('hapticsStatus').textContent=supported
+    ?enabled?'振動を使います。設定はこの端末に保存されます。':'振動はありません。必要なときだけ「あり」に変更できます。'
+    :'この環境は振動に対応していません。ゲームはそのまま遊べます。';
 }
 
 function beginCountdown(){
@@ -540,6 +557,7 @@ function finish(){
   $('resultExitStatus').textContent='';
   $('shareText').style.display='none';
   playCue('RESULT');
+  playHaptic('RESULT');
 }
 
 function hud(force=false){
@@ -657,6 +675,7 @@ function endGame(){
 function syncAudioVisibility(){
   const now=monotonicNow();
   void setAudioActive(!document.hidden);
+  setHapticsActive(!document.hidden);
   if(document.hidden){
     suspendVisiblePlay(now);
     lastRenderTimestamp=null;
@@ -712,12 +731,21 @@ function showHitFeedback(hit){
   },520);
 }
 
-world.onReflect=reflection=>playCue(reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT');
-world.onHit=hit=>{playHitSound(hit);showHitFeedback(hit)};
+world.onReflect=reflection=>{
+  const cue=reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT';
+  playCue(cue);
+  playHaptic(cue);
+};
+world.onHit=hit=>{playHitSound(hit);playHitHaptic(hit);showHitFeedback(hit)};
 $('soundToggle').onclick=()=>{
   const enabled=setSoundEnabled(!isSoundEnabled());
   updateSoundControl();
   if(enabled)void wake().then(ready=>{if(ready)playCue('ENABLE')});
+};
+$('hapticsToggle').onclick=()=>{
+  setHapticsEnabled(!isHapticsEnabled());
+  updateHapticsControl();
+  if(isHapticsEnabled())playHaptic('TAP');
 };
 $('startOfficial').onclick=()=>start(GAME_MODE.OFFICIAL);
 $('startPractice').onclick=()=>start(GAME_MODE.PRACTICE);
@@ -741,8 +769,10 @@ addEventListener('pagehide',()=>{
     setState('HOME');
   }
   void setAudioActive(false);
+  setHapticsActive(false);
 });
 addEventListener('pageshow',syncAudioVisibility);
 syncAudioVisibility();
 updateSoundControl();
+updateHapticsControl();
 boot();
