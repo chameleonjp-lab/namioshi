@@ -1772,3 +1772,9 @@ Draft Pull Request #46を作成し、GitHub Actions Run #73でNode.js 18・20・
 ## 2026-08-11 回復D D2.1進捗
 
 D2のSQL案を公式RPC契約へ照合した結果、同名関数の引数違いによるオーバーロードは使用できないことが分かった。既存の4引数`public.submit_score`を保護するため、未適用SQLの7引数関数名を`public.submit_namioshi_score_v1`へ変更し、クライアント送信先、契約書、静的試験を同期する。SQL適用、非本番データベース作成、本番疎通、ランキング有効化は行わない。
+
+## 14. 2026-08-12 現在の進行判断
+
+Supabaseの非本番検証とランキング連携は後回しにし、依存しないPhase 6A「端末内保存と結果画面」を先に進める。Draft `agent/phase6a-result-storage`では、公式ベストと練習結果を分離し、保存失敗時に保存済みと表示しない結果画面と、再挑戦・モード選択・ゲーム終了・実験場への移動を追加する。詳細ランキングは準備中の無効表示に留める。
+
+Phase 6Aのローカル検証は103/103テスト、build、verify、配置分析、SVG検査、サイズ報告、差分検査まで成功した。GitHub Actions、iPhone・iPad実機、実ブラウザの保存拒否と強制WebGL消失、Supabase連携、Phase 6Bは未確認または後続工程である。
