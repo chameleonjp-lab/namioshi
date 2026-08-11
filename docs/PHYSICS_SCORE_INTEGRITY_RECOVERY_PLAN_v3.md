@@ -183,6 +183,14 @@ Pull Request #45の回復C統合後、クライアントのランキング送信
 
 クライアント側の検査は不正利用者が回避できるため、競技性の証明にはならない。サーバー側の許可version、rule version、season、play ID一意性、入力再計算または自己申告表示の選択は別工程とする。
 
+## 9.6 まとまりD第一段階の検証結果
+
+- Draft Pull Request #46を作成した
+- ローカルランキング契約試験は5/5成功した
+- GitHub Actions Run #73（ID 31469136374）はNode.js 18・20・22の全ジョブが成功した
+- Actions内のnpm testは96/96、verifyも成功した
+- 既存のmain.jsから送信関数を呼ばない契約を維持した
+- ランキング送信、SQL、RPC、RLS、public.games、本番データは変更していない
 ## 10. 実機停止条件
 
 まとまりBの後、iPhone 17 Proで最低限次を確認する。
