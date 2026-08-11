@@ -110,3 +110,28 @@ test('both renderers use finite reflection arcs instead of a reflected full circ
   assert.match(canvas,/fillReflectionArcPoints\(wave,this\.arcPoints,REFLECTION_ARC_SEGMENTS\)/);
   assert.match(canvas,/context\.moveTo\(this\.arcPoints\[point\]/);
 });
+
+test('WebGL caches locations, reuses buffers, and precomputes circle samples',()=>{
+  const webgl=readFileSync(new URL('../src/render/webgl.js',import.meta.url),'utf8');
+
+  assert.equal((webgl.match(/getAttribLocation/g)??[]).length,1);
+  assert.equal((webgl.match(/getUniformLocation/g)??[]).length,1);
+  assert.match(webgl,/backgroundBuffer=null/);
+  assert.match(webgl,/gl\.bufferData\(gl\.ARRAY_BUFFER,MAX_DYNAMIC_FLOATS\*Float32Array\.BYTES_PER_ELEMENT,gl\.DYNAMIC_DRAW\)/);
+  assert.match(webgl,/gl\.bufferSubData\(gl\.ARRAY_BUFFER,0,points\)/);
+  assert.match(webgl,/UNIT_CIRCLE_COS/);
+  assert.match(webgl,/UNIT_CIRCLE_SIN/);
+  assert.doesNotMatch(webgl,/waves\.slice\(/);
+  assert.doesNotMatch(webgl,/world\.particles\.slice\(/);
+  assert.match(webgl,/selfTestPoints=new Float32Array\(\[0,0,1,0\]\)/);
+});
+
+test('the main loop reduces non-play rendering and keeps quality stable during play',()=>{
+  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+
+  assert.match(main,/const STATIC_RENDER_INTERVAL=1000\/30/);
+  assert.match(main,/state==='PLAYING'\|\|lastStaticRenderTimestamp===null\|\|now-lastStaticRenderTimestamp>=STATIC_RENDER_INTERVAL/);
+  assert.match(main,/if\(state==='PLAYING'\)return;/);
+  assert.match(main,/state==='PLAYING'&&frameSeconds>0&&frames\.length<90/);
+  assert.match(main,/state!=='PLAYING'&&frames\.length>=90/);
+});

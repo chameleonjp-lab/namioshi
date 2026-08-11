@@ -296,13 +296,19 @@ test('the structural wave bound keeps all six timed taps available',()=>{
   assert.ok(world.waves.length<=MAX_WAVES);
 });
 
-test('all scoring waves remain foreground-visible at every quality level',()=>{
-  for(const settings of Object.values(QUALITY))assert.equal(settings.waves,MAX_WAVES);
+test('quality limits background waves and particles without hiding scoring waves',()=>{
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(QUALITY).map(([name,settings])=>[name,[settings.waves,settings.particles]])),
+    {HIGH:[12,90],MID:[8,60],LOW:[5,30]}
+  );
   const webgl=readFileSync(new URL('../src/render/webgl.js',import.meta.url),'utf8');
   const canvas=readFileSync(new URL('../src/render/canvas.js',import.meta.url),'utf8');
   assert.match(webgl,/for\(const wave of world\.waves\)\{/);
   assert.doesNotMatch(webgl,/world\.waves\.slice\(0,QUALITY\[quality\]\.waves\)/);
+  assert.match(webgl,/const visibleCount=Math\.min\(MAX_BACKGROUND_WAVES,QUALITY\[quality\]\.waves,waves\.length\)/);
+  assert.match(webgl,/const particleCount=Math\.min\(MAX_PARTICLES,QUALITY\[quality\]\.particles,world\.particles\.length\)/);
   assert.match(canvas,/for\(const wave of world\.waves\)\{/);
+  assert.match(canvas,/const particleCount=Math\.min\(QUALITY\[quality\]\?\.particles\?/);
 });
 
 test('a wave cannot move or score beyond its three-second lifetime',()=>{

@@ -140,7 +140,9 @@ const fixedSteps=new FixedStepRunner();
 const timedInputs=new TimedInputQueue();
 let playDeadline=null;
 let lastRenderTimestamp=null;
+let lastStaticRenderTimestamp=null;
 let deadlineSettlementActive=false;
+const STATIC_RENDER_INTERVAL=1000/30;
 
 const GUIDE_STORAGE_KEY='namioshi.guide.completed';
 const STATE_FOCUS_TARGETS=Object.freeze({
@@ -172,6 +174,7 @@ function focusStateTarget(nextState){
 }
 
 function setState(nextState){
+  if(state!==nextState)lastStaticRenderTimestamp=null;
   state=nextState;
   for(const screen of ['HOME','RULES','COUNTDOWN','PLAYING','RESULT','ERROR']){
     const visible=screen===nextState;
@@ -551,6 +554,7 @@ function hud(force=false){
 }
 
 function degrade(average){
+  if(state==='PLAYING')return;
   const old=quality;
   if(average<32)quality='LOW';
   else if(average<45)quality=quality==='HIGH'?'MID':quality==='MID'?'LOW':'LOW';
@@ -600,9 +604,13 @@ function loop(timestamp){
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
     if(playFrame.shouldFinish)finish();
   }
-  renderCurrentFrame(now);
-  if(frameSeconds>0)frames.push(1/frameSeconds);
-  if(frames.length>90){
+  const shouldRender=state==='PLAYING'||lastStaticRenderTimestamp===null||now-lastStaticRenderTimestamp>=STATIC_RENDER_INTERVAL;
+  if(shouldRender){
+    renderCurrentFrame(now);
+    if(state!=='PLAYING')lastStaticRenderTimestamp=now;
+  }
+  if(state==='PLAYING'&&frameSeconds>0&&frames.length<90)frames.push(1/frameSeconds);
+  if(state!=='PLAYING'&&frames.length>=90){
     degrade(frames.reduce((sum,value)=>sum+value,0)/frames.length);
     frames=[];
   }

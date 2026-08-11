@@ -18,6 +18,7 @@ v3は段階的に実装しています。文書があることだけを完成の
 - Supabase Phase 5A監査: [`docs/SUPABASE_AUDIT_v3.md`](docs/SUPABASE_AUDIT_v3.md)
 - 敵対的検証後の回復計画: [`docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md`](docs/PHYSICS_SCORE_INTEGRITY_RECOVERY_PLAN_v3.md)
 - Phase 6B 画面・支援機能: [`docs/PHASE6B_SCREEN_ACCESSIBILITY_REPORT.md`](docs/PHASE6B_SCREEN_ACCESSIBILITY_REPORT.md)
+- Phase 7A 描画土台最適化: [`docs/PHASE7A_RENDER_FOUNDATION_REPORT.md`](docs/PHASE7A_RENDER_FOUNDATION_REPORT.md)
 
 v3では3MBを受け入れ上限にしません。容量は報告値として扱い、入力反応、フレーム時間、継続動作、実機確認を優先します。複数ファイルとES Modulesを正式に使用します。
 
@@ -74,7 +75,7 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 練習モードは従来のランダム配置を残します。練習結果はランキングへ送信しません。
 
-旧ランダム配置の記録と新しい公式配置の記録を混ぜないため、公式モードの実送信もPhase 5まで停止します。画面には現在の送信状態をそのまま表示します。
+旧ランダム配置の記録と新しい公式配置の記録を混ぜないため、公式モードの実送信もランキング再開条件を満たすまで停止します。画面には現在の送信状態をそのまま表示します。
 
 結果画面では、同じモードの再挑戦と、公式・練習を選び直すためのHOME復帰を選べます。停止中の送信関数は、直接呼ばれても通信を開始しません。
 
@@ -84,11 +85,15 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 
 本命描画は`src/render/webgl.js`の純粋WebGLです。反射波は有限経路を通る有効な弧だけを表示し、直接波だけが全円になります。WebGLの初期化や復帰、描画中の処理に失敗した場合は、同じcanvasで2D contextを取得せず新しいcanvasへ差し替えて`src/render/canvas.js`のCanvas 2Dへ切り替えます。両方が同じ`World`とviewport変換を使います。
 
+## Phase 7A 描画土台
+
+WebGLはattributeとuniformの位置を初期化時に取得し、背景用の静的バッファと動的頂点バッファを分けています。単位円のsin/cosは事前計算し、動的バッファは`bufferSubData`で更新します。背景波と粒子はHIGH・MID・LOWの品質設定を使いますが、得点対象の前景波は品質を下げても隠しません。プレイ中の品質は固定し、HOMEやRESULTなどは最大30fpsで描画します。
+
 ## 確認状態
 
-Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49まではmainへ統合済みです。ただし、G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
+Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49、Phase 6BのPull Request #50まではmainへ統合済みです。ただし、G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
 
-現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線まで統合済みです。公式fixtureの実到達例は5481点（直接0、壁239、反射板429、2回反射4813）で、台帳合計・内訳合計・1800固定stepをgoldenとして固定し、6480はhard ceilingとして扱い探索最大値とは断定していません。実ブラウザの強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
+現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線、Phase 6Bの画面支援契約まで統合済みです。公式fixtureの実到達例は5481点（直接0、壁239、反射板429、2回反射4813）で、台帳合計・内訳合計・1800固定stepをgoldenとして固定し、6480はhard ceilingとして扱い探索最大値とは断定していません。実ブラウザの強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示、Phase 7Aの実ブラウザ性能は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
 
 
 ## 回復D D2.1の状態
