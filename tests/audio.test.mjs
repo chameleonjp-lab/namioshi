@@ -107,7 +107,7 @@ test('home provides an accessible sound-effects switch',()=>{
   assert.match(main,/setAttribute\('aria-pressed',String\(enabled\)\)/);
   assert.match(main,/function start\(mode\)\{[\s\S]*?\$\('name'\)\.blur\(\);\n  void wake\(\);/);
   assert.match(main,/world\.onReflect=reflection=>playCue\(reflection\.kind==='glass'\?'GLASS_REFLECT':'WALL_REFLECT'\)/);
-  assert.match(main,/world\.onHit=hit=>playHitSound\(hit\)/);
+  assert.match(main,/world\.onHit=hit=>\{playHitSound\(hit\);showHitFeedback\(hit\)\}/);
   assert.match(main,/audioReady\.then\(ready=>\{if\(ready&&state==='PLAYING'&&!rendererSuspended\)playCue\('TAP'\)\}\)/);
   assert.match(main,/document\.addEventListener\('visibilitychange',syncAudioVisibility\)/);
   assert.match(main,/addEventListener\('pagehide',[\s\S]*?setAudioActive\(false\)/);
