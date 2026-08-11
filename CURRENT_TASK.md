@@ -56,7 +56,7 @@ Pull Request #42〜#44で物理・得点・時刻境界をmainへ統合した後
 
 - 基準main: 既存85件成功
 - 現在: 91件成功
-- Pull Request #43最終head `dd8761c`のGitHub Actions Run #62（ID `31321372362`）: Node.js 18、20、22を含め成功。今回補修のActionsはDraft作成後に確認する
+- Pull Request #45 head `537baf6`のGitHub Actions Run #66（ID `31467312854`）: Node.js 18、20、22の全ジョブが成功
 - 既知のbeacon-b GLASS 168点を拒否
 - 有効な有限ガラス反射を維持
 - 採用した反射得点の全交点が有限区間内

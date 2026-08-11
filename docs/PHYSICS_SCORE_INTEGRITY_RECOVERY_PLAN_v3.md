@@ -195,8 +195,8 @@ WebGLでは`webglcontextlost`で`preventDefault()`を呼び、可視時間を精
 | 対応計画 | Pull Request #42〜#44のまとまりA/Bはmainへ統合済み。まとまりCを別Draft Pull Requestで提出する |
 | まとまりA 実装 | 完了（Node自動試験） |
 | まとまりA/B/C ローカル自動試験 | 91件成功、build/verify/配置確認/容量確認成功 |
-| GitHub Actions | Pull Request #43最終head `dd8761c`のRun #62は成功。まとまりCはDraft作成後に確認する |
+| GitHub Actions | Pull Request #45 head `537baf6`のRun #66（ID `31467312854`）はNode.js 18、20、22の全ジョブが成功 |
 | iPhone短期確認 | 未確認 |
 | まとまりB | Pull Request #43・#44統合済み。iPhone実機未確認 |
-| まとまりC | ローカル実装・自動確認完了。実ブラウザの強制WebGL消失とDraft後Actionsは未確認 |
+| まとまりC | ローカル実装・自動確認・Run #66完了。実ブラウザの強制WebGL消失は未確認 |
 | まとまりD〜E | 未着手 |
