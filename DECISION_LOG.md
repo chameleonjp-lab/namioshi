@@ -119,3 +119,11 @@ safe-areaと横画面はCSSで余白と配置を調整し、画面回転や`visu
 70. シェアは、本文と公式URL、ネイティブ共有の成功・キャンセル・予期しない失敗、クリップボードのみ、共有機能なし、コピー失敗をNode.js標準テストで固定する。共有経路の失敗は結果画面の手動コピー導線へ渡す前提を維持する。
 71. HOME、RULES、COUNTDOWN、PLAYING、RESULT、ERRORの状態画面は一つのstate値から表示を切り替え、カウントダウンとプレイ開始の二重起動を拒否する契約を自動試験で確認する。
 72. Chromium、WebKit、Playwrightの実行環境がないためブラウザ操作試験は追加しない。Node試験の成功を実ブラウザ・iPhone・iPad確認済みとは扱わず、G4、G7、Supabase、ランキング再開、公開判定は未完了のまま残す。
+
+
+## 2026-08-12 Phase 8A統合後・Phase 8B開始
+
+- Pull Request #54をmainへ統合し、Phase 8Aの共有経路・画面導線の自動試験を完了扱いとする。GitHub Actions Run #91はNode.js 18・20・22の全ジョブが成功し、`npm test`は127/127である。
+- Node.js標準テストの成功は、実ブラウザ、iPhone・iPad、WebGLコンテキスト消失、Canvas 2D切替、音、振動、safe-area、長時間稼働の確認へ置き換えない。
+- Phase 8Bでは同じ公開候補コミット単位で実機・実ブラウザの結果を記録する。利用できない端末は未確認とし、推測で成功結果を作らない。
+- `RANKING_SERVICE_STATE.enabled=false`、Supabase未適用、ランキング再開停止、Codeberg Pages公開未確認を維持する。
