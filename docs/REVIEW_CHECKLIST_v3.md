@@ -491,3 +491,13 @@
 - [未確認] Phase 8Cのリリース候補固定、Supabase、ランキング再開、Codeberg Pages公開へ進む
 
 再確認時点ではPlaywrightのNode.jsパッケージは利用できたが、ChromiumとWebKitの実行バイナリがなく、Chromium導入も破損アーカイブで失敗した。ブラウザ操作、画面キャプチャ、コンソール、性能の結果は作成していない。
+
+
+## Phase 8B 検収対象コミットの更新（2026-08-12）
+
+- [済] Pull Request #56が `2474ec9e9a4863e483465075cfaa294d696feb58` としてmainへ統合済みである
+- [済] PR #56の変更が文書6ファイルだけで、ゲーム本体・自動試験コード・ランキング・Supabase設定を変更していないことを確認した
+- [未確認] `2474ec9e9a4863e483465075cfaa294d696feb58` でChromium、WebKit、実ブラウザからHOMEからRESULTまでを操作する
+- [未確認] `2474ec9e9a4863e483465075cfaa294d696feb58` でWebGL消失・復帰、Canvas 2D切替、iPhone・iPad、音、振動、safe-area、横画面、VoiceOver、reduced-motion、継続性能を確認する
+- [未確認] 同じ公開候補コミットで3回連続合格する
+- [未確認] Phase 8Cのリリース候補固定、Supabase、ランキング再開、Codeberg Pages公開へ進む

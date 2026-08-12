@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `bc038feba7774cc58ecb3ce7845012e98b80eb18`（Pull Request #55マージ後のmain）
+- 進捗反映基準: `2474ec9e9a4863e483465075cfaa294d696feb58`（Pull Request #56マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: Codeberg Pages の `/namioshi/`
 - 正式表示名: `namioshi`
@@ -146,6 +146,8 @@ v3は、コードが動くだけでは完成としない。次の条件をすべ
 - Pull Request #52で、WebGLの波帯、水面、ガラス、ビーコン、命中表示を高品質化し、mainへマージした。
 - Pull Request #53で、既存の効果音契約を維持したまま、対応環境だけで使える任意の振動通知を追加し、mainへマージした。
 - Pull Request #54で、共有経路と画面導線の自動回帰契約を追加し、mainへマージした。`npm test`は127/127成功し、実ブラウザ・実機確認とは分けて扱う。
+
+- Pull Request #55・#56で、Phase 8B検収の基準コミットと未確認理由を文書へ同期した。ゲーム本体・自動試験コードは変更していない。
 
 ### 2.2 未完了
 
@@ -1330,7 +1332,7 @@ Node.jsの標準テスト機能または同等の軽い仕組みを使う。
 
 ## Phase 8B: 実機検収を行う
 
-> 現在状態: Pull Request #55の統合後。検収記録は[`PHASE8B_DEVICE_TEST_REPORT_v3.md`](PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理し、実機・実ブラウザの未確認項目を合格扱いにしない。検収対象コミットは `bc038feba7774cc58ecb3ce7845012e98b80eb18` である。
+> 現在状態: Pull Request #56の統合後。検収記録は[`PHASE8B_DEVICE_TEST_REPORT_v3.md`](PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理し、実機・実ブラウザの未確認項目を合格扱いにしない。検収対象コミットは `2474ec9e9a4863e483465075cfaa294d696feb58` である。
 
 ### 目的
 
@@ -1836,3 +1838,10 @@ Phase 8Aの自動試験はNode.js標準テストで127件を実行する。Chrom
 - PlaywrightのNode.jsパッケージは利用できたが、ChromiumとWebKitの実行バイナリがなく、Chromium導入も破損アーカイブで失敗した。実ブラウザ操作、画面キャプチャ、WebGL消失・復帰、性能測定は未実施である。
 - PR #54と同じゲームコード・自動試験コードを再実行し、`npm test` 127/127、build、verify、配置分析、SVG、容量、差分検査が成功した。これは実ブラウザ・実機の合格へ置き換えない。
 - iPhone・iPad、実ブラウザ、長時間・反復・発熱、G4・G7・G8、Supabase、ランキング再開、Phase 8C、公開判定は未完了のまま維持する。
+
+
+## 19. 2026-08-12 PR #56統合後・Phase 8B基準更新
+
+- Pull Request #56をmainへ統合し、現在のmainとPhase 8B検収対象を `2474ec9e9a4863e483465075cfaa294d696feb58` に更新する。
+- PR #56の変更は文書6ファイルだけで、ゲームルール、描画、音、振動、テストコード、ランキング、Supabase設定を変更していない。
+- 実ブラウザ・実機の確認結果は追加されていないため、G4・G7・G8、Phase 8C、ランキング再開、Supabase適用、Codeberg Pages公開は未完了のまま維持する。

@@ -134,3 +134,10 @@ safe-areaと横画面はCSSで余白と配置を調整し、画面回転や`visu
 - Pull Request #55の統合コミット `bc038feba7774cc58ecb3ce7845012e98b80eb18` をPhase 8Bの検収対象として固定する。PR #55は文書6ファイルだけを変更しており、ゲームコード、テストコード、ランキング、Supabase設定は変更していない。
 - PlaywrightのNode.jsパッケージが利用できても、ChromiumとWebKitの実行バイナリがない場合は、実ブラウザ検収を完了扱いにしない。今回のChromium導入は破損アーカイブで失敗したため、画面、コンソール、性能の証拠を作成しない。
 - iPhone・iPadの実機結果がないため、G4・G7・G8、ランキング再開、Phase 8C、Codeberg Pages公開を保留する。
+
+
+## 2026-08-12 Phase 8B基準コミットの更新
+
+- Pull Request #56のマージコミット `2474ec9e9a4863e483465075cfaa294d696feb58` を、現在のmainとPhase 8B検収対象として扱う。
+- PR #56は文書6ファイルだけを変更しており、ゲーム本体、自動試験コード、ランキング、Supabase設定は変更していない。
+- 実ブラウザ・iPhone・iPadの確認結果は追加されていないため、G4・G7・G8、Phase 8C、ランキング再開、Supabase適用、公開判定は保留する。
