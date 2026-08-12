@@ -3,8 +3,8 @@
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 基準main: `bc038feba7774cc58ecb3ce7845012e98b80eb18`（Phase 8B PR #55統合後）
-- 対応ブランチ: `codex/namioshi-v3-phase8b-evidence-refresh`
+- 基準main: `2474ec9e9a4863e483465075cfaa294d696feb58`（PR #56統合後）
+- 対応ブランチ: `codex/namioshi-v3-phase8b-pr56-sync`
 - このPull RequestはDraftのままにする
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
 
@@ -42,6 +42,8 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 - PR #54: merged
 - PR #55: merged（merge commit `bc038feba7774cc58ecb3ce7845012e98b80eb18`）
 - PR #55の変更は文書6ファイルのみで、ゲーム本体・自動試験コードは変更なし
+- PR #56: merged（merge commit `2474ec9e9a4863e483465075cfaa294d696feb58`）
+- PR #56の変更は文書6ファイルのみで、ゲーム本体・自動試験コードは変更なし
 - PR #54と同じゲームコード・自動試験コードを作業コピーで再実行し、`npm test` 127/127、build、verify、配置分析、SVG、容量、差分検査が成功
 - GitHub Actions Run #91: Node.js 18・20・22成功
 - PR #54の `npm test`: 127/127成功
@@ -55,6 +57,12 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 - Chromiumの一時導入を試行したが、取得アーカイブが0MiB・破損状態で終了したため、ブラウザ操作、画面キャプチャ、コンソール確認を実施済みとは扱わない。
 - iPhone、iPad、実ブラウザの確認結果を推測で補わず、Phase 8Bは未完了のまま維持する。
 
+## 2026-08-12 PR #56統合後の基準更新
+
+- Pull Request #56をmainへ統合し、Phase 8Bの検収対象コミットを `2474ec9e9a4863e483465075cfaa294d696feb58` へ更新する。
+- PR #56の変更は文書6ファイルだけで、ゲーム本体・自動試験コード・ランキング・Supabase設定は変更していない。
+- 実ブラウザ・実機の結果は追加されていないため、Phase 8Bは未完了のまま維持する。
+
 ## 未確認・保留
 
 - Chromium、WebKit、実ブラウザでのHOMEからRESULTまでの操作
@@ -67,7 +75,7 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 
 ## 次の工程
 
-Phase 8Bの実機・実ブラウザ確認結果を、同じ公開候補コミット単位で記録する。利用できない端末は未確認と記録し、確認結果がそろうまでPhase 8Cのリリース候補固定、ランキング有効化、公開判定へ進めない。
+Phase 8Bの実機・実ブラウザ確認結果を、PR #56統合後の公開候補コミット `2474ec9e9a4863e483465075cfaa294d696feb58` 単位で記録する。利用できない端末は未確認と記録し、確認結果がそろうまでPhase 8Cのリリース候補固定、ランキング有効化、公開判定へ進めない。
 
 ## 戻し方
 
