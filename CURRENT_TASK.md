@@ -3,8 +3,8 @@
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 基準main: `2474ec9e9a4863e483465075cfaa294d696feb58`（PR #56統合後）
-- 対応ブランチ: `codex/namioshi-v3-phase8b-pr56-sync`
+- 基準main: `cc9d00e8542a1d1edc34cc5731e69e03b0d2ee9e`（PR #57統合後）
+- 対応ブランチ: `agent/namioshi-deadline-settlement-recovery`
 - このPull RequestはDraftのままにする
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
 
@@ -15,7 +15,7 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 ## 今回の対応
 
 - Pull Request #54の統合を確認し、Phase 8Aを完了扱いへ更新する
-- Pull Request #56の統合後コミット `2474ec9e9a4863e483465075cfaa294d696feb58` を今回の検収対象として固定する
+- Pull Request #57の統合後コミット `cc9d00e8542a1d1edc34cc5731e69e03b0d2ee9e` を今回の検収対象として固定する
 - Phase 8Bの検収項目、端末候補、成功・失敗の記録欄を `docs/PHASE8B_DEVICE_TEST_REPORT_v3.md` に追加する
 - ブラウザ実行バイナリがないため、実ブラウザ試験を実施済みとは記録しない
 - 実機を使わずに、成功結果やスクリーンショットを推測で補わない
@@ -63,6 +63,13 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 - PR #56の変更は文書6ファイルだけで、ゲーム本体・自動試験コード・ランキング・Supabase設定は変更していない。
 - 実ブラウザ・実機の結果は追加されていないため、Phase 8Bは未完了のまま維持する。
 
+## 2026-08-12 公開版Cloud Chromeの後続確認
+
+- https://chameleonjp-lab.github.io/namioshi/ をCloud Chromeで開き、名前入力から公式モードのPLAYINGまで進めた。
+- 締切後に表示が「残り 0.0」のまま35秒以上継続し、RESULTへ遷移しなかった。RESULTは非表示のままで、ゲーム本体URLのコンソールエラーは確認されなかった。
+- この失敗は実ブラウザで確認した失敗として記録し、iPhone・iPad、WebGL強制消失・復帰、Canvas 2D切替、音・振動、長時間試験の確認済みとは扱わない。
+- 原因候補を、描画停止中のrendererSuspended分岐が締切決済を進めない経路として限定し、期限到達時だけ固定更新の追いつきを継続する最小修正をDraft候補へ追加する。
+
 ## 未確認・保留
 
 - Chromium、WebKit、実ブラウザでのHOMEからRESULTまでの操作
@@ -75,7 +82,7 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 
 ## 次の工程
 
-Phase 8Bの実機・実ブラウザ確認結果を、PR #56統合後の公開候補コミット `2474ec9e9a4863e483465075cfaa294d696feb58` 単位で記録する。利用できない端末は未確認と記録し、確認結果がそろうまでPhase 8Cのリリース候補固定、ランキング有効化、公開判定へ進めない。
+Phase 8Bの実機・実ブラウザ確認結果を、PR #57統合後の公開候補コミット `cc9d00e8542a1d1edc34cc5731e69e03b0d2ee9e` 単位で記録する。利用できない端末は未確認と記録し、確認結果がそろうまでPhase 8Cのリリース候補固定、ランキング有効化、公開判定へ進めない。
 
 ## 戻し方
 

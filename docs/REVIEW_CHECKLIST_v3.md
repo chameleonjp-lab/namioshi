@@ -501,3 +501,10 @@
 - [未確認] `2474ec9e9a4863e483465075cfaa294d696feb58` でWebGL消失・復帰、Canvas 2D切替、iPhone・iPad、音、振動、safe-area、横画面、VoiceOver、reduced-motion、継続性能を確認する
 - [未確認] 同じ公開候補コミットで3回連続合格する
 - [未確認] Phase 8Cのリリース候補固定、Supabase、ランキング再開、Codeberg Pages公開へ進む
+
+## 2026-08-12 実ブラウザで確認した失敗
+
+- [失敗] Cloud Chromeで公式モードを開始し、締切後も「残り 0.0」が35秒以上継続してRESULTへ遷移しない。
+- [確認済み] ゲーム本体URLのコンソールエラーは確認されなかった。
+- [未確認] 修正候補をmainへ統合した後の再検証、iPhone・iPad、WebGL強制消失・復帰、Canvas 2D切替、音・振動、長時間動作。
+- [未確認] 実機・実ブラウザの全Phase 8B項目。

@@ -141,3 +141,9 @@ safe-areaと横画面はCSSで余白と配置を調整し、画面回転や`visu
 - Pull Request #56のマージコミット `2474ec9e9a4863e483465075cfaa294d696feb58` を、現在のmainとPhase 8B検収対象として扱う。
 - PR #56は文書6ファイルだけを変更しており、ゲーム本体、自動試験コード、ランキング、Supabase設定は変更していない。
 - 実ブラウザ・iPhone・iPadの確認結果は追加されていないため、G4・G7・G8、Phase 8C、ランキング再開、Supabase適用、公開判定は保留する。
+
+## 2026-08-12 公開版Cloud Chromeでの締切遷移失敗
+
+- 公開版 https://chameleonjp-lab.github.io/namioshi/ をCloud Chromeで確認し、公式モードの締切後も「残り 0.0」が35秒以上継続してRESULTへ遷移しない失敗を記録する。
+- ゲーム本体URLのコンソールエラーは確認されなかった。これは実ブラウザで確認した失敗であり、iPhone・iPad、WebGL強制消失・復帰、Canvas 2D切替、音・振動、長時間動作の成功を意味しない。
+- 原因候補をrendererSuspended中の締切決済停止に限定し、期限到達時の固定更新を継続する最小修正と自動回帰契約をDraft候補へ追加する。ゲームルール、得点、ランキング、Supabase設定は変更しない。
