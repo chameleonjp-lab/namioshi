@@ -127,3 +127,10 @@ safe-areaと横画面はCSSで余白と配置を調整し、画面回転や`visu
 - Node.js標準テストの成功は、実ブラウザ、iPhone・iPad、WebGLコンテキスト消失、Canvas 2D切替、音、振動、safe-area、長時間稼働の確認へ置き換えない。
 - Phase 8Bでは同じ公開候補コミット単位で実機・実ブラウザの結果を記録する。利用できない端末は未確認とし、推測で成功結果を作らない。
 - `RANKING_SERVICE_STATE.enabled=false`、Supabase未適用、ランキング再開停止、Codeberg Pages公開未確認を維持する。
+
+
+## 2026-08-12 Phase 8B検収対象の更新
+
+- Pull Request #55の統合コミット `bc038feba7774cc58ecb3ce7845012e98b80eb18` をPhase 8Bの検収対象として固定する。PR #55は文書6ファイルだけを変更しており、ゲームコード、テストコード、ランキング、Supabase設定は変更していない。
+- PlaywrightのNode.jsパッケージが利用できても、ChromiumとWebKitの実行バイナリがない場合は、実ブラウザ検収を完了扱いにしない。今回のChromium導入は破損アーカイブで失敗したため、画面、コンソール、性能の証拠を作成しない。
+- iPhone・iPadの実機結果がないため、G4・G7・G8、ランキング再開、Phase 8C、Codeberg Pages公開を保留する。

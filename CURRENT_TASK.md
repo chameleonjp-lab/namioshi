@@ -1,10 +1,10 @@
-# CURRENT_TASK: Phase 8B 実機検収（未完了）
+# CURRENT_TASK: Phase 8B 実機・実ブラウザ検収（未完了）
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 基準main: `d2249c33e7debf63da80495043972f92c575f077`（Phase 8A PR #54統合後）
-- 対応ブランチ: `codex/namioshi-v3-phase8b-device-report`
+- 基準main: `bc038feba7774cc58ecb3ce7845012e98b80eb18`（Phase 8B PR #55統合後）
+- 対応ブランチ: `codex/namioshi-v3-phase8b-evidence-refresh`
 - このPull RequestはDraftのままにする
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
 
@@ -15,6 +15,7 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 ## 今回の対応
 
 - Pull Request #54の統合を確認し、Phase 8Aを完了扱いへ更新する
+- Pull Request #55の統合後コミット `bc038feba7774cc58ecb3ce7845012e98b80eb18` を今回の検収対象として固定する
 - Phase 8Bの検収項目、端末候補、成功・失敗の記録欄を `docs/PHASE8B_DEVICE_TEST_REPORT_v3.md` に追加する
 - ブラウザ実行バイナリがないため、実ブラウザ試験を実施済みとは記録しない
 - 実機を使わずに、成功結果やスクリーンショットを推測で補わない
@@ -39,11 +40,20 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 ## 確認結果
 
 - PR #54: merged
+- PR #55: merged（merge commit `bc038feba7774cc58ecb3ce7845012e98b80eb18`）
+- PR #55の変更は文書6ファイルのみで、ゲーム本体・自動試験コードは変更なし
+- PR #54と同じゲームコード・自動試験コードを作業コピーで再実行し、`npm test` 127/127、build、verify、配置分析、SVG、容量、差分検査が成功
 - GitHub Actions Run #91: Node.js 18・20・22成功
 - PR #54の `npm test`: 127/127成功
 - PR #54の `build`、`verify`、配置・生成物検査: 成功
 - 実ブラウザ、WebGLコンテキスト消失、Canvas 2D切替、iPhone・iPad実機: 未確認
 - Supabase、ランキング再開、Codeberg Pages公開: 未実施
+
+## 2026-08-12 再確認記録
+
+- PlaywrightのNode.jsパッケージは利用できたが、ChromiumとWebKitの実行バイナリは存在しなかった。
+- Chromiumの一時導入を試行したが、取得アーカイブが0MiB・破損状態で終了したため、ブラウザ操作、画面キャプチャ、コンソール確認を実施済みとは扱わない。
+- iPhone、iPad、実ブラウザの確認結果を推測で補わず、Phase 8Bは未完了のまま維持する。
 
 ## 未確認・保留
 
