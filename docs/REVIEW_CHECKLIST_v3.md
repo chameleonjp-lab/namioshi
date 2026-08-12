@@ -464,3 +464,16 @@
 - [済] `npm test`で127件を実行できる
 - [未確認] Chromium、WebKit、PlaywrightでHOMEからRESULTまでを操作する
 - [未確認] 実ブラウザでWebGL消失、復帰、Canvas 2D切替を行う
+
+
+## Phase 8B 実機検収
+
+- [済] Pull Request #54がmainへ統合済みである
+- [済] Phase 8Aの自動試験127/127、build、verify、生成物検査の結果を記録した
+- [未確認] Chromium、WebKit、実ブラウザでHOMEからRESULTまでを操作する
+- [未確認] 実ブラウザでWebGL消失、復帰、Canvas 2D切替を行う
+- [未確認] iPhone SE級、iPhone 11 Pro、iPhone 17 Pro、iPad Pro 2018で表示・操作・性能を確認する
+- [未確認] 音、振動、safe-area、横画面、VoiceOver、reduced-motionを確認する
+- [未確認] 連続再挑戦10回、30分連続稼働、バックグラウンド復帰10回、通常より20%重い条件を確認する
+- [未確認] 同じ公開候補コミットで3回連続合格する
+- [未確認] Codeberg Pages、Supabase、ランキング再開、公開判定を確認する
