@@ -30,6 +30,40 @@ test('using all taps and clearing all waves cannot end play early',()=>{
   assert.doesNotMatch(main,/world\.taps\s*>=|world\.waves\.length\s*===\s*0/);
 });
 
+
+test('an empty play still finalizes after a long deadline frame',()=>{
+  const runner=new FixedStepRunner();
+  runner.reset(0);
+  const queue=new TimedInputQueue();
+  queue.reset(0);
+  let steps=0;
+  const first=advancePlayFrame({
+    timestamp:30050,
+    deadline:30000,
+    runner,
+    inputQueue:queue,
+    update:()=>{steps++}
+  });
+  assert.equal(first.steps,3);
+  assert.equal(first.shouldFinish,false);
+  let frame=first;
+  let settlementFrames=1;
+  while(!frame.shouldFinish&&settlementFrames<1000){
+    frame=advancePlayFrame({
+      timestamp:30000,
+      deadline:30000,
+      runner,
+      inputQueue:queue,
+      update:()=>{steps++}
+    });
+    settlementFrames++;
+  }
+  assert.equal(frame.shouldFinish,true);
+  assert.equal(runner.stepCount,1800);
+  assert.equal(queue.length,0);
+  assert.equal(steps,1800);
+});
+
 test('fixed-step runner produces the same update count at 60Hz and 120Hz',()=>{
   const run=(refreshRate)=>{
     const runner=new FixedStepRunner();

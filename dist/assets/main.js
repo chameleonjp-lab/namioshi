@@ -597,6 +597,14 @@ function renderCurrentFrame(now){
   }
 }
 
+function settleSuspendedDeadline(now){
+  if(state!=='PLAYING'||tutorialMode||playDeadline===null||now<playDeadline)return;
+  updatePlayTime(now);
+  const playFrame=rememberPlayFrame(advanceSimulation(playDeadline));
+  updatePlayTime(now);
+  if(playFrame.shouldFinish)finish();
+}
+
 function loop(timestamp){
   const now=Number.isFinite(timestamp)?timestamp:monotonicNow();
   const frameSeconds=lastRenderTimestamp===null
@@ -613,6 +621,7 @@ function loop(timestamp){
   }
 
   if(rendererSuspended){
+    settleSuspendedDeadline(now);
     lastRenderTimestamp=null;
     frames=[];
     requestAnimationFrame(loop);

@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `2474ec9e9a4863e483465075cfaa294d696feb58`（Pull Request #56マージ後のmain）
+- 進捗反映基準: `cc9d00e8542a1d1edc34cc5731e69e03b0d2ee9e`（Pull Request #57マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: Codeberg Pages の `/namioshi/`
 - 正式表示名: `namioshi`
@@ -171,6 +171,13 @@ v3は、コードが動くだけでは完成としない。次の条件をすべ
 - 全判定波の前景表示は回復計画のまとまりAで自動試験済み。最大波場面のiPhone性能は未確認である。
 - iPhoneの初回プレイ確認は問題なしの報告を受けたが、長時間・反復・発熱を含む検収は未確認である。
 - iPad、Codeberg Pages、実Supabase通信を確認していない。
+
+### 2.2.1 2026-08-12 公開版Cloud Chromeの後続確認
+
+- 公開版をCloud Chromeで実行し、PLAYINGから締切をまたいだ後も「残り 0.0」のまま35秒以上RESULTへ遷移しない失敗を確認した。
+- ゲーム本体URLのコンソールエラーは確認されなかった。実機、iPhone・iPad、WebGL強制消失・復帰、Canvas 2D切替、音・振動、長時間動作の確認済みとは扱わない。
+- rendererSuspended中に締切決済を継続する最小修正と、自動回帰契約をDraft候補へ追加する。ゲームルール、得点式、ランキング、Supabase設定は変更しない。
+
 
 ### 2.3 未確認として扱う事項
 
@@ -1332,7 +1339,7 @@ Node.jsの標準テスト機能または同等の軽い仕組みを使う。
 
 ## Phase 8B: 実機検収を行う
 
-> 現在状態: Pull Request #56の統合後。検収記録は[`PHASE8B_DEVICE_TEST_REPORT_v3.md`](PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理し、実機・実ブラウザの未確認項目を合格扱いにしない。検収対象コミットは `2474ec9e9a4863e483465075cfaa294d696feb58` である。
+> 現在状態: Pull Request #57の統合後。検収記録は[`PHASE8B_DEVICE_TEST_REPORT_v3.md`](PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理し、実機・実ブラウザの未確認項目を合格扱いにしない。検収対象コミットは `cc9d00e8542a1d1edc34cc5731e69e03b0d2ee9e` である。Cloud Chromeでは締切後のRESULT遷移失敗を確認し、修正候補をDraftで検証中である。
 
 ### 目的
 

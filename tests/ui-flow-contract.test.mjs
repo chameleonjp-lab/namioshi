@@ -31,6 +31,12 @@ test('result flow keeps share, replay, mode selection, and exit paths available'
   assert.match(main,/\$\('endGame'\)\.onclick=endGame/);
 });
 
+
+test('renderer suspension keeps an expired deadline settlement alive',()=>{
+  assert.match(main,/function settleSuspendedDeadline\(now\)\{[\s\S]*?advanceSimulation\(playDeadline\)[\s\S]*?if\(playFrame\.shouldFinish\)finish\(\)/);
+  assert.match(main,/if\(rendererSuspended\)\{[\s\S]*?settleSuspendedDeadline\(now\);[\s\S]*?requestAnimationFrame\(loop\)/);
+});
+
 test('input and renderer fallback contracts remain connected to the UI flow',()=>{
   assert.match(main,/enqueueWithinLimit\([\s\S]*?maximum:MAX_TAPS/);
   assert.match(main,/function switchToCanvas\(\{resume=true\}=\{\}\)/);
