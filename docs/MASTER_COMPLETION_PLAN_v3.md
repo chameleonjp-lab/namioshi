@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `d2249c33e7debf63da80495043972f92c575f077`（Pull Request #54マージ後のmain）
+- 進捗反映基準: `bc038feba7774cc58ecb3ce7845012e98b80eb18`（Pull Request #55マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: Codeberg Pages の `/namioshi/`
 - 正式表示名: `namioshi`
@@ -1330,7 +1330,7 @@ Node.jsの標準テスト機能または同等の軽い仕組みを使う。
 
 ## Phase 8B: 実機検収を行う
 
-> 現在状態: Pull Request #54の統合後。検収記録は[`PHASE8B_DEVICE_TEST_REPORT_v3.md`](PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理し、実機・実ブラウザの未確認項目を合格扱いにしない。
+> 現在状態: Pull Request #55の統合後。検収記録は[`PHASE8B_DEVICE_TEST_REPORT_v3.md`](PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理し、実機・実ブラウザの未確認項目を合格扱いにしない。検収対象コミットは `bc038feba7774cc58ecb3ce7845012e98b80eb18` である。
 
 ### 目的
 
@@ -1828,3 +1828,11 @@ Pull Request #53の統合を確認した。Phase 7D相当のWebGL復旧は回復
 今回のDraftでは、シェア文と公式URL、ネイティブ共有の成功・キャンセル・予期しない失敗、クリップボードのみ、共有機能なし、コピー失敗を試験する。また、HOMEからRESULTまでの状態画面、カウントダウン二重起動防止、RESULTのシェア・再挑戦・モード選択・終了導線、入力上限、WebGLからCanvas 2Dへの切替契約を固定する。
 
 Phase 8Aの自動試験はNode.js標準テストで127件を実行する。Chromium、WebKit、Playwrightの実行環境がこの作業場にないため、ブラウザ操作試験は追加せず、実ブラウザ・実機確認済みとは扱わない。Supabase、ランキング再開、G4・G7の実機通過、公開判定は変更しない。
+
+## 18. 2026-08-12 Phase 8B継続確認
+
+- Pull Request #55をmainへ統合し、検収対象コミットを `bc038feba7774cc58ecb3ce7845012e98b80eb18` に更新する。
+- Pull Request #55の変更は文書6ファイルだけで、ゲームルール、描画、音、振動、テストコード、ランキング、Supabaseを変更していない。
+- PlaywrightのNode.jsパッケージは利用できたが、ChromiumとWebKitの実行バイナリがなく、Chromium導入も破損アーカイブで失敗した。実ブラウザ操作、画面キャプチャ、WebGL消失・復帰、性能測定は未実施である。
+- PR #54と同じゲームコード・自動試験コードを再実行し、`npm test` 127/127、build、verify、配置分析、SVG、容量、差分検査が成功した。これは実ブラウザ・実機の合格へ置き換えない。
+- iPhone・iPad、実ブラウザ、長時間・反復・発熱、G4・G7・G8、Supabase、ランキング再開、Phase 8C、公開判定は未完了のまま維持する。
