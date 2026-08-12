@@ -15,7 +15,7 @@ Phase 8AでNode.js標準テストによる回帰契約をそろえた。次は�
 ## 今回の対応
 
 - Pull Request #54の統合を確認し、Phase 8Aを完了扱いへ更新する
-- Pull Request #55の統合後コミット `bc038feba7774cc58ecb3ce7845012e98b80eb18` を今回の検収対象として固定する
+- Pull Request #56の統合後コミット `2474ec9e9a4863e483465075cfaa294d696feb58` を今回の検収対象として固定する
 - Phase 8Bの検収項目、端末候補、成功・失敗の記録欄を `docs/PHASE8B_DEVICE_TEST_REPORT_v3.md` に追加する
 - ブラウザ実行バイナリがないため、実ブラウザ試験を実施済みとは記録しない
 - 実機を使わずに、成功結果やスクリーンショットを推測で補わない
@@ -79,4 +79,4 @@ Phase 8Bの実機・実ブラウザ確認結果を、PR #56統合後の公開候
 
 ## 戻し方
 
-このPull Requestの検収記録と文書更新だけをrevertすれば、Phase 8A PR #54統合直後のmainへ戻せる。ゲーム結果、端末保存、Supabaseデータの戻し作業は発生しない。
+このPull Requestの検収記録と文書更新だけをrevertすれば、PR #56統合後のmainへ戻せる。ゲーム結果、端末保存、Supabaseデータの戻し作業は発生しない。
