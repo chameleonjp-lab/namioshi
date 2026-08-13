@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `cc9d00e8542a1d1edc34cc5731e69e03b0d2ee9e`（Pull Request #57マージ後のmain）
+- 進捗反映基準: `f10a77159eafed3dce0b347332723a75ac46a882`（Pull Request #58マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: Codeberg Pages の `/namioshi/`
 - 正式表示名: `namioshi`
@@ -177,6 +177,15 @@ v3は、コードが動くだけでは完成としない。次の条件をすべ
 - 公開版をCloud Chromeで実行し、PLAYINGから締切をまたいだ後も「残り 0.0」のまま35秒以上RESULTへ遷移しない失敗を確認した。
 - ゲーム本体URLのコンソールエラーは確認されなかった。実機、iPhone・iPad、WebGL強制消失・復帰、Canvas 2D切替、音・振動、長時間動作の確認済みとは扱わない。
 - rendererSuspended中に締切決済を継続する最小修正と、自動回帰契約をDraft候補へ追加する。ゲームルール、得点式、ランキング、Supabase設定は変更しない。
+
+### 2.2.2 2026-08-13 Pull Request #58統合後の再失敗と第2回復
+
+- PR #58統合後のmain `f10a77159eafed3dce0b347332723a75ac46a882` がGitHub Pagesへ反映されていることを公開JavaScriptで確認した。
+- Cloud Chromeで公式モードを再実行し、締切後32秒以上「残り 0.0」のままRESULTへ遷移しない失敗を再現した。ページは可視状態で、ゲーム本体由来のコンソールエラーは確認されなかった。
+- 1Hz相当では30秒時点で90/1800固定step、未処理1710stepとなり、従来の1画面3stepだけでは追加570画面更新を要する。PR #58のrendererSuspended補修だけでは通常経路の低い画面更新頻度を解消できなかった。
+- 第2回復では、締切後だけ最大60論理フレーム・180固定stepずつ処理し、各処理の間でブラウザへ制御を返す。締切前の1画面最大3step、入力順、得点、30秒、6タップは変更しない。
+- 1Hz fixtureは最大10回の小分け処理で1800stepへ到達し、既存fixtureと同じ5481点・内訳を維持することを完了条件へ追加する。
+- 自動試験の成功は、Draft反映後のCloud Chrome、main配信後、iPhone・iPad、WebGL消失・復帰、Canvas 2D、長時間動作の合格へ置き換えない。
 
 
 ### 2.3 未確認として扱う事項

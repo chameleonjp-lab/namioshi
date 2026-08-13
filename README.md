@@ -102,16 +102,20 @@ Pull Request #54で、共有成功・キャンセル・失敗時のクリップ�
 
 ## Phase 8B 実機検収
 
-Phase 8Bでは、同じ公開候補コミットでブラウザ表示、スマートフォン操作、描画復旧、音・振動、休止復帰、継続動作を確認します。PR #57統合後の検収対象は `cc9d00e8542a1d1edc34cc5731e69e03b0d2ee9e` です。Cloud Chromeでは締切後にRESULTへ遷移しない失敗を確認したため、修正候補をDraftで検証中です。G4・G7・G8、ランキング再開、公開判定は未完了です。記録欄と未確認範囲は[`docs/PHASE8B_DEVICE_TEST_REPORT_v3.md`](docs/PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理します。
+Phase 8Bでは、同じ公開候補コミットでブラウザ表示、スマートフォン操作、描画復旧、音・振動、休止復帰、継続動作を確認します。現在のmainはPR #58統合後の `f10a77159eafed3dce0b347332723a75ac46a882` です。Cloud Chromeで締切後にRESULTへ遷移しない失敗を再確認したため、低い画面更新頻度でも締切精算を小分け処理で終える第2修正をDraftで検証します。G4・G7・G8、ランキング再開、公開判定は未完了です。記録欄と未確認範囲は[`docs/PHASE8B_DEVICE_TEST_REPORT_v3.md`](docs/PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理します。
 
 ## 2026-08-12 公開版ブラウザの後続確認
 
 Cloud Chromeで公式モードを実行したところ、締切後に「残り 0.0」の表示が35秒以上続き、RESULTへ遷移しない失敗を確認しました。これは実ブラウザで確認した失敗として記録します。描画停止中の締切決済経路を補修するDraft候補を作成しますが、iPhone・iPad、強制WebGL消失・復帰、Canvas 2D切替、音・振動、長時間動作、ランキング、Supabaseの確認済みとは扱いません。
 
+## 2026-08-13 PR #58統合後の再検証
+
+GitHub Pages上のPR #58統合後コードでも、公式モードが締切後32秒以上「残り 0.0」のままRESULTへ進まない失敗を再現しました。1Hz相当では30秒時点で90/1800固定stepしか処理できず、結果まで追加570回の画面更新が必要になることを自動再現しています。第2修正では締切後だけ小分け精算を開始し、通常プレイ中の1画面最大3stepは維持します。
+
 
 ## 確認状態
 
-Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49、Phase 6BのPull Request #50、Phase 7AのPull Request #51、Phase 7BのPull Request #52、Phase 7CのPull Request #53、Phase 8AのPull Request #54まではmainへ統合済みです。Phase 8Bの実ブラウザ・実機検収は未完了です。G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
+Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49、Phase 6BのPull Request #50、Phase 7AのPull Request #51、Phase 7BのPull Request #52、Phase 7CのPull Request #53、Phase 8AのPull Request #54、締切回復のPull Request #58まではmainへ統合済みです。Phase 8Bの実ブラウザ・実機検収は未完了です。G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
 
 現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線、Phase 6Bの画面支援契約、Phase 7Bの水面・波帯・ガラス・ビーコン表現、Phase 7Cの任意振動通知、Phase 8Aの自動試験契約まで統合済みです。公式fixtureの実到達例は5481点（直接0、壁239、反射板429、2回反射4813）で、台帳合計・内訳合計・1800固定stepをgoldenとして固定し、6480はhard ceilingとして扱い探索最大値とは断定していません。実ブラウザの強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示、Phase 7A・7Bの実ブラウザ性能、Phase 7Cの振動実動作は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
 

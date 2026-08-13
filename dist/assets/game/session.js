@@ -281,6 +281,39 @@ export function advancePlayFrame({
   };
 }
 
+/**
+ * Drain deadline backlog in bounded chunks that are independent from the
+ * browser's render rate. Each internal frame still honours the normal
+ * three-fixed-step limit; the caller yields between chunks so a throttled RAF
+ * cannot turn the result transition into a minutes-long wait.
+ */
+export function settlePlayDeadline({
+  deadline,
+  runner,
+  inputQueue,
+  update,
+  maxFrames=60
+}){
+  if(!Number.isFinite(deadline))throw new TypeError('deadline settlement requires a finite deadline');
+  if(!Number.isInteger(maxFrames)||maxFrames<1){
+    throw new TypeError('deadline settlement requires a positive frame limit');
+  }
+  let frame=null;
+  let settlementFrames=0;
+  do{
+    frame=advancePlayFrame({
+      timestamp:deadline,
+      deadline,
+      tutorial:false,
+      runner,
+      inputQueue,
+      update
+    });
+    settlementFrames++;
+  }while(!frame.shouldFinish&&settlementFrames<maxFrames);
+  return{...frame,settlementFrames};
+}
+
 export function createPlayDeadline(startTimestamp,durationSeconds){
   if(!Number.isFinite(startTimestamp)||!Number.isFinite(durationSeconds)||durationSeconds<0){
     throw new TypeError('play deadline requires finite start and duration');

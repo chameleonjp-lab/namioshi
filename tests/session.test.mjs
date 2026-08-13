@@ -6,6 +6,7 @@ import {
   createPlayDeadline,
   FixedStepRunner,
   remainingPlaySeconds,
+  settlePlayDeadline,
   shouldFinishPlay,
   TimedInputQueue
 } from '../src/game/session.js';
@@ -62,6 +63,72 @@ test('an empty play still finalizes after a long deadline frame',()=>{
   assert.equal(runner.stepCount,1800);
   assert.equal(queue.length,0);
   assert.equal(steps,1800);
+});
+
+test('deadline backlog drains in bounded chunks without waiting for more render frames',()=>{
+  const events=[
+    [90,140,137],
+    [180,340,1073],
+    [270,490,2249],
+    [90,140,3377],
+    [180,340,4193],
+    [270,490,5281]
+  ];
+  const world=new World();
+  world.reset({mode:GAME_MODE.OFFICIAL});
+  const queue=new TimedInputQueue();
+  queue.reset(0);
+  for(const [x,y,timestamp] of events)assert.equal(queue.enqueue({x,y,timestamp}),true);
+  const runner=new FixedStepRunner();
+  runner.reset(0);
+  const update=(step,{boundaryTimestamp})=>{
+    world.step(step,{countTime:false});
+    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+  };
+
+  let frame=null;
+  for(let second=1;second<=30;second++){
+    frame=advancePlayFrame({
+      timestamp:second*1000,
+      deadline:30000,
+      runner,
+      inputQueue:queue,
+      update
+    });
+  }
+  assert.equal(frame.shouldFinish,false);
+  assert.equal(runner.stepCount,90);
+
+  let chunks=0;
+  while(!frame.shouldFinish&&chunks<20){
+    frame=settlePlayDeadline({
+      deadline:30000,
+      runner,
+      inputQueue:queue,
+      update,
+      maxFrames:60
+    });
+    assert.ok(frame.settlementFrames<=60);
+    chunks++;
+  }
+
+  assert.equal(frame.shouldFinish,true);
+  assert.ok(chunks<=10);
+  assert.equal(runner.stepCount,1800);
+  assert.equal(queue.length,0);
+  world.finalizePendingHits();
+  assert.equal(world.score,5481);
+  assert.deepEqual(world.getScoreBreakdown(),{direct:0,wall:239,glass:429,double:4813});
+});
+
+test('deadline settlement validates its chunk boundary',()=>{
+  const runner=new FixedStepRunner();
+  runner.reset(0);
+  const queue=new TimedInputQueue();
+  queue.reset(0);
+  const update=()=>{};
+  assert.throws(()=>settlePlayDeadline({deadline:Number.NaN,runner,inputQueue:queue,update}),/finite deadline/);
+  assert.throws(()=>settlePlayDeadline({deadline:30000,runner,inputQueue:queue,update,maxFrames:0}),/positive frame limit/);
 });
 
 test('fixed-step runner produces the same update count at 60Hz and 120Hz',()=>{
