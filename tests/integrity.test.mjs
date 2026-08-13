@@ -115,6 +115,7 @@ test('two finite reflections inside one fixed step are both generated',()=>{
   world.glass=[];
   world.waves=[];
   assert.equal(world.tap(6,7),true);
+  world.waves[0].speed=165;
 
   for(let step=0;step<3;step++)world.step(1/60);
 
@@ -357,6 +358,7 @@ test('a wave cannot move or score beyond its three-second lifetime',()=>{
   const expiringReflections=new World({random:()=>.5});
   expiringReflections.reset();
   assert.equal(expiringReflections.tap(0,80),true);
+  expiringReflections.waves[0].speed=165;
   for(let frame=0;frame<179;frame++)expiringReflections.step(1/60);
   const finalFrameReflections=[];
   expiringReflections.onReflect=event=>finalFrameReflections.push(event);
@@ -504,8 +506,10 @@ test('the six-root three-beacon score ledger cannot exceed 6480 points',()=>{
     }
   }
   world.step(1/60);
+  world.finalizePendingHits();
 
   assert.equal(world.bestHits.size,18);
+  assert.equal(world.routeBestHits.size,18);
   assert.equal(world.score,6480);
   assert.equal(Object.values(world.getScoreBreakdown()).reduce((sum,value)=>sum+value,0),6480);
 });

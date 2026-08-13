@@ -3,6 +3,7 @@ import {
   LOGICAL_WIDTH,
   OFFICIAL_LAYOUT_FINGERPRINT,
   OFFICIAL_LAYOUT_ID,
+  OFFICIAL_LAYOUT_VERSION,
   OFFICIAL_RULE_VERSION
 } from '../config.js';
 
@@ -22,6 +23,7 @@ const OFFICIAL_GLASS=Object.freeze([
 export const OFFICIAL_LAYOUT=Object.freeze({
   id:OFFICIAL_LAYOUT_ID,
   label:'候補C・開港型',
+  layoutVersion:OFFICIAL_LAYOUT_VERSION,
   ruleVersion:OFFICIAL_RULE_VERSION,
   fingerprint:OFFICIAL_LAYOUT_FINGERPRINT,
   beacons:OFFICIAL_BEACONS,
@@ -61,6 +63,7 @@ export function createOfficialLayout(){
   return{
     id:OFFICIAL_LAYOUT.id,
     label:OFFICIAL_LAYOUT.label,
+    layoutVersion:OFFICIAL_LAYOUT.layoutVersion,
     ruleVersion:OFFICIAL_LAYOUT.ruleVersion,
     fingerprint:OFFICIAL_LAYOUT.fingerprint,
     beacons:OFFICIAL_LAYOUT.beacons.map(cloneBeacon),
@@ -108,6 +111,7 @@ export function createPracticeLayout(random=Math.random){
   return{
     id:'practice-random',
     label:'練習ランダム',
+    layoutVersion:null,
     ruleVersion:OFFICIAL_RULE_VERSION,
     fingerprint:null,
     beacons,

@@ -56,7 +56,7 @@ test('enabled service accepts official scores once and sends the versioned contr
     p_display_name:'player',
     p_game_slug:'namioshi',
     p_score:100,
-    p_client_version:'namioshi-v3.1.0-official002',
+    p_client_version:'namioshi-v3.2.0-official003',
     p_play_id:'play-1',
     p_rule_version:OFFICIAL_RULE_VERSION,
     p_season:RANKING_SEASON

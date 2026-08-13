@@ -12,13 +12,14 @@ import {
   MAX_WAVES,
   PLAY_SECONDS,
   WALL_REFLECTION_ENERGY,
+  WAVE_SPEED,
   WAVE_LIFETIME
 } from '../config.js';
 import {judgementFromPrecision} from './judgement.js';
 import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
 import {createReflectionPath,traceReflectionPath} from './reflection-path.js';
-import {candidateScore,scoreCategory} from './scoring.js';
+import {candidateScore,scoreCategory,scoreRouteKey} from './scoring.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const clampVector=(x,y,maximum)=>{
@@ -51,6 +52,7 @@ export class World{
   h=LOGICAL_HEIGHT;
   mode=GAME_MODE.OFFICIAL;
   layoutId=null;
+  layoutVersion=null;
   ruleVersion=null;
   layoutFingerprint=null;
   rankingCandidate=true;
@@ -64,8 +66,11 @@ export class World{
   particles=[];
   reflectionEffects=[];
   bestHits=new Map();
+  routeBestHits=new Map();
+  finalizedRoots=new Set();
   waveSequence=1;
   onHit=()=>{};
+  onRoute=()=>{};
   onReflect=()=>{};
 
   constructor({random=Math.random}={}){
@@ -86,6 +91,7 @@ export class World{
     this.random=official?seededRandom(OFFICIAL_RANDOM_SEED):this.practiceRandomSource;
     const layout=official?createOfficialLayout():createPracticeLayout(this.random);
     this.layoutId=layout.id;
+    this.layoutVersion=layout.layoutVersion??null;
     this.ruleVersion=layout.ruleVersion;
     this.layoutFingerprint=layout.fingerprint;
     this.rankingCandidate=official;
@@ -97,6 +103,8 @@ export class World{
     this.particles=[];
     this.reflectionEffects=[];
     this.bestHits=new Map();
+    this.routeBestHits=new Map();
+    this.finalizedRoots=new Set();
     this.waveSequence=1;
     this.beacons=layout.beacons;
     this.glass=layout.glass;
@@ -119,7 +127,7 @@ export class World{
     glass=[],
     radius=1,
     width=9,
-    speed=165,
+    speed=WAVE_SPEED,
     age=0,
     lifetime=WAVE_LIFETIME,
     energy=1,
@@ -172,6 +180,111 @@ export class World{
     if(!Number.isFinite(beacon.shakeVy))beacon.shakeVy=0;
   }
 
+  rebuildRouteScore(){
+    const routes=new Map();
+    for(const [sourceHitKey,candidate] of this.bestHits){
+      if(!this.finalizedRoots.has(candidate.rootTapId))continue;
+      const routeKey=candidate.routeKey??scoreRouteKey(candidate.beaconId,candidate.pathIntersections);
+      const previous=routes.get(routeKey);
+      if(!previous||isBetterCandidate(candidate,previous)){
+        routes.set(routeKey,{...candidate,routeKey,sourceHitKey});
+      }
+    }
+    const breakdown={direct:0,wall:0,glass:0,double:0};
+    let score=0;
+    for(const candidate of routes.values()){
+      score+=candidate.score;
+      breakdown[candidate.category]+=candidate.score;
+    }
+    this.routeBestHits=routes;
+    this.scoreBreakdown=breakdown;
+    this.score=score;
+  }
+
+  routeEvent(candidate,{points=0,routeStatus='known'}={}){
+    return{
+      beaconId:candidate.beaconId,
+      waveId:candidate.waveId,
+      judgement:judgementFromPrecision(candidate.precision),
+      precision:candidate.precision,
+      points,
+      candidateScore:candidate.score,
+      category:candidate.category,
+      kind:candidate.kind,
+      reflections:candidate.reflections,
+      pathIntersections:candidate.pathIntersections,
+      routeKey:candidate.routeKey,
+      routeStatus,
+      discoveredRoutes:this.routeBestHits.size
+    };
+  }
+
+  presentCandidateImpact(wave,beacon,candidate){
+    this.prepareBeacon(beacon);
+    const targetX=Number.isFinite(candidate.targetX)?candidate.targetX:beacon.x;
+    const targetY=Number.isFinite(candidate.targetY)?candidate.targetY:beacon.y;
+    const distance=Math.hypot(wave.originX-targetX,wave.originY-targetY);
+    beacon.flash=1;
+    beacon.shakeVx+=(targetX-wave.originX)/(distance||1)*BEACON_SHAKE_IMPULSE;
+    beacon.shakeVy+=(targetY-wave.originY)/(distance||1)*BEACON_SHAKE_IMPULSE;
+    [beacon.shakeVx,beacon.shakeVy]=clampVector(beacon.shakeVx,beacon.shakeVy,BEACON_SHAKE_MAX_SPEED);
+    this.burst(targetX,targetY);
+    this.onHit(this.routeEvent(candidate,{routeStatus:'impact'}));
+  }
+
+  settleRoots(rootTapIds){
+    const roots=[...new Set(rootTapIds)].filter(rootTapId=>rootTapId&&!this.finalizedRoots.has(rootTapId));
+    if(!roots.length)return;
+    const rootSet=new Set(roots);
+    const previousRoutes=this.routeBestHits;
+    for(const rootTapId of roots)this.finalizedRoots.add(rootTapId);
+    this.rebuildRouteScore();
+    const candidates=[...this.bestHits].filter(([,candidate])=>rootSet.has(candidate.rootTapId));
+    const contributingHitKeys=new Set();
+    let points=0;
+    let newRoutes=0;
+    let improvedRoutes=0;
+    let representative=null;
+    for(const [routeKey,candidate] of this.routeBestHits){
+      if(!rootSet.has(candidate.rootTapId))continue;
+      const previous=previousRoutes.get(routeKey);
+      const addedPoints=candidate.score-(previous?.score??0);
+      if(addedPoints<=0)continue;
+      points+=addedPoints;
+      if(previous)improvedRoutes++;
+      else newRoutes++;
+      contributingHitKeys.add(candidate.sourceHitKey);
+      if(!representative||isBetterCandidate(candidate,representative))representative=candidate;
+    }
+    const knownRoutes=Math.max(0,candidates.length-contributingHitKeys.size);
+    if(!representative){
+      for(const[,candidate]of candidates){
+        if(!representative||isBetterCandidate(candidate,representative))representative=candidate;
+      }
+    }
+    if(!representative)return;
+    const routeStatus=newRoutes?'new':improvedRoutes?'improved':'known';
+    this.onRoute({
+      ...this.routeEvent(representative,{points,routeStatus}),
+      rootCount:roots.length,
+      candidateCount:candidates.length,
+      newRoutes,
+      improvedRoutes,
+      knownRoutes
+    });
+  }
+
+  settleCompletedRoots({all=false}={}){
+    const activeRoots=all?new Set():new Set(this.waves.map(wave=>wave.rootTapId));
+    const completed=[];
+    for(const candidate of this.bestHits.values()){
+      if(!this.finalizedRoots.has(candidate.rootTapId)&&(all||!activeRoots.has(candidate.rootTapId))){
+        completed.push(candidate.rootTapId);
+      }
+    }
+    this.settleRoots(completed);
+  }
+
   advanceBeacon(beacon,dt){
     beacon.flash=Math.max(0,beacon.flash-dt*3);
     beacon.baseX=clamp(beacon.baseX+beacon.vx*dt,beacon.radius,this.w-beacon.radius);
@@ -190,6 +303,7 @@ export class World{
   }
 
   commitWaveHit(wave,beacon){
+    if(this.finalizedRoots.has(wave.rootTapId))return;
     if(wave.finalizedHits.has(beacon.id))return;
     const candidate=wave.hitCandidates.get(beacon.id);
     if(!candidate)return;
@@ -198,42 +312,20 @@ export class World{
     const hitKey=`${wave.rootTapId}:${beacon.id}`;
     const previous=this.bestHits.get(hitKey);
     if(!isBetterCandidate(candidate,previous))return;
-    this.bestHits.set(hitKey,{...candidate,pending:false});
-    const points=candidate.score-(previous?.score??0);
-    if(points===0){
-      // A same-score representative can still move between categories in
-      // synthetic/tie cases. Keep the ledger aligned with bestHits without
-      // replaying score or presentation side effects.
-      if(previous&&previous.category!==candidate.category){
-        this.scoreBreakdown[previous.category]-=previous.score;
-        this.scoreBreakdown[candidate.category]+=candidate.score;
-      }
-      return;
-    }
-    this.prepareBeacon(beacon);
-    if(previous)this.scoreBreakdown[previous.category]-=previous.score;
-    this.scoreBreakdown[candidate.category]+=candidate.score;
-    this.score+=points;
-    const targetX=Number.isFinite(candidate.targetX)?candidate.targetX:beacon.x;
-    const targetY=Number.isFinite(candidate.targetY)?candidate.targetY:beacon.y;
-    const distance=Math.hypot(wave.originX-targetX,wave.originY-targetY);
-    beacon.flash=1;
-    beacon.shakeVx+=(targetX-wave.originX)/(distance||1)*BEACON_SHAKE_IMPULSE;
-    beacon.shakeVy+=(targetY-wave.originY)/(distance||1)*BEACON_SHAKE_IMPULSE;
-    [beacon.shakeVx,beacon.shakeVy]=clampVector(beacon.shakeVx,beacon.shakeVy,BEACON_SHAKE_MAX_SPEED);
-    this.burst(targetX,targetY);
-    this.onHit({
+    const routeKey=scoreRouteKey(beacon.id,candidate.pathIntersections);
+    const accepted={
+      ...candidate,
       beaconId:beacon.id,
-      waveId:wave.id,
-      judgement:judgementFromPrecision(candidate.precision),
-      precision:candidate.precision,
-      points,
-      candidateScore:candidate.score,
-      category:candidate.category,
+      rootTapId:wave.rootTapId,
+      originX:wave.originX,
+      originY:wave.originY,
       kind:wave.kind,
       reflections:wave.reflections,
-      pathIntersections:candidate.pathIntersections
-    });
+      routeKey,
+      pending:false
+    };
+    this.bestHits.set(hitKey,accepted);
+    if(candidate.score>(previous?.score??0))this.presentCandidateImpact(wave,beacon,accepted);
   }
 
   flushWaveHits(wave){
@@ -247,6 +339,7 @@ export class World{
    */
   finalizePendingHits(){
     for(const wave of this.waves)this.flushWaveHits(wave);
+    this.settleCompletedRoots({all:true});
   }
 
   scoreWave(wave,beaconTargets,{finalize=false}={}){
@@ -335,6 +428,7 @@ export class World{
       }
     }
     this.waves=this.waves.filter(wave=>wave.age<wave.lifetime-LIFETIME_EPSILON);
+    this.settleCompletedRoots();
 
     for(let index=this.particles.length-1;index>=0;index--){
       const particle=this.particles[index];
@@ -597,5 +691,9 @@ export class World{
 
   getScoreBreakdown(){
     return{...this.scoreBreakdown};
+  }
+
+  getDiscoveredRouteCount(){
+    return this.routeBestHits.size;
   }
 }

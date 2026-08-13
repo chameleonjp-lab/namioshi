@@ -32,14 +32,23 @@ test('water and beacon rendering keep two-layer surface cues and hit expansion',
   assert.match(canvas,/fillReflectionArcPoints/);
 });
 
-test('hit feedback presents only positive awarded points and is cleared by state changes',()=>{
+test('hit feedback distinguishes new, improved, and known routes without sound',()=>{
   const main=source('src/main.js');
   const styles=source('src/ui/styles.css');
   assert.match(main,/id="hitFeedback"/);
   assert.match(main,/const HIT_FEEDBACK_LABELS=Object\.freeze/);
-  assert.match(main,/hit\.points<=0\)return/);
-  assert.match(main,/setTimeout\(\(\)=>\{[\s\S]*?\},520\)/);
+  assert.match(main,/function showRouteFeedback\(summary\)/);
+  assert.match(main,/summary\.newRoutes/);
+  assert.match(main,/summary\.improvedRoutes/);
+  assert.match(main,/summary\.knownRoutes/);
+  assert.match(main,/代表 \$\{detail\}/);
+  assert.match(main,/別の経路を探そう/);
+  assert.match(main,/duration:1400/);
   assert.match(main,/showHitFeedback\(hit\)/);
+  assert.match(main,/world\.onRoute=showRouteFeedback/);
+  assert.match(main,/namioshi\.guide\.completed\.\$\{OFFICIAL_RULE_VERSION\}/);
   assert.match(styles,/\.hitFeedback\{/);
   assert.match(styles,/\.hitFeedback\.show\{/);
+  assert.match(styles,/data-route-status="known"/);
+  assert.match(styles,/z-index:5/);
 });

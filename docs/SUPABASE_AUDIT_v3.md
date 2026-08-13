@@ -18,6 +18,8 @@
 
 この文書では本番スコアを送信していない。SQL変更、テーブル変更、RPC変更、ランキング再開も行っていない。
 
+2026-08-13追記: 上記1と4は後続のクライアント修正で、正式Project URLへの一致とBearer削除まで完了した。`namioshi`未登録、既存取得RPCの版分離不足、未適用の専用サーバー契約、実疎通未確認は残る。ランキングは引き続き無効である。
+
 ## 1. プロジェクト情報
 
 | 項目 | 確認結果 |
@@ -30,7 +32,7 @@
 | 添付 `SUPABASE_URL.txt` | 正式Project URLと一致 |
 | DB | PostgreSQL 17.6.1 |
 
-`src/config.js` は `https://chameleonjp.supabase.co` を使っている。このURLが正式Project URLの別名であるかは、今回の監査では確認できなかった。Phase 5B開始前に、コードのURLを正式Project URLへ合わせるか、別名として使用できる根拠を確認する。
+監査時点の`src/config.js`は別URLを使っていた。後続修正後の現行コードは、上表の正式Project URLへ一致している。
 
 ## 2. Publishable key
 
@@ -102,13 +104,13 @@
 | 確認項目 | 現行状態 |
 |---|---|
 | `GAME_SLUG` | `namioshi` |
-| `CLIENT_VERSION` | `namioshi-v3.1.0-official002` |
-| 送信状態 | `RANKING_SERVICE_STATE.enabled = false`。Phase 5まで停止 |
+| `CLIENT_VERSION` | `namioshi-v3.2.0-official003` |
+| 送信状態 | `RANKING_SERVICE_STATE.enabled = false`。明示承認まで停止 |
 | 送信関数 | `src/services/ranking.js`に存在するが、現行`main.js`から送信開始されていない |
-| 本文 | `p_display_name`, `p_game_slug`, `p_score`, `p_client_version`の4項目 |
+| 本文 | 専用RPC向けの名前、slug、score、client version、play ID、rule version、seasonの7項目 |
 | `apikey` | Publishable keyを設定 |
-| `Authorization` | `Bearer`設定が残っている。Phase 5Bで削除が必要 |
-| URL | 正式Project URLと一致しない |
+| `Authorization` | 送らない |
+| URL | 正式Project URLと一致 |
 
 ランキング送信を停止しているため、今回確認した0件は「停止中だから送信されていない」状態と整合する。
 

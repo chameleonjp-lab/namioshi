@@ -1,8 +1,8 @@
-import {CLIENT_VERSION} from '../config.js';
+import {CLIENT_VERSION,OFFICIAL_RULE_VERSION} from '../config.js';
 
 export const STORAGE_KEYS=Object.freeze({
   displayName:'namioshi.displayName',
-  bestScore:'namioshi.bestScore',
+  bestScore:`namioshi.bestScore.${OFFICIAL_RULE_VERSION}`,
   playCount:'namioshi.playCount',
   lastClientVersion:'namioshi.lastClientVersion'
 });
@@ -118,4 +118,3 @@ export function recordPlayResult({mode,score,displayName=''},storage=getStorage(
     return{saved:false,mode,bestScore:null,playCount:null,isNewBest:false};
   }
 }
-

@@ -33,9 +33,9 @@ insert into private.namioshi_ranking_config (
 ) values (
   1,
   'namioshi',
-  'prelaunch-v1',
-  'namioshi-v3.1.0-official002',
-  'namioshi-v3-layout-study-001',
+  'prelaunch-v2',
+  'namioshi-v3.2.0-official003',
+  'namioshi-v3-strategy-002',
   6480,
   60,
   3600,

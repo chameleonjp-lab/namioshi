@@ -1,5 +1,7 @@
 import {LOGICAL_HEIGHT as HEIGHT,LOGICAL_WIDTH as WIDTH} from '../src/config.js';
 
+// This is the immutable Phase 3B comparison condition. Current competitive
+// rule tuning is measured separately by tools/strategy-analysis.js.
 export const ANALYSIS_CONFIG=Object.freeze({waveSpeed:165,waveLifetime:3,hitBand:18,timeStart:.25,timeStep:.05,timeSamples:56});
 export const REFERENCE_TAPS=Object.freeze([{x:90,y:140},{x:180,y:340},{x:270,y:490}]);
 
