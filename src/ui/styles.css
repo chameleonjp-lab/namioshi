@@ -152,18 +152,20 @@ p{line-height:1.55;color:#bad9e8}
 
 .hitFeedback{
   position:absolute;
-  z-index:2;
+  z-index:5;
   top:calc(var(--safe-top) + 58px);
   left:50%;
-  min-width:118px;
+  width:max-content;
+  max-width:min(390px,calc(100% - var(--safe-left) - var(--safe-right) - 20px));
   padding:8px 14px;
   border:1px solid rgba(255,224,117,.62);
-  border-radius:999px;
+  border-radius:16px;
   background:rgba(11,9,30,.82);
   color:#fff0ad;
   font-size:18px;
   font-weight:900;
   letter-spacing:.04em;
+  line-height:1.35;
   text-align:center;
   pointer-events:none;
   opacity:0;
@@ -174,6 +176,11 @@ p{line-height:1.55;color:#bad9e8}
 .hitFeedback.show{
   opacity:1;
   transform:translate(-50%,0) scale(1);
+}
+.hitFeedback[data-route-status="known"]{
+  border-color:rgba(181,205,219,.52);
+  color:#d7e6ee;
+  box-shadow:0 0 20px rgba(111,154,177,.2);
 }
 
 .guideOverlay{

@@ -31,3 +31,11 @@ export function candidateScore(category,accuracy){
   const precision=Number.isFinite(accuracy)?Math.max(0,Math.min(1,accuracy)):0;
   return Math.round(base*(.8+precision*.4));
 }
+
+export function scoreRouteKey(beaconId,pathIntersections=[]){
+  const beacon=String(beaconId??'');
+  const surfaces=Array.isArray(pathIntersections)
+    ?pathIntersections.map(intersection=>intersection?.surfaceKey).filter(Boolean)
+    :[];
+  return`${beacon}|${surfaces.length?surfaces.join('>'):'direct'}`;
+}

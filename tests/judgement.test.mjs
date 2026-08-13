@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {MAX_WAVES} from '../src/config.js';
 import {HIT_JUDGEMENT,judgementFromPrecision} from '../src/game/judgement.js';
 import {createReflectionPath} from '../src/game/reflection-path.js';
+import {scoreRouteKey} from '../src/game/scoring.js';
 import {World} from '../src/game/world.js';
 
 test('hit precision has four stable judgement levels',()=>{
@@ -22,20 +23,29 @@ test('world reports judgement quality without changing hit scoring',()=>{
   world.beacons=[{id:'test-beacon',x:100,y:100,radius:10,flash:0,vx:0,vy:0}];
   world.glass=[];
   world.waves=[];
-  const wave=world.addWave(0,100,0,'direct');
-  wave.radius=98.35;
+  const wave=world.addWave(0,100,0,'direct',{speed:0});
+  wave.radius=100;
   let hit=null;
+  let route=null;
   world.onHit=value=>{hit=value};
+  world.onRoute=value=>{route=value};
 
   world.step(.01);
+  world.finalizePendingHits();
 
   assert.equal(hit?.judgement,HIT_JUDGEMENT.PERFECT);
   assert.ok(Math.abs(hit.precision-1)<1e-9);
-  assert.equal(hit.points,24);
+  assert.equal(hit.points,0);
   assert.equal(hit.candidateScore,24);
   assert.equal(hit.category,'direct');
   assert.equal(hit.kind,'direct');
   assert.equal(hit.reflections,0);
+  assert.equal(hit.routeStatus,'impact');
+  assert.equal(route.points,24);
+  assert.equal(route.newRoutes,1);
+  assert.equal(route.improvedRoutes,0);
+  assert.equal(route.knownRoutes,0);
+  assert.equal(route.discoveredRoutes,1);
   assert.equal(world.score,24);
   assert.deepEqual(world.getScoreBreakdown(),{direct:24,wall:0,glass:0,double:0});
 });
@@ -74,10 +84,13 @@ test('a hit keeps the closest fixed-step approach instead of the first band entr
   const committed=world.bestHits.get('manual-1:closest-beacon');
   assert.equal(committed?.score,24);
   assert.equal(committed?.pending,false);
-  assert.equal(world.score,24);
+  assert.equal(world.score,0);
   assert.equal(hits.length,1);
   assert.equal(world.particles.length,14);
   const committedShake=[world.beacons[0].shakeVx,world.beacons[0].shakeVy];
+  world.settleRoots(['manual-1']);
+  assert.equal(world.score,24);
+  assert.equal(hits.length,1);
   world.flushWaveHits(wave);
   assert.equal(world.score,24);
   assert.equal(hits.length,1);
@@ -86,7 +99,119 @@ test('a hit keeps the closest fixed-step approach instead of the first band entr
   assert.deepEqual(world.getScoreBreakdown(),{direct:24,wall:0,glass:0,double:0});
 });
 
-test('an exact candidate commits immediately and cannot commit twice',()=>{
+test('the route ledger keeps one award for the same beacon and ordered path',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const beacon={id:'route-beacon',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0};
+  world.beacons=[beacon];
+  world.glass=[];
+  world.waves=[];
+  const routeEvents=[];
+  world.onRoute=event=>routeEvents.push(event);
+
+  const first=world.addWave(0,100,0,'direct',{rootTapId:'route-a'});
+  first.hitCandidates.set(beacon.id,{category:'direct',score:24,error:0,precision:1,targetX:100,targetY:100,waveId:first.id,reflectionDepth:0,pathIntersections:[],pending:true});
+  world.commitWaveHit(first,beacon);
+  world.settleRoots(['route-a']);
+
+  const second=world.addWave(0,100,0,'direct',{rootTapId:'route-b'});
+  second.hitCandidates.set(beacon.id,{category:'direct',score:24,error:0,precision:1,targetX:100,targetY:100,waveId:second.id,reflectionDepth:0,pathIntersections:[],pending:true});
+  world.commitWaveHit(second,beacon);
+  world.settleRoots(['route-b']);
+
+  assert.equal(world.bestHits.size,2);
+  assert.equal(world.routeBestHits.size,1);
+  assert.equal(world.getDiscoveredRouteCount(),1);
+  assert.equal(world.score,24);
+  assert.deepEqual(world.getScoreBreakdown(),{direct:24,wall:0,glass:0,double:0});
+  assert.equal(routeEvents.length,2);
+  assert.deepEqual(
+    routeEvents.map(event=>[event.routeStatus,event.points,event.newRoutes,event.improvedRoutes,event.knownRoutes]),
+    [['new',24,1,0,0],['known',0,0,0,1]]
+  );
+  assert.equal(scoreRouteKey('route-beacon',[]),'route-beacon|direct');
+  assert.notEqual(
+    scoreRouteKey('route-beacon',[{surfaceKey:'wall:l'},{surfaceKey:'glass:a'}]),
+    scoreRouteKey('route-beacon',[{surfaceKey:'glass:a'},{surfaceKey:'wall:l'}])
+  );
+});
+
+test('simultaneous roots produce one route summary with awarded and known totals',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const beacons=[
+    {id:'summary-a',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0},
+    {id:'summary-b',x:200,y:100,baseX:200,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0}
+  ];
+  world.beacons=beacons;
+  world.glass=[];
+  world.waves=[];
+  const routeEvents=[];
+  world.onRoute=event=>routeEvents.push(event);
+
+  for(const rootTapId of ['batch-a','batch-b']){
+    for(const beacon of beacons){
+      const wave=world.addWave(0,100,0,'direct',{rootTapId});
+      wave.hitCandidates.set(beacon.id,{category:'direct',score:24,error:0,precision:1,targetX:beacon.x,targetY:beacon.y,waveId:wave.id,reflectionDepth:0,pathIntersections:[],pending:true});
+      world.commitWaveHit(wave,beacon);
+    }
+  }
+  world.settleRoots(['batch-a','batch-b']);
+
+  assert.equal(routeEvents.length,1);
+  assert.deepEqual({
+    points:routeEvents[0].points,
+    rootCount:routeEvents[0].rootCount,
+    candidateCount:routeEvents[0].candidateCount,
+    newRoutes:routeEvents[0].newRoutes,
+    improvedRoutes:routeEvents[0].improvedRoutes,
+    knownRoutes:routeEvents[0].knownRoutes
+  },{points:48,rootCount:2,candidateCount:4,newRoutes:2,improvedRoutes:0,knownRoutes:2});
+  assert.equal(world.score,48);
+  assert.equal(routeEvents[0].points,world.score);
+});
+
+test('a finalized root cannot mutate either score ledger',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const beacon={id:'finalized-beacon',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0};
+  world.beacons=[beacon];
+  world.glass=[];
+  world.waves=[];
+  const first=world.addWave(0,100,0,'direct',{rootTapId:'finalized-root'});
+  first.hitCandidates.set(beacon.id,{category:'direct',score:20,error:2,precision:.5,targetX:100,targetY:100,waveId:first.id,reflectionDepth:0,pathIntersections:[],pending:true});
+  world.commitWaveHit(first,beacon);
+  world.settleRoots(['finalized-root']);
+  const second=world.addWave(0,100,0,'direct',{rootTapId:'finalized-root'});
+  second.hitCandidates.set(beacon.id,{category:'direct',score:24,error:0,precision:1,targetX:100,targetY:100,waveId:second.id,reflectionDepth:0,pathIntersections:[],pending:true});
+  world.commitWaveHit(second,beacon);
+  assert.equal(world.score,20);
+  assert.equal(world.bestHits.get('finalized-root:finalized-beacon')?.score,20);
+  assert.equal(world.routeBestHits.get('finalized-beacon|direct')?.score,20);
+});
+
+test('each root and beacon selects its highest candidate before route deduplication',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const beacon={id:'precedence-beacon',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0};
+  world.beacons=[beacon];
+  world.glass=[];
+  world.waves=[];
+  const strongest=world.addWave(0,100,2,'glass',{rootTapId:'precedence-root'});
+  strongest.hitCandidates.set(beacon.id,{category:'double',score:360,error:0,precision:1,targetX:100,targetY:100,waveId:strongest.id,reflectionDepth:2,pathIntersections:[{surfaceKey:'wall:l'},{surfaceKey:'glass:a'}],pending:true});
+  world.commitWaveHit(strongest,beacon);
+  const lowerNewRoute=world.addWave(0,100,1,'glass',{rootTapId:'precedence-root'});
+  lowerNewRoute.hitCandidates.set(beacon.id,{category:'glass',score:216,error:0,precision:1,targetX:100,targetY:100,waveId:lowerNewRoute.id,reflectionDepth:1,pathIntersections:[{surfaceKey:'glass:b'}],pending:true});
+  world.commitWaveHit(lowerNewRoute,beacon);
+  world.settleRoots(['precedence-root']);
+
+  assert.equal(world.bestHits.size,1);
+  assert.equal(world.routeBestHits.size,1);
+  assert.equal(world.score,360);
+  assert.equal(world.routeBestHits.has('precedence-beacon|glass:b'),false);
+});
+
+test('an exact candidate records immediately and awards once settled',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   const beacon={id:'exact-beacon',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0};
@@ -99,6 +224,8 @@ test('an exact candidate commits immediately and cannot commit twice',()=>{
 
   world.scoreWave(wave,world.beacons);
   assert.equal(world.bestHits.get('exact-root:exact-beacon')?.score,24);
+  assert.equal(world.score,0);
+  world.settleRoots(['exact-root']);
   assert.equal(world.score,24);
   assert.equal(hits.length,1);
   assert.equal(world.particles.length,14);
@@ -223,32 +350,33 @@ test('equal-score representatives use depth, error, then wave id without side ef
   second.hitCandidates.set(beacon.id,{category:'wall',score:100,error:3,precision:.5,targetX:100,targetY:100,waveId:second.id,reflectionDepth:1,pathIntersections:[],pending:true});
   world.commitWaveHit(second,beacon);
   assert.equal(world.bestHits.get('tie-root:tie-beacon')?.waveId,second.id);
-  assert.equal(world.score,100);
-  assert.deepEqual(world.getScoreBreakdown(),{direct:0,wall:100,glass:0,double:0});
+  assert.equal(world.score,0);
+  assert.deepEqual(world.getScoreBreakdown(),{direct:0,wall:0,glass:0,double:0});
   assert.equal(hitCount,1);
   const third=world.addWave(0,100,1,'wall',{rootTapId:'tie-root'});
   third.hitCandidates.set(beacon.id,{category:'wall',score:100,error:3,precision:.5,targetX:100,targetY:100,waveId:third.id,reflectionDepth:1,pathIntersections:[],pending:true});
   world.commitWaveHit(third,beacon);
   assert.equal(world.bestHits.get('tie-root:tie-beacon')?.waveId,second.id);
-  assert.equal(world.score,100);
+  assert.equal(world.score,0);
   assert.equal(hitCount,1);
 
   const closer=world.addWave(0,100,1,'wall',{rootTapId:'tie-root'});
   closer.hitCandidates.set(beacon.id,{category:'wall',score:100,error:2,precision:.5,targetX:100,targetY:100,waveId:closer.id,reflectionDepth:1,pathIntersections:[],pending:true});
   world.commitWaveHit(closer,beacon);
   assert.equal(world.bestHits.get('tie-root:tie-beacon')?.waveId,closer.id);
-  assert.equal(world.score,100);
+  assert.equal(world.score,0);
   assert.equal(hitCount,1);
 
   const higherScore=world.addWave(0,100,0,'direct',{rootTapId:'tie-root'});
   higherScore.hitCandidates.set(beacon.id,{category:'direct',score:101,error:99,precision:.5,targetX:100,targetY:100,waveId:higherScore.id,reflectionDepth:0,pathIntersections:[],pending:true});
   world.commitWaveHit(higherScore,beacon);
   assert.equal(world.bestHits.get('tie-root:tie-beacon')?.waveId,higherScore.id);
+  world.settleRoots(['tie-root']);
   assert.equal(world.score,101);
   assert.deepEqual(world.getScoreBreakdown(),{direct:101,wall:0,glass:0,double:0});
   assert.equal(hitCount,2);
 
-  const ledgerTotal=[...world.bestHits.values()].reduce((sum,hit)=>sum+hit.score,0);
+  const ledgerTotal=[...world.routeBestHits.values()].reduce((sum,hit)=>sum+hit.score,0);
   const breakdownTotal=Object.values(world.getScoreBreakdown()).reduce((sum,score)=>sum+score,0);
   assert.equal(world.score,ledgerTotal);
   assert.equal(world.score,breakdownTotal);
@@ -268,6 +396,7 @@ test('equal-score representatives use depth, error, then wave id without side ef
     waveIdWorld.commitWaveHit(wave,waveIdBeacon);
   }
   assert.equal(waveIdWorld.bestHits.get('wave-id-root:wave-id-beacon')?.waveId,smallerId.id);
+  waveIdWorld.settleRoots(['wave-id-root']);
   assert.equal(waveIdWorld.score,100);
   assert.equal(waveIdHits,1);
 });
@@ -453,7 +582,7 @@ test('the same tap and beacon keep only the highest candidate score',()=>{
   direct.speed=0;
   direct.radius=100;
   world.step(.01);
-  assert.equal(world.score,24);
+  assert.equal(world.score,0);
 
   const reflectionPath=createReflectionPath({
     surfaceKey:'wall:test',
@@ -472,6 +601,7 @@ test('the same tap and beacon keep only the highest candidate score',()=>{
   wall.radius=100;
   world.step(.01);
   world.flushWaveHits(wall);
+  world.settleRoots(['root-1']);
   assert.ok(world.score>24);
   assert.deepEqual(world.getScoreBreakdown(),{direct:0,wall:world.score,glass:0,double:0});
   assert.equal(Object.values(world.getScoreBreakdown()).reduce((total,points)=>total+points,0),world.score);

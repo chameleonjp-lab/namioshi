@@ -2,7 +2,7 @@ import {World} from './game/world.js';
 import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,settlePlayDeadline,TimedInputQueue} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
-import {MAX_TAPS,PLAY_SECONDS} from './config.js';
+import {MAX_TAPS,OFFICIAL_RULE_VERSION,PLAY_SECONDS} from './config.js';
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
@@ -21,11 +21,11 @@ app.innerHTML=`
 <div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
 <div id="playLegend" class="playLegend" role="note" aria-live="polite">
   <span><b>反射板</b>：棒に波を当てると、波の向きが変わります</span>
-  <span>得点　直接20 ／ 壁100 ／ 反射板180 ／ 2回反射300</span>
+  <span>各タップはビーコンごとに最高の経路を判定。同じ経路の繰り返しでは点が増えません</span>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（棒）へ当ててみてください。反射板に触れると、波の向きが変わり、直接当てるより高得点になります。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（棒）へ当ててみてください。1回のタップでは各ビーコンへの一番高い経路を判定し、同じ経路を繰り返しても点は増えません。</p>
   <div class="guideButtons">
     <button id="guideContinue" class="btn" type="button">案内を終えて本番へ</button>
     <button id="guideHome" class="btn secondary" type="button">ホームへ戻る</button>
@@ -34,7 +34,7 @@ app.innerHTML=`
 <section id="HOME" class="screen freshStart show" aria-labelledby="homeTitle" aria-hidden="false">
   <div class="panel">
     <h1 id="homeTitle">namioshi</h1>
-    <p>暗い水面に波を押し出し、壁や反射板で反射させて3つのビーコンへ波の線を重ねる30秒ゲームです。</p>
+    <p>6回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探す30秒ゲームです。同じ経路は最高点だけが残ります。</p>
     <label class="srOnly" for="name">名前</label>
     <input id="name" class="input" maxlength="20" placeholder="名前" autocomplete="nickname" aria-describedby="nameHint">
     <p id="nameHint" class="srOnly">公式結果と練習結果の表示に使います。</p>
@@ -73,6 +73,9 @@ app.innerHTML=`
       <li>棒の反射板に波を当てると、波の向きが変わる</li>
       <li>波を3つのビーコンへ重ねる</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
+      <li>1回のタップでは、各ビーコンへの一番高い経路だけを判定</li>
+      <li>同じビーコンへ同じ順番で通った経路を繰り返しても、点は増えない</li>
+      <li>6回を別の場所へ使い、違う経路を探すほど得点を伸ばせる</li>
       <li>公式は候補Cの固定配置</li>
       <li>練習はランダム配置でランキング送信なし</li>
     </ul>
@@ -98,6 +101,7 @@ app.innerHTML=`
       <p>反射板 <b id="scoreGlass">0</b>点</p>
       <p>2回反射 <b id="scoreDouble">0</b>点</p>
     </div>
+    <p id="resultRouteStatus" class="resultStatus">今回の有効ルート：<b id="routeCount">0</b>件</p>
     <p id="rank" class="small" role="status" aria-live="polite"></p>
     <button id="share" class="btn" type="button">シェア</button>
     <button id="again" class="btn secondary" type="button">同じモードでもう一度</button>
@@ -150,7 +154,7 @@ const STATIC_RENDER_INTERVAL=1000/30;
 const DEADLINE_SETTLEMENT_FRAMES_PER_CHUNK=60;
 let hitFeedbackTimer=0;
 
-const GUIDE_STORAGE_KEY='namioshi.guide.completed';
+const GUIDE_STORAGE_KEY=`namioshi.guide.completed.${OFFICIAL_RULE_VERSION}`;
 const STATE_FOCUS_TARGETS=Object.freeze({
   HOME:'name',
   RULES:'closeRules',
@@ -584,6 +588,7 @@ function finish(){
   $('scoreWall').textContent=String(breakdown.wall);
   $('scoreGlass').textContent=String(breakdown.glass);
   $('scoreDouble').textContent=String(breakdown.double);
+  $('routeCount').textContent=String(world.getDiscoveredRouteCount());
   updateResultPersistence(recordPlayResult({
     mode:world.mode,
     score:world.score,
@@ -760,17 +765,16 @@ function syncAudioVisibility(){
 }
 
 const HIT_FEEDBACK_LABELS=Object.freeze({
-  direct:'DIRECT',
-  wall:'WALL',
-  glass:'GLASS',
-  double:'DOUBLE'
+  direct:'直接',
+  wall:'壁反射',
+  glass:'反射板',
+  double:'2回反射'
 });
 
-function showHitFeedback(hit){
-  if(!hit||!Number.isFinite(hit.points)||hit.points<=0)return;
+function presentFeedback(text,{status='impact',duration=1100}={}){
   const feedback=$('hitFeedback');
-  const label=HIT_FEEDBACK_LABELS[hit.category]??'HIT';
-  feedback.textContent='+'+hit.points+' '+label;
+  feedback.dataset.routeStatus=status;
+  feedback.textContent=text;
   feedback.classList.remove('show');
   void feedback.offsetWidth;
   feedback.classList.add('show');
@@ -778,7 +782,27 @@ function showHitFeedback(hit){
   hitFeedbackTimer=setTimeout(()=>{
     feedback.classList.remove('show');
     hitFeedbackTimer=0;
-  },520);
+  },duration);
+}
+
+function showHitFeedback(hit){
+  if(!hit||!Number.isFinite(hit.points))return;
+  const category=HIT_FEEDBACK_LABELS[hit.category]??'命中';
+  presentFeedback(`${hit.judgement??'HIT'}・${category}`);
+}
+
+function showRouteFeedback(summary){
+  if(!summary||!Number.isFinite(summary.points))return;
+  const parts=[];
+  if(summary.newRoutes)parts.push(`新${summary.newRoutes}`);
+  if(summary.improvedRoutes)parts.push(`更新${summary.improvedRoutes}`);
+  if(summary.knownRoutes)parts.push(`発見済み${summary.knownRoutes}`);
+  const category=HIT_FEEDBACK_LABELS[summary.category]??'命中';
+  const detail=`${summary.judgement??'HIT'}・${category}`;
+  const text=summary.points>0
+    ?`${parts.join('・')} +${summary.points}｜代表 ${detail}`
+    :`${parts.join('・')||'発見済み'}｜別の経路を探そう`;
+  presentFeedback(text,{status:summary.routeStatus??'known',duration:1400});
 }
 
 world.onReflect=reflection=>{
@@ -787,6 +811,7 @@ world.onReflect=reflection=>{
   playHaptic(cue);
 };
 world.onHit=hit=>{playHitSound(hit);playHitHaptic(hit);showHitFeedback(hit)};
+world.onRoute=showRouteFeedback;
 $('soundToggle').onclick=()=>{
   const enabled=setSoundEnabled(!isSoundEnabled());
   updateSoundControl();
@@ -811,6 +836,7 @@ $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('gesturestart',event=>event.preventDefault());
 document.addEventListener('visibilitychange',syncAudioVisibility);
 addEventListener('pagehide',()=>{
+  cancelDeadlineSettlement();
   suspendVisiblePlay(monotonicNow());
   lastRenderTimestamp=null;
   frames=[];

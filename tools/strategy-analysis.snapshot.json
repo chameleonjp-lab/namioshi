@@ -1,0 +1,485 @@
+{
+  "schemaVersion": 2,
+  "analysisVersion": "namioshi-strategy-analysis-002",
+  "clientVersion": "namioshi-v3.2.0-official003",
+  "ruleVersion": "namioshi-v3-strategy-002",
+  "layoutId": "candidate-c-open-harbor",
+  "layoutVersion": "namioshi-v3-layout-study-001",
+  "layoutFingerprint": "fnv1a-fc71e804",
+  "waveSpeed": 110,
+  "scoreHardCeiling": 6480,
+  "percentileMethod": "sorted[floor((n-1)*ratio)]",
+  "coordinateDomain": {
+    "xMin": 0,
+    "xMax": 360,
+    "yMin": 0,
+    "yMax": 640
+  },
+  "randomTimestamps": [
+    1000,
+    6000,
+    11000,
+    16000,
+    21000,
+    26000
+  ],
+  "random": {
+    "calibration": {
+      "runs": 1000,
+      "seedStart": 1,
+      "seedEnd": 1000,
+      "q10": 1316,
+      "median": 1803,
+      "q90": 2355,
+      "maximum": 3219,
+      "zeroScores": 0,
+      "doubleShareMedian": 0.3783,
+      "scoreDrops": 0,
+      "integrityFailures": 0
+    },
+    "holdout": {
+      "runs": 1000,
+      "seedStart": 10001,
+      "seedEnd": 11000,
+      "q10": 1356,
+      "median": 1881,
+      "q90": 2432,
+      "maximum": 3231,
+      "zeroScores": 0,
+      "doubleShareMedian": 0.3984,
+      "scoreDrops": 0,
+      "integrityFailures": 0
+    }
+  },
+  "repeated": {
+    "timestamps": [
+      1000,
+      6000,
+      11000,
+      16000,
+      21000,
+      26000
+    ],
+    "coarseSamples": 429,
+    "refinedSamples": 378,
+    "refinementTopPoints": 10,
+    "coarseMaximum": {
+      "x": 90,
+      "y": 280,
+      "score": 2796,
+      "breakdown": {
+        "direct": 24,
+        "wall": 223,
+        "glass": 431,
+        "double": 2118
+      },
+      "routeCount": 11,
+      "rootHitCount": 18,
+      "routeLedgerSum": 2796,
+      "breakdownSum": 2796,
+      "routeSummaryPoints": 2796,
+      "routeSummaryCount": 6,
+      "routeKnownCount": 4,
+      "stepCount": 1800,
+      "queueLength": 0,
+      "scoreDrops": 0
+    },
+    "maximum": {
+      "x": 120,
+      "y": 250,
+      "score": 3106,
+      "breakdown": {
+        "direct": 24,
+        "wall": 239,
+        "glass": 429,
+        "double": 2414
+      },
+      "routeCount": 12,
+      "rootHitCount": 18,
+      "routeLedgerSum": 3106,
+      "breakdownSum": 3106,
+      "routeSummaryPoints": 3106,
+      "routeSummaryCount": 6,
+      "routeKnownCount": 6,
+      "stepCount": 1800,
+      "queueLength": 0,
+      "scoreDrops": 0
+    },
+    "scoreDrops": 0,
+    "integrityFailures": 0,
+    "ratioFromDesigned": 1.404
+  },
+  "twoPointBaseline": {
+    "selection": "ordered pairs from the top full-round same-point candidates",
+    "candidatePoints": [
+      {
+        "x": 120,
+        "y": 250
+      },
+      {
+        "x": 95,
+        "y": 270
+      },
+      {
+        "x": 100,
+        "y": 265
+      },
+      {
+        "x": 115,
+        "y": 255
+      },
+      {
+        "x": 90,
+        "y": 275
+      },
+      {
+        "x": 85,
+        "y": 275
+      },
+      {
+        "x": 120,
+        "y": 255
+      },
+      {
+        "x": 85,
+        "y": 280
+      },
+      {
+        "x": 100,
+        "y": 285
+      },
+      {
+        "x": 110,
+        "y": 275
+      },
+      {
+        "x": 65,
+        "y": 290
+      },
+      {
+        "x": 70,
+        "y": 285
+      }
+    ],
+    "samples": 132,
+    "maximum": {
+      "first": {
+        "x": 120,
+        "y": 255
+      },
+      "second": {
+        "x": 120,
+        "y": 250
+      },
+      "score": 3293,
+      "breakdown": {
+        "direct": 24,
+        "wall": 238,
+        "glass": 645,
+        "double": 2386
+      },
+      "routeCount": 13,
+      "rootHitCount": 18,
+      "routeLedgerSum": 3293,
+      "breakdownSum": 3293,
+      "routeSummaryPoints": 3293,
+      "routeSummaryCount": 6,
+      "routeKnownCount": 5,
+      "stepCount": 1800,
+      "queueLength": 0,
+      "scoreDrops": 0
+    },
+    "scoreDrops": 0,
+    "integrityFailures": 0,
+    "ratioFromDesigned": 1.325
+  },
+  "designed": {
+    "inputs": [
+      [
+        60,
+        310,
+        1000
+      ],
+      [
+        270,
+        220,
+        6000
+      ],
+      [
+        240,
+        280,
+        11000
+      ],
+      [
+        300,
+        280,
+        16000
+      ],
+      [
+        120,
+        250,
+        21000
+      ],
+      [
+        90,
+        280,
+        26000
+      ]
+    ],
+    "score": 4362,
+    "breakdown": {
+      "direct": 24,
+      "wall": 120,
+      "glass": 645,
+      "double": 3573
+    },
+    "routeCount": 15,
+    "rootHitCount": 18,
+    "routeLedgerSum": 4362,
+    "breakdownSum": 4362,
+    "routeSummaryPoints": 4362,
+    "routeSummaryCount": 6,
+    "routeKnownCount": 1,
+    "stepCount": 1800,
+    "queueLength": 0,
+    "scoreDrops": 0,
+    "ratioToCalibrationMedian": 2.419,
+    "ratioToHoldoutMedian": 2.319
+  },
+  "refreshRateChecks": {
+    "designed": {
+      "20": {
+        "score": 4362,
+        "breakdown": {
+          "direct": 24,
+          "wall": 120,
+          "glass": 645,
+          "double": 3573
+        },
+        "routeCount": 15,
+        "rootHitCount": 18,
+        "routeLedgerSum": 4362,
+        "breakdownSum": 4362,
+        "routeSummaryPoints": 4362,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 1,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "30": {
+        "score": 4362,
+        "breakdown": {
+          "direct": 24,
+          "wall": 120,
+          "glass": 645,
+          "double": 3573
+        },
+        "routeCount": 15,
+        "rootHitCount": 18,
+        "routeLedgerSum": 4362,
+        "breakdownSum": 4362,
+        "routeSummaryPoints": 4362,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 1,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "60": {
+        "score": 4362,
+        "breakdown": {
+          "direct": 24,
+          "wall": 120,
+          "glass": 645,
+          "double": 3573
+        },
+        "routeCount": 15,
+        "rootHitCount": 18,
+        "routeLedgerSum": 4362,
+        "breakdownSum": 4362,
+        "routeSummaryPoints": 4362,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 1,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "120": {
+        "score": 4362,
+        "breakdown": {
+          "direct": 24,
+          "wall": 120,
+          "glass": 645,
+          "double": 3573
+        },
+        "routeCount": 15,
+        "rootHitCount": 18,
+        "routeLedgerSum": 4362,
+        "breakdownSum": 4362,
+        "routeSummaryPoints": 4362,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 1,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      }
+    },
+    "repeatedMaximum": {
+      "20": {
+        "score": 3106,
+        "breakdown": {
+          "direct": 24,
+          "wall": 239,
+          "glass": 429,
+          "double": 2414
+        },
+        "routeCount": 12,
+        "rootHitCount": 18,
+        "routeLedgerSum": 3106,
+        "breakdownSum": 3106,
+        "routeSummaryPoints": 3106,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 6,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "30": {
+        "score": 3106,
+        "breakdown": {
+          "direct": 24,
+          "wall": 239,
+          "glass": 429,
+          "double": 2414
+        },
+        "routeCount": 12,
+        "rootHitCount": 18,
+        "routeLedgerSum": 3106,
+        "breakdownSum": 3106,
+        "routeSummaryPoints": 3106,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 6,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "60": {
+        "score": 3106,
+        "breakdown": {
+          "direct": 24,
+          "wall": 239,
+          "glass": 429,
+          "double": 2414
+        },
+        "routeCount": 12,
+        "rootHitCount": 18,
+        "routeLedgerSum": 3106,
+        "breakdownSum": 3106,
+        "routeSummaryPoints": 3106,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 6,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "120": {
+        "score": 3106,
+        "breakdown": {
+          "direct": 24,
+          "wall": 239,
+          "glass": 429,
+          "double": 2414
+        },
+        "routeCount": 12,
+        "rootHitCount": 18,
+        "routeLedgerSum": 3106,
+        "breakdownSum": 3106,
+        "routeSummaryPoints": 3106,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 6,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      }
+    },
+    "holdoutSeed10001": {
+      "20": {
+        "score": 2151,
+        "breakdown": {
+          "direct": 48,
+          "wall": 595,
+          "glass": 431,
+          "double": 1077
+        },
+        "routeCount": 12,
+        "rootHitCount": 15,
+        "routeLedgerSum": 2151,
+        "breakdownSum": 2151,
+        "routeSummaryPoints": 2151,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 2,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "30": {
+        "score": 2151,
+        "breakdown": {
+          "direct": 48,
+          "wall": 595,
+          "glass": 431,
+          "double": 1077
+        },
+        "routeCount": 12,
+        "rootHitCount": 15,
+        "routeLedgerSum": 2151,
+        "breakdownSum": 2151,
+        "routeSummaryPoints": 2151,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 2,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "60": {
+        "score": 2151,
+        "breakdown": {
+          "direct": 48,
+          "wall": 595,
+          "glass": 431,
+          "double": 1077
+        },
+        "routeCount": 12,
+        "rootHitCount": 15,
+        "routeLedgerSum": 2151,
+        "breakdownSum": 2151,
+        "routeSummaryPoints": 2151,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 2,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      },
+      "120": {
+        "score": 2151,
+        "breakdown": {
+          "direct": 48,
+          "wall": 595,
+          "glass": 431,
+          "double": 1077
+        },
+        "routeCount": 12,
+        "rootHitCount": 15,
+        "routeLedgerSum": 2151,
+        "breakdownSum": 2151,
+        "routeSummaryPoints": 2151,
+        "routeSummaryCount": 6,
+        "routeKnownCount": 2,
+        "stepCount": 1800,
+        "queueLength": 0,
+        "scoreDrops": 0
+      }
+    }
+  }
+}

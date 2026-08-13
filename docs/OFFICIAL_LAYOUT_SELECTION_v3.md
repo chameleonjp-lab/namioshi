@@ -6,7 +6,7 @@
 - 選定候補: 候補C・開港型
 - 公式配置ID: `candidate-c-open-harbor`
 - 配置指紋: `fnv1a-fc71e804`
-- ルール版: `namioshi-v3-layout-study-001`
+- 配置版: `namioshi-v3-layout-study-001`
 - 対象Phase: Phase 3C
 - 公開承認: 未完了
 - iPhone実機確認: 未完了
@@ -51,7 +51,7 @@
 
 ## 4. 実装契約
 
-公式モードは候補Cを使い、初期化時に`Math.random()`を使わない。配置ID、指紋、ルール版をWorldへ保持する。
+公式モードは候補Cを使い、初期化時に`Math.random()`を使わない。配置ID、指紋、配置版をWorldへ保持し、後から変わり得る競技ルール版と分離する。Phase 3Bの波速165による比較snapshotとSVGは選定履歴として維持し、現行ルールの分析で上書きしない。
 
 練習モードは従来のランダム配置を残し、Worldへ注入した乱数を使う。練習結果はランキング送信対象にしない。
 

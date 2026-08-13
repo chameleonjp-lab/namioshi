@@ -19,10 +19,10 @@
   "p_display_name": "プレイヤー名",
   "p_game_slug": "namioshi",
   "p_score": 1230,
-  "p_client_version": "namioshi-v3.1.0-official002",
+  "p_client_version": "namioshi-v3.2.0-official003",
   "p_play_id": "端末内で一度だけ作る識別子",
-  "p_rule_version": "namioshi-v3-layout-study-001",
-  "p_season": "prelaunch-v1"
+  "p_rule_version": "namioshi-v3-strategy-002",
+  "p_season": "prelaunch-v2"
 }
 ```
 
@@ -39,6 +39,8 @@
 - 同じ名前からの送信回数が設定値を超えていないか
 
 既存の共有4項目版や既存作品のデータは、この提案の対象外である。
+
+配置版`namioshi-v3-layout-study-001`は座標の履歴識別子であり、ランキングの競技ルール版には使わない。波速110と二段階得点台帳の新記録を旧波速165の記録と混ぜないため、client version、rule version、seasonを同時に分離する。この契約とSQLは未適用で、ランキングは無効のままである。
 
 ## RPC名の安全条件
 

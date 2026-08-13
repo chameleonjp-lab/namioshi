@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {
   OFFICIAL_LAYOUT_FINGERPRINT,
   OFFICIAL_LAYOUT_ID,
+  OFFICIAL_LAYOUT_VERSION,
   OFFICIAL_RULE_VERSION
 } from '../src/config.js';
 import {OFFICIAL_LAYOUT,createPracticeLayout} from '../src/game/layouts.js';
@@ -24,6 +25,7 @@ function initialState(world){
   return{
     mode:world.mode,
     layoutId:world.layoutId,
+    layoutVersion:world.layoutVersion,
     ruleVersion:world.ruleVersion,
     layoutFingerprint:world.layoutFingerprint,
     rankingCandidate:world.rankingCandidate,
@@ -48,8 +50,10 @@ test('selected official layout exactly matches study candidate C',()=>{
   const candidate=LAYOUT_CANDIDATES.find(layout=>layout.id==='candidate-c-open-harbor');
   assert.ok(candidate);
   assert.equal(OFFICIAL_LAYOUT_ID,candidate.id);
-  assert.equal(OFFICIAL_LAYOUT.ruleVersion,candidate.ruleVersion);
-  assert.equal(OFFICIAL_RULE_VERSION,candidate.ruleVersion);
+  assert.equal(OFFICIAL_LAYOUT.layoutVersion,candidate.ruleVersion);
+  assert.equal(OFFICIAL_LAYOUT_VERSION,candidate.ruleVersion);
+  assert.equal(OFFICIAL_LAYOUT.ruleVersion,OFFICIAL_RULE_VERSION);
+  assert.notEqual(OFFICIAL_RULE_VERSION,candidate.ruleVersion);
   assert.equal(OFFICIAL_LAYOUT.fingerprint,OFFICIAL_LAYOUT_FINGERPRINT);
   assert.equal(OFFICIAL_LAYOUT_FINGERPRINT,'fnv1a-fc71e804');
   assert.deepEqual(OFFICIAL_LAYOUT.beacons,candidate.beacons);
@@ -67,6 +71,8 @@ test('official reset does not call Math.random and always creates the same initi
     assert.deepEqual(initialState(first),initialState(second));
     assert.equal(first.mode,GAME_MODE.OFFICIAL);
     assert.equal(first.layoutId,OFFICIAL_LAYOUT_ID);
+    assert.equal(first.layoutVersion,OFFICIAL_LAYOUT_VERSION);
+    assert.equal(first.ruleVersion,OFFICIAL_RULE_VERSION);
     assert.equal(first.rankingCandidate,true);
   }finally{
     Math.random=original;

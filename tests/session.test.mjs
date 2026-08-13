@@ -117,8 +117,9 @@ test('deadline backlog drains in bounded chunks without waiting for more render 
   assert.equal(runner.stepCount,1800);
   assert.equal(queue.length,0);
   world.finalizePendingHits();
-  assert.equal(world.score,5481);
-  assert.deepEqual(world.getScoreBreakdown(),{direct:0,wall:239,glass:429,double:4813});
+  assert.equal(world.score,1566);
+  assert.deepEqual(world.getScoreBreakdown(),{direct:48,wall:221,glass:581,double:716});
+  assert.equal(world.getDiscoveredRouteCount(),9);
 });
 
 test('deadline settlement validates its chunk boundary',()=>{
@@ -419,12 +420,12 @@ test('visible backlog is settled when a hidden page resumes after the deadline',
     };
   };
 
-  assert.equal(run(60,{settleBacklog:false}).score,502);
+  assert.equal(run(60,{settleBacklog:false}).score,24);
   const results=[20,30,60,120].map(refreshRate=>run(refreshRate));
   for(const result of results.slice(1))assert.deepEqual(result,results[0]);
   assert.deepEqual(results[0],{
-    score:566,
-    breakdown:{direct:24,wall:0,glass:215,double:327},
+    score:41,
+    breakdown:{direct:41,wall:0,glass:0,double:0},
     stepCount:1794,
     queueLength:0
   });
@@ -491,7 +492,8 @@ test('timestamped input results are identical across render rates and long frame
     taps:world.taps,
     stepCount:runner.stepCount,
     queueLength:queue.length,
-    ledgerSum:[...world.bestHits.values()].reduce((sum,hit)=>sum+hit.score,0),
+    ledgerSum:[...world.routeBestHits.values()].reduce((sum,hit)=>sum+hit.score,0),
+    routeCount:world.routeBestHits.size,
     bestHits:[...world.bestHits].sort(([left],[right])=>left.localeCompare(right)).map(([key,hit])=>[
       key,
       hit.category,
@@ -553,13 +555,14 @@ test('timestamped input results are identical across render rates and long frame
   assert.deepEqual(regular[20],regular[60]);
   assert.deepEqual(regular[20],regular[120]);
 
-  assert.equal(regular[60].score,5481);
-  assert.deepEqual(regular[60].breakdown,{direct:0,wall:239,glass:429,double:4813});
+  assert.equal(regular[60].score,1566);
+  assert.deepEqual(regular[60].breakdown,{direct:48,wall:221,glass:581,double:716});
   assert.equal(regular[60].taps,6);
   assert.equal(regular[60].stepCount,1800);
   assert.equal(regular[60].queueLength,0);
-  assert.equal(regular[60].bestHits.length,18);
-  assert.equal(regular[60].ledgerSum,5481);
+  assert.equal(regular[60].bestHits.length,16);
+  assert.equal(regular[60].routeCount,9);
+  assert.equal(regular[60].ledgerSum,1566);
 
   for(const stopMilliseconds of [50,100,150,1000]){
     const frameTimes=[];
@@ -623,11 +626,12 @@ test('deadline finalization keeps late official hits deterministic across render
   };
   const results=[20,30,60,120].map(run);
   for(const result of results.slice(1))assert.deepEqual(result,results[0]);
-  assert.equal(results[0].scoreBeforeFinalization,358);
-  assert.equal(results[0].score,589);
+  assert.equal(results[0].scoreBeforeFinalization,0);
+  assert.equal(results[0].score,47);
   assert.equal(results[0].stepCount,1800);
   assert.equal(results[0].queueLength,0);
-  assert.equal(Object.values(results[0].breakdown).reduce((sum,value)=>sum+value,0),589);
+  assert.deepEqual(results[0].breakdown,{direct:47,wall:0,glass:0,double:0});
+  assert.equal(Object.values(results[0].breakdown).reduce((sum,value)=>sum+value,0),47);
 });
 
 test('suspending and resuming a fixed-step runner does not fast-forward the world',()=>{

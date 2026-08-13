@@ -41,6 +41,7 @@ v3では3MBを受け入れ上限にしません。容量は報告値として扱
 npm run build
 npm test
 npm run analyze:layouts
+npm run analyze:strategy
 npm run render:layouts
 npm run verify
 npm run size
@@ -51,6 +52,8 @@ npm run size
 `npm test`は、固定論理座標、公式配置候補、候補Cの選定記録、公式・練習モードの分離、共有経路、画面導線、描画復旧を確認します。
 
 `npm run analyze:layouts`は、3つの配置候補を同じ121地点、同じ56到達時刻、同じ3地点の参考タップで再計算し、保存済み結果と一致するか確認します。これは配置比較用の固定条件で、通常プレイのタップ上限とは別です。
+
+`npm run analyze:strategy`は、現行競技ルールについて、30秒全域のランダム2,000試行、同地点の境界込み探索、2地点交互baseline、設計fixture、20/30/60/120Hzの一致を保存済みsnapshotと照合します。配置比較時の波速165の履歴は上書きしません。
 
 `npm run render:layouts`は、候補データと分析値から生成した比較SVGが最新か確認します。
 
@@ -71,7 +74,8 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 ```text
 配置ID: candidate-c-open-harbor
 指紋: fnv1a-fc71e804
-ルール版: namioshi-v3-layout-study-001
+配置版: namioshi-v3-layout-study-001
+競技ルール版: namioshi-v3-strategy-002
 ```
 
 公式モードは、ビーコンの初期位置、速度、ガラス片を固定し、初期化時に`Math.random()`を使いません。
@@ -102,7 +106,7 @@ Pull Request #54で、共有成功・キャンセル・失敗時のクリップ�
 
 ## Phase 8B 実機検収
 
-Phase 8Bでは、同じ公開候補コミットでブラウザ表示、スマートフォン操作、描画復旧、音・振動、休止復帰、継続動作を確認します。現在のmainはPR #58統合後の `f10a77159eafed3dce0b347332723a75ac46a882` です。Cloud Chromeで締切後にRESULTへ遷移しない失敗を再確認したため、低い画面更新頻度でも締切精算を小分け処理で終える第2修正をDraftで検証します。G4・G7・G8、ランキング再開、公開判定は未完了です。記録欄と未確認範囲は[`docs/PHASE8B_DEVICE_TEST_REPORT_v3.md`](docs/PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理します。
+Phase 8Bでは、同じ公開候補コミットでブラウザ表示、スマートフォン操作、描画復旧、音・振動、休止復帰、継続動作を確認します。現在のmainはPR #59統合後の `4689107` です。配信後のCloud Chromeで、入力なしの公式30秒プレイが`公式結果`へ進むことを確認し、以前の「残り 0.0」停止は再現しませんでした。後続Draftでは波速110と二段階の得点台帳を組み合わせ、同じ地点の繰り返しより異なる経路探索が優位になるよう再調整します。G4・G7・G8、iPhone実機、ランキング再開、公開判定は未完了です。記録欄と未確認範囲は[`docs/PHASE8B_DEVICE_TEST_REPORT_v3.md`](docs/PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理します。
 
 ## 2026-08-12 公開版ブラウザの後続確認
 
@@ -112,12 +116,16 @@ Cloud Chromeで公式モードを実行したところ、締切後に「残り 0
 
 GitHub Pages上のPR #58統合後コードでも、公式モードが締切後32秒以上「残り 0.0」のままRESULTへ進まない失敗を再現しました。1Hz相当では30秒時点で90/1800固定stepしか処理できず、結果まで追加570回の画面更新が必要になることを自動再現しています。第2修正では締切後だけ小分け精算を開始し、通常プレイ中の1画面最大3stepは維持します。
 
+## 2026-08-13 PR #59統合後の再検証
+
+PR #59のGitHub ActionsとPages配信成功後、Cloud Chromeで公開版の公式モードを開始し、30秒後に`公式結果`へ遷移することを確認しました。操作は入力なしの1プレイで、iPhone・iPad、WebGL強制消失、音・振動、反復性能の合格には置き換えません。
+
 
 ## 確認状態
 
-Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49、Phase 6BのPull Request #50、Phase 7AのPull Request #51、Phase 7BのPull Request #52、Phase 7CのPull Request #53、Phase 8AのPull Request #54、締切回復のPull Request #58まではmainへ統合済みです。Phase 8Bの実ブラウザ・実機検収は未完了です。G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
+Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49、Phase 6BのPull Request #50、Phase 7AのPull Request #51、Phase 7BのPull Request #52、Phase 7CのPull Request #53、Phase 8AのPull Request #54、締切回復のPull Request #58・#59まではmainへ統合済みです。Phase 8Bの実ブラウザ・実機検収は未完了です。G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
 
-現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線、Phase 6Bの画面支援契約、Phase 7Bの水面・波帯・ガラス・ビーコン表現、Phase 7Cの任意振動通知、Phase 8Aの自動試験契約まで統合済みです。公式fixtureの実到達例は5481点（直接0、壁239、反射板429、2回反射4813）で、台帳合計・内訳合計・1800固定stepをgoldenとして固定し、6480はhard ceilingとして扱い探索最大値とは断定していません。実ブラウザの強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示、Phase 7A・7Bの実ブラウザ性能、Phase 7Cの振動実動作は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
+現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線、Phase 6Bの画面支援契約、Phase 7Bの水面・波帯・ガラス・ビーコン表現、Phase 7Cの任意振動通知、Phase 8Aの自動試験契約、締切後の小分け精算まで統合済みです。後続候補の競技ルール`namioshi-v3-strategy-002`は波速110と二段階台帳を組み合わせ、設計fixture4362点、独立holdout中央値1881点、全ラウンド同地点探索の最高標本3106点を固定しています。6480は構造上のhard ceilingのままで、探索最大値とは断定していません。実ブラウザの候補表示、強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示、Phase 7A・7Bの実ブラウザ性能、Phase 7Cの振動実動作は未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
 
 
 ## 回復D D2.1の状態

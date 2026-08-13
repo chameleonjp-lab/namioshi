@@ -38,6 +38,7 @@ test('renderer suspension keeps an expired deadline settlement alive',()=>{
   assert.match(main,/function scheduleDeadlineSettlement\(\)[\s\S]*?setTimeout\(runDeadlineSettlementChunk,0\)/);
   assert.match(main,/function runDeadlineSettlementChunk\(\)[\s\S]*?settlePlayDeadline\([\s\S]*?maxFrames:DEADLINE_SETTLEMENT_FRAMES_PER_CHUNK[\s\S]*?scheduleDeadlineSettlement\(\)/);
   assert.match(main,/else if\(playFrame\.deadlineExpired\)scheduleDeadlineSettlement\(\)/);
+  assert.match(main,/addEventListener\('pagehide',[\s\S]*?cancelDeadlineSettlement\(\)/);
 });
 
 test('input and renderer fallback contracts remain connected to the UI flow',()=>{

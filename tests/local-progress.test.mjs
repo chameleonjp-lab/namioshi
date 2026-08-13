@@ -49,6 +49,16 @@ test('legacy numeric play count is treated as the official count',()=>{
   assert.deepEqual(readPlayerState(storage).playCount,{official:4,practice:0});
 });
 
+test('a best score from the previous rule remains separate',()=>{
+  const storage=new MemoryStorage();
+  storage.setItem('namioshi.bestScore','6400');
+  assert.match(STORAGE_KEYS.bestScore,/namioshi-v3-strategy-002/);
+  assert.equal(readPlayerState(storage).bestScore,null);
+  const result=recordPlayResult({mode:'official',score:1200,displayName:'新ルール'},storage);
+  assert.equal(result.bestScore,1200);
+  assert.equal(storage.getItem('namioshi.bestScore'),'6400');
+});
+
 test('storage failure does not report a saved result and rolls back partial writes',()=>{
   const storage=new FailingStorage();
   const result=recordPlayResult({mode:'official',score:500,displayName:'失敗'},storage);
@@ -81,4 +91,3 @@ test('result screen exposes persistence status and non-ranking exit paths',()=>{
   assert.match(styles,/\.resultStatus\{/);
   assert.match(styles,/\.btnLink\{/);
 });
-
