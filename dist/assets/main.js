@@ -1,5 +1,5 @@
 import {World} from './game/world.js';
-import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,TimedInputQueue} from './game/session.js';
+import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,settlePlayDeadline,TimedInputQueue} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
 import {MAX_TAPS,PLAY_SECONDS} from './config.js';
@@ -145,7 +145,9 @@ let playDeadline=null;
 let lastRenderTimestamp=null;
 let lastStaticRenderTimestamp=null;
 let deadlineSettlementActive=false;
+let deadlineSettlementTimer=0;
 const STATIC_RENDER_INTERVAL=1000/30;
+const DEADLINE_SETTLEMENT_FRAMES_PER_CHUNK=60;
 let hitFeedbackTimer=0;
 
 const GUIDE_STORAGE_KEY='namioshi.guide.completed';
@@ -214,6 +216,7 @@ function monotonicNow(){
 }
 
 function resetPlayClock(){
+  cancelDeadlineSettlement();
   const start=monotonicNow();
   fixedSteps.reset(start);
   timedInputs.reset(start);
@@ -250,6 +253,39 @@ function advanceSimulation(timestamp){
 function rememberPlayFrame(playFrame){
   deadlineSettlementActive=Boolean(playFrame?.deadlineExpired&&!playFrame?.caughtUp);
   return playFrame;
+}
+
+function cancelDeadlineSettlement(){
+  if(deadlineSettlementTimer){
+    clearTimeout(deadlineSettlementTimer);
+    deadlineSettlementTimer=0;
+  }
+}
+
+function scheduleDeadlineSettlement(){
+  if(deadlineSettlementTimer||state!=='PLAYING'||tutorialMode||!Number.isFinite(playDeadline)||document.hidden)return;
+  deadlineSettlementTimer=setTimeout(runDeadlineSettlementChunk,0);
+}
+
+function runDeadlineSettlementChunk(){
+  deadlineSettlementTimer=0;
+  if(state!=='PLAYING'||tutorialMode||!Number.isFinite(playDeadline)||document.hidden)return;
+  const playFrame=rememberPlayFrame(settlePlayDeadline({
+    deadline:playDeadline,
+    runner:fixedSteps,
+    inputQueue:timedInputs,
+    update:(step,{boundaryTimestamp})=>{
+      world.step(step,{countTime:false});
+      timedInputs.drainThrough(boundaryTimestamp,applyTimedInput);
+    },
+    maxFrames:DEADLINE_SETTLEMENT_FRAMES_PER_CHUNK
+  }));
+  updatePlayTime(monotonicNow());
+  if(playFrame.shouldFinish){
+    finish();
+    return;
+  }
+  scheduleDeadlineSettlement();
 }
 
 function suspendVisiblePlay(now){
@@ -522,6 +558,7 @@ function updateResultPersistence(result){
 
 function finish(){
   if(state!=='PLAYING')return;
+  cancelDeadlineSettlement();
   clearCountdown();
   if(playDeadline!==null){
     timedInputs.closeBefore(playDeadline);
@@ -603,6 +640,7 @@ function settleSuspendedDeadline(now){
   const playFrame=rememberPlayFrame(advanceSimulation(playDeadline));
   updatePlayTime(now);
   if(playFrame.shouldFinish)finish();
+  else scheduleDeadlineSettlement();
 }
 
 function loop(timestamp){
@@ -635,6 +673,7 @@ function loop(timestamp){
     const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
     if(playFrame.shouldFinish)finish();
+    else if(playFrame.deadlineExpired)scheduleDeadlineSettlement();
   }
   const shouldRender=state==='PLAYING'||lastStaticRenderTimestamp===null||now-lastStaticRenderTimestamp>=STATIC_RENDER_INTERVAL;
   if(shouldRender){
@@ -686,6 +725,7 @@ function syncAudioVisibility(){
   void setAudioActive(!document.hidden);
   setHapticsActive(!document.hidden);
   if(document.hidden){
+    cancelDeadlineSettlement();
     suspendVisiblePlay(now);
     lastRenderTimestamp=null;
     frames=[];
@@ -700,6 +740,7 @@ function syncAudioVisibility(){
 
   if(state==='PLAYING'&&deadlineSettlementActive){
     fixedSteps.resume(playDeadline,{shiftTimeline:false});
+    scheduleDeadlineSettlement();
   }else{
     // If the wall-clock deadline passed while hidden, shift the paused
     // simulation only as far as that deadline. Visible backlog accumulated

@@ -35,6 +35,9 @@ test('result flow keeps share, replay, mode selection, and exit paths available'
 test('renderer suspension keeps an expired deadline settlement alive',()=>{
   assert.match(main,/function settleSuspendedDeadline\(now\)\{[\s\S]*?advanceSimulation\(playDeadline\)[\s\S]*?if\(playFrame\.shouldFinish\)finish\(\)/);
   assert.match(main,/if\(rendererSuspended\)\{[\s\S]*?settleSuspendedDeadline\(now\);[\s\S]*?requestAnimationFrame\(loop\)/);
+  assert.match(main,/function scheduleDeadlineSettlement\(\)[\s\S]*?setTimeout\(runDeadlineSettlementChunk,0\)/);
+  assert.match(main,/function runDeadlineSettlementChunk\(\)[\s\S]*?settlePlayDeadline\([\s\S]*?maxFrames:DEADLINE_SETTLEMENT_FRAMES_PER_CHUNK[\s\S]*?scheduleDeadlineSettlement\(\)/);
+  assert.match(main,/else if\(playFrame\.deadlineExpired\)scheduleDeadlineSettlement\(\)/);
 });
 
 test('input and renderer fallback contracts remain connected to the UI flow',()=>{
