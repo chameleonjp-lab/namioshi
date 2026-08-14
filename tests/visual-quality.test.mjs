@@ -77,15 +77,28 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   const main=source('src/main.js');
   const styles=source('src/ui/styles.css');
   assert.match(main,/id="playLegend" class="playLegend" role="note"/);
+  assert.match(main,/id="playStatus" class="playStatus" role="status"/);
+  assert.match(main,/目的：波をビーコンに重ねる/);
+  assert.match(main,/反射板経由は高得点/);
   assert.match(main,/class="legendMark legendWave"/);
   assert.match(main,/class="legendMark legendBoard"/);
   assert.match(main,/class="legendMark legendBeacon"/);
   assert.match(main,/<b>波<\/b>：/);
   assert.match(main,/<b>反射板<\/b>：光る線/);
-  assert.match(main,/<b>ビーコン<\/b>：白く光る点/);
+  assert.match(main,/<b>ビーコン<\/b>：白く光る点。波が重なると得点です/);
   assert.doesNotMatch(main,/棒に波/);
   assert.match(styles,/\.legendLine\{/);
+  assert.match(styles,/\.playStatus\{/);
   assert.match(styles,/\.legendWave\{/);
   assert.match(styles,/\.legendBoard\{/);
   assert.match(styles,/\.legendBeacon\{/);
+});
+
+test('rules and practice entry explain scoring and the post-tap wait',()=>{
+  const main=source('src/main.js');
+  assert.match(main,/ビーコンに波が重なると得点。反射板に当てるだけでは得点にならない/);
+  assert.match(main,/基準点は直接20点、壁100点、反射板180点、2回反射300点/);
+  assert.match(main,/6回使い切っても、30秒までは波の結果を待つ/);
+  assert.match(main,/毎回変わる配置で反射経路を練習します/);
+  assert.match(main,/ランキング外。練習結果は送信しません/);
 });

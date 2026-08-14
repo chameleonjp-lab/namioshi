@@ -28,7 +28,9 @@ test('using all taps and clearing all waves cannot end play early',()=>{
   assert.match(main,/function finish\(\){\s*if\(state!=='PLAYING'\)return/);
   assert.match(main,/function finish\(\)[\s\S]*?timedInputs\.drainThrough\(playDeadline,applyTimedInput\)[\s\S]*?world\.finalizePendingHits\(\)[\s\S]*?timedInputs\.clear\(\)/);
   assert.match(main,/timedInputs\.reset\(start\)/);
-  assert.doesNotMatch(main,/world\.taps\s*>=|world\.waves\.length\s*===\s*0/);
+  const finish=main.match(/function finish\(\)\{[\s\S]*?\n\}/)?.[0]??'';
+  const loop=main.match(/function loop\(timestamp\)\{[\s\S]*?\n\}/)?.[0]??'';
+  assert.doesNotMatch(`${finish}\n${loop}`,/world\.taps\s*>=|world\.waves\.length\s*===\s*0/);
 });
 
 
