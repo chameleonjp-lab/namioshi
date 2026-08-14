@@ -21,6 +21,17 @@ test('countdown and play entry points reject duplicate starts',()=>{
   assert.match(main,/const sequence=\[\['3',600\],\['2',600\],\['1',600\],\['START',400\]\]/);
 });
 
+test('first guide requires a confirmed glass reflection before starting the round',()=>{
+  assert.match(main,/id="guideStatus"[^>]*role="status"/);
+  assert.match(main,/id="guideContinue"[^>]*disabled/);
+  assert.match(main,/function resetGuideProgress\(\)/);
+  assert.match(main,/function markGuideReflectionSuccess\(\)/);
+  const leaveGuide=main.match(/function leaveGuide\(startGame\)\{[\s\S]*?\n\}/)?.[0]??'';
+  assert.match(leaveGuide,/if\(startGame&&!guideReflectionConfirmed\)/);
+  assert.match(leaveGuide,/if\(startGame\)markGuideCompleted\(\)/);
+  assert.match(main,/world\.onReflect=reflection=>\{[\s\S]*?if\(reflection\.kind==='glass'\)markGuideReflectionSuccess\(\)/);
+});
+
 test('result flow keeps share, replay, mode selection, and exit paths available',()=>{
   for(const id of ['share','again','changeMode','rankingDetails','endGame']){
     assert.match(main,new RegExp(`id="${id}"`));

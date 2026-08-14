@@ -25,9 +25,10 @@ app.innerHTML=`
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（棒）へ当ててみてください。1回のタップでは各ビーコンへの一番高い経路を判定し、同じ経路を繰り返しても点は増えません。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（棒）へ当ててみてください。まず反射板への命中を1回確認してから案内を終えます。</p>
+  <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">反射板に波を当てると、ここで成功を確認できます。</p>
   <div class="guideButtons">
-    <button id="guideContinue" class="btn" type="button">案内を終えて本番へ</button>
+    <button id="guideContinue" class="btn" type="button" disabled>反射板に当てて本番へ</button>
     <button id="guideHome" class="btn secondary" type="button">ホームへ戻る</button>
   </div>
 </div>
@@ -143,6 +144,7 @@ let countdownTimer=0;
 let countdownId=0;
 let tutorialMode=false;
 let guideCompletedInMemory=false;
+let guideReflectionConfirmed=false;
 const fixedSteps=new FixedStepRunner();
 const timedInputs=new TimedInputQueue();
 let playDeadline=null;
@@ -170,6 +172,21 @@ function hasCompletedGuide(){
 function markGuideCompleted(){
   guideCompletedInMemory=true;
   try{localStorage.setItem(GUIDE_STORAGE_KEY,'yes')}catch{}
+}
+
+function resetGuideProgress(){
+  guideReflectionConfirmed=false;
+  $('guideContinue').disabled=true;
+  $('guideContinue').textContent='反射板に当てて本番へ';
+  $('guideStatus').textContent='反射板に波を当てると、ここで成功を確認できます。';
+}
+
+function markGuideReflectionSuccess(){
+  if(!tutorialMode||guideReflectionConfirmed)return;
+  guideReflectionConfirmed=true;
+  $('guideContinue').disabled=false;
+  $('guideContinue').textContent='案内を終えて本番へ';
+  $('guideStatus').textContent='反射板への命中を確認しました。案内を終えて本番を始められます。';
 }
 
 function focusStateTarget(nextState){
@@ -502,6 +519,7 @@ function beginCountdown(){
 function startGuide(){
   clearCountdown();
   tutorialMode=true;
+  resetGuideProgress();
   world.reset({mode:selectedMode});
   resetPlayClock();
   const presentation=modePresentation(world.mode);
@@ -515,7 +533,12 @@ function startGuide(){
 
 function leaveGuide(startGame){
   if(state!=='PLAYING'||!tutorialMode)return;
-  markGuideCompleted();
+  if(startGame&&!guideReflectionConfirmed){
+    $('guideStatus').textContent='先に反射板へ波を当てて、成功を確認してください。';
+    $('guideContinue').focus({preventScroll:true});
+    return;
+  }
+  if(startGame)markGuideCompleted();
   tutorialMode=false;
   fixedSteps.suspend();
   playDeadline=null;
@@ -806,6 +829,7 @@ function showRouteFeedback(summary){
 }
 
 world.onReflect=reflection=>{
+  if(reflection.kind==='glass')markGuideReflectionSuccess();
   const cue=reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT';
   playCue(cue);
   playHaptic(cue);

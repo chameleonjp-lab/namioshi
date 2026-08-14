@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
+  LOGICAL_WIDTH,
   OFFICIAL_LAYOUT_FINGERPRINT,
   OFFICIAL_LAYOUT_ID,
   OFFICIAL_LAYOUT_VERSION,
   OFFICIAL_RULE_VERSION
 } from '../src/config.js';
-import {OFFICIAL_LAYOUT,createPracticeLayout} from '../src/game/layouts.js';
+import {OFFICIAL_LAYOUT,createPracticeLayout,PRACTICE_LAYOUT_CONSTRAINTS} from '../src/game/layouts.js';
 import {GAME_MODE,normalizeGameMode,rankingPolicy} from '../src/game/modes.js';
 import {World} from '../src/game/world.js';
 import {RANKING_SERVICE_STATE,submitScore} from '../src/services/ranking.js';
@@ -103,6 +104,30 @@ test('practice mode is reproducible with injected random and changes with anothe
   assert.equal(world.layoutId,'practice-random');
   assert.equal(world.layoutFingerprint,null);
   assert.equal(world.rankingCandidate,false);
+});
+
+function pointToSegmentDistance(px,py,piece){
+  const dx=piece.x2-piece.x1;
+  const dy=piece.y2-piece.y1;
+  const lengthSquared=dx*dx+dy*dy;
+  const projection=lengthSquared===0
+    ?0
+    :Math.max(0,Math.min(1,((px-piece.x1)*dx+(py-piece.y1)*dy)/lengthSquared));
+  return Math.hypot(px-(piece.x1+dx*projection),py-(piece.y1+dy*projection));
+}
+
+test('practice reflection boards stay inside the play area and away from beacons',()=>{
+  const {endpointMargin,minY,maxY,beaconGap}=PRACTICE_LAYOUT_CONSTRAINTS;
+  for(let seed=1;seed<=10000;seed++){
+    const layout=createPracticeLayout(seededRandom(seed));
+    for(const piece of layout.glass){
+      assert.ok([piece.x1,piece.x2].every(x=>x>=endpointMargin&&x<=LOGICAL_WIDTH-endpointMargin),`x outside seed ${seed}`);
+      assert.ok([piece.y1,piece.y2].every(y=>y>=minY&&y<=maxY),`y outside seed ${seed}`);
+      for(const beacon of layout.beacons){
+        assert.ok(pointToSegmentDistance(beacon.x,beacon.y,piece)>=beaconGap,`beacon gap seed ${seed}`);
+      }
+    }
+  }
 });
 
 test('only explicit official and practice mode values are accepted',()=>{
