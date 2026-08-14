@@ -41,6 +41,10 @@ test('hit feedback distinguishes new, improved, and known routes without sound',
   assert.match(main,/summary\.newRoutes/);
   assert.match(main,/summary\.improvedRoutes/);
   assert.match(main,/summary\.knownRoutes/);
+  assert.match(main,/function formatRouteCategoryCounts\(counts\)/);
+  assert.match(main,/summary\.awardedCategoryCounts/);
+  assert.match(main,/summary\.candidateCategoryCounts/);
+  assert.match(main,/｜経路 \$\{categoryCounts\}/);
   assert.match(main,/代表 \$\{detail\}/);
   assert.match(main,/別の経路を探そう/);
   assert.match(main,/duration:1400/);
@@ -49,6 +53,7 @@ test('hit feedback distinguishes new, improved, and known routes without sound',
   assert.match(main,/namioshi\.guide\.completed\.\$\{OFFICIAL_RULE_VERSION\}/);
   assert.match(styles,/\.hitFeedback\{/);
   assert.match(styles,/\.hitFeedback\.show\{/);
+  assert.match(styles,/\.hitFeedback\{[\s\S]*?overflow-wrap:anywhere/);
   assert.match(styles,/data-route-status="known"/);
   assert.match(styles,/z-index:5/);
 });
