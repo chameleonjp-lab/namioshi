@@ -106,7 +106,7 @@ Pull Request #54で、共有成功・キャンセル・失敗時のクリップ�
 
 ## Phase 8B 実機検収
 
-Phase 8Bでは、同じ公開候補コミットでブラウザ表示、スマートフォン操作、描画復旧、音・振動、休止復帰、継続動作を確認します。現在のmainはPR #61統合後の `50d227e8bcbf61d5365d18b40ca574adaf92ab82` です。PR #60で波速110と二段階の得点台帳、PR #61で初回案内の成功確認と練習配置の安全制約を統合しました。次のDraftでは、同時確定時の複数反射種別を集約通知へ明示し、狭い画面で折り返します。G4・G7・G8、iPhone実機、ランキング再開、公開判定は未完了です。記録欄と未確認範囲は[`docs/PHASE8B_DEVICE_TEST_REPORT_v3.md`](docs/PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理します。
+Phase 8Bでは、同じ公開候補コミットでブラウザ表示、スマートフォン操作、描画復旧、音・振動、休止復帰、継続動作を確認します。現在のmainはPR #62統合後の `1c724ccab97ab7a88bb7e1e55f5a2019a0670086` です。PR #60で波速110と二段階の得点台帳、PR #61で初回案内の成功確認と練習配置の安全制約、PR #62で同時確定時の複数反射種別の集約通知を統合しました。次のDraftでは、結果画面に最高経路と次の目標を表示します。G4・G7・G8、iPhone実機、ランキング再開、公開判定は未完了です。記録欄と未確認範囲は[`docs/PHASE8B_DEVICE_TEST_REPORT_v3.md`](docs/PHASE8B_DEVICE_TEST_REPORT_v3.md)で管理します。
 
 ## 2026-08-12 公開版ブラウザの後続確認
 
@@ -123,9 +123,9 @@ PR #59のGitHub ActionsとPages配信成功後、Cloud Chromeで公開版の公�
 
 ## 確認状態
 
-Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49、Phase 6BのPull Request #50、Phase 7AのPull Request #51、Phase 7BのPull Request #52、Phase 7CのPull Request #53、Phase 8AのPull Request #54、締切回復のPull Request #58・#59、競技ルール再調整のPull Request #60まではmainへ統合済みです。Phase 8Bの実ブラウザ・実機検収は未完了です。G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
+Phase 1からPhase 5Aの監査、物理・得点回復のPull Request #42、時刻・入力回復のPull Request #43・#44、描画復旧のPull Request #45、ランキング安全化のPull Request #46〜#48、Phase 6AのPull Request #49、Phase 6BのPull Request #50、Phase 7AのPull Request #51、Phase 7BのPull Request #52、Phase 7CのPull Request #53、Phase 8AのPull Request #54、締切回復のPull Request #58・#59、競技ルール再調整のPull Request #60、Phase 8BのPull Request #61・#62まではmainへ統合済みです。Phase 8Bの実ブラウザ・実機検収は未完了です。G4「物理と得点」はiPhone短期確認と描画復旧の実機確認が終わるまで不合格を維持し、競技版公開とランキング再開を停止しています。
 
-現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線、Phase 6Bの画面支援契約、Phase 7Bの水面・波帯・ガラス・ビーコン表現、Phase 7Cの任意振動通知、Phase 8Aの自動試験契約、締切後の小分け精算、競技ルール`namioshi-v3-strategy-002`の波速110・二段階台帳、初回案内の成功確認、練習配置制約まで統合済みです。次のDraftでは、同時確定時の複数反射種別を候補数と加点数に分けて通知し、狭い画面で折り返します。設計fixture4362点、独立holdout中央値1881点、全ラウンド同地点探索の最高標本3106点は固定しています。6480は構造上のhard ceilingのままで、探索最大値とは断定していません。実ブラウザの候補表示、強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示、Phase 7A・7Bの実ブラウザ性能、Phase 7Cの振動実動作、同時通知の実機読みやすさは未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
+現在のmainでは、有限経路に対応する反射弧、無効な仮想接触の通知抑制、WebGL消失からの復帰、新canvasによるCanvas 2D切替、端末内保存、結果画面の終了導線、Phase 6Bの画面支援契約、Phase 7Bの水面・波帯・ガラス・ビーコン表現、Phase 7Cの任意振動通知、Phase 8Aの自動試験契約、締切後の小分け精算、競技ルール`namioshi-v3-strategy-002`の波速110・二段階台帳、初回案内の成功確認、練習配置制約、同時確定時の反射種別集約通知まで統合済みです。次のDraftでは、結果画面に確定済みの最高経路（反射面の順序・判定語・得点）と、次の目標を1つ表示します。設計fixture4362点、独立holdout中央値1881点、全ラウンド同地点探索の最高標本3106点は固定しています。6480は構造上のhard ceilingのままで、探索最大値とは断定していません。実ブラウザの候補表示、強制WebGL消失、iPhoneの最大波性能、長時間・反復・発熱、ランキング本番疎通、Phase 6Bの実機表示、Phase 7A・7Bの実ブラウザ性能、Phase 7Cの振動実動作、同時通知と結果案内の実機読みやすさは未確認です。実機で確認していない項目と確認済みの失敗は[`docs/REVIEW_CHECKLIST_v3.md`](docs/REVIEW_CHECKLIST_v3.md)で区別して管理します。
 
 
 ## 回復D D2.1の状態

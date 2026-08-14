@@ -1,4 +1,5 @@
 import {World} from './game/world.js';
+import {judgementFromPrecision} from './game/judgement.js';
 import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,settlePlayDeadline,TimedInputQueue} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
@@ -103,6 +104,8 @@ app.innerHTML=`
       <p>2回反射 <b id="scoreDouble">0</b>点</p>
     </div>
     <p id="resultRouteStatus" class="resultStatus">今回の有効ルート：<b id="routeCount">0</b>件</p>
+    <p id="resultBestRoute" class="resultStatus resultHighlight" role="status" aria-live="polite"></p>
+    <p id="resultNextGoal" class="resultStatus resultGoal" role="status" aria-live="polite"></p>
     <p id="rank" class="small" role="status" aria-live="polite"></p>
     <button id="share" class="btn" type="button">シェア</button>
     <button id="again" class="btn secondary" type="button">同じモードでもう一度</button>
@@ -583,6 +586,28 @@ function updateResultPersistence(result){
   }
 }
 
+const ROUTE_SURFACE_LABELS=Object.freeze({wall:'壁',glass:'反射板'});
+
+function formatRoutePath(route){
+  const surfaces=(route?.pathIntersections??[])
+    .map(intersection=>String(intersection?.surfaceKey??'').split(':',1)[0])
+    .map(surface=>ROUTE_SURFACE_LABELS[surface]??'反射')
+    .filter(Boolean);
+  return surfaces.length?surfaces.join('→'):'直接';
+}
+
+function formatBestRoute(route){
+  if(!route)return'最高経路：まだありません';
+  return`最高経路：${formatRoutePath(route)}・${judgementFromPrecision(route.precision)}・${route.score}点`;
+}
+
+function resultNextGoal(breakdown,routeCount){
+  if(routeCount===0)return'次の目標：まずビーコンに1回波を重ねる';
+  if(breakdown.glass<=0)return'次の目標：反射板を使う経路を1回成功させる';
+  if(breakdown.double<=0)return'次の目標：2回反射を1回成功させる';
+  return'次の目標：別の経路を探して最高経路を更新する';
+}
+
 function finish(){
   if(state!=='PLAYING')return;
   cancelDeadlineSettlement();
@@ -611,7 +636,10 @@ function finish(){
   $('scoreWall').textContent=String(breakdown.wall);
   $('scoreGlass').textContent=String(breakdown.glass);
   $('scoreDouble').textContent=String(breakdown.double);
-  $('routeCount').textContent=String(world.getDiscoveredRouteCount());
+  const routeCount=world.getDiscoveredRouteCount();
+  $('routeCount').textContent=String(routeCount);
+  $('resultBestRoute').textContent=formatBestRoute(world.getBestRoute());
+  $('resultNextGoal').textContent=resultNextGoal(breakdown,routeCount);
   updateResultPersistence(recordPlayResult({
     mode:world.mode,
     score:world.score,

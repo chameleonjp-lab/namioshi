@@ -106,6 +106,8 @@ p{line-height:1.55;color:#bad9e8}
 .modeCard .small{margin:7px 2px 0}
 .modeResult{margin:2px 0 8px;padding:8px 10px;border:1px solid rgba(142,229,255,.22);border-radius:12px;background:rgba(88,240,255,.07);font-size:13px}
 .resultStatus{margin:6px 0;color:#d9f8ff;font-size:14px;line-height:1.45}
+.resultHighlight{color:#fff2b8;font-weight:800}
+.resultGoal{color:#bde8ff}
 .link{display:block;color:#9fecff;margin-top:10px}
 .btnLink{display:block;text-decoration:none;text-align:center}
 
