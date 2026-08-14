@@ -72,3 +72,20 @@ test('result screen explains the best route and one next goal',()=>{
   assert.match(styles,/\.resultHighlight\{/);
   assert.match(styles,/\.resultGoal\{/);
 });
+
+test('play legend makes waves, reflection boards, and beacons distinct',()=>{
+  const main=source('src/main.js');
+  const styles=source('src/ui/styles.css');
+  assert.match(main,/id="playLegend" class="playLegend" role="note"/);
+  assert.match(main,/class="legendMark legendWave"/);
+  assert.match(main,/class="legendMark legendBoard"/);
+  assert.match(main,/class="legendMark legendBeacon"/);
+  assert.match(main,/<b>波<\/b>：/);
+  assert.match(main,/<b>反射板<\/b>：光る線/);
+  assert.match(main,/<b>ビーコン<\/b>：白く光る点/);
+  assert.doesNotMatch(main,/棒に波/);
+  assert.match(styles,/\.legendLine\{/);
+  assert.match(styles,/\.legendWave\{/);
+  assert.match(styles,/\.legendBoard\{/);
+  assert.match(styles,/\.legendBeacon\{/);
+});

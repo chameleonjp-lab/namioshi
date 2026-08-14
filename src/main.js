@@ -20,13 +20,14 @@ app.innerHTML=`
   <div class="pill">タップ <span id="tp">0</span>/6</div>
 </div>
 <div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
-<div id="playLegend" class="playLegend" role="note" aria-live="polite">
-  <span><b>反射板</b>：棒に波を当てると、波の向きが変わります</span>
-  <span>各タップはビーコンごとに最高の経路を判定。同じ経路の繰り返しでは点が増えません</span>
+<div id="playLegend" class="playLegend" role="note" aria-label="プレイ中の見方">
+  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波</b>：タップ位置から広がり、ビーコンに重ねます</span></div>
+  <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
+  <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。別の経路を探すほど得点が伸びます</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（棒）へ当ててみてください。まず反射板への命中を1回確認してから案内を終えます。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当ててみてください。まず反射板への命中を1回確認してから案内を終えます。</p>
   <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">反射板に波を当てると、ここで成功を確認できます。</p>
   <div class="guideButtons">
     <button id="guideContinue" class="btn" type="button" disabled>反射板に当てて本番へ</button>
@@ -72,7 +73,7 @@ app.innerHTML=`
     <ul class="rulesList">
       <li>タップは最大6回</li>
       <li>制限時間は30秒</li>
-      <li>棒の反射板に波を当てると、波の向きが変わる</li>
+      <li>光る線の反射板に波を当てると、波の向きが変わる</li>
       <li>波を3つのビーコンへ重ねる</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
       <li>1回のタップでは、各ビーコンへの一番高い経路だけを判定</li>
