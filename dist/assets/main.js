@@ -24,11 +24,11 @@ app.innerHTML=`
   <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点です。</div>
   <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波</b>：タップ位置から広がり、ビーコンに重ねます</span></div>
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
-  <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると得点です</span></div>
+  <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると命中し、精算時に得点が確定します</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。まず反射板への命中を1回確認してから案内を終えます。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。白いビーコン（点）へ波を重ねると得点です。まず反射板への命中を1回確認してから案内を終えます。</p>
   <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">反射板に波を当てると、ここで成功を確認できます。</p>
   <div class="guideButtons">
     <button id="guideContinue" class="btn" type="button" disabled>反射板に当てて本番へ</button>
@@ -75,11 +75,12 @@ app.innerHTML=`
       <li>タップは最大6回</li>
       <li>制限時間は30秒</li>
       <li>光る線の反射板に波を当てると、波の向きが変わる</li>
-      <li>ビーコンに波が重なると得点。反射板に当てるだけでは得点にならない</li>
+      <li>ビーコンに波が重なると命中。反射板に当てるだけでは得点にならない</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
       <li>基準点は直接20点、壁100点、反射板180点、2回反射300点。命中精度で変動する</li>
       <li>1回のタップでは、各ビーコンへの一番高い経路だけを判定</li>
       <li>同じビーコンへ同じ順番で通った経路を繰り返しても、点は増えない</li>
+      <li>命中確認は接触時、得点は波の精算時に「得点確定」として表示する</li>
       <li>6回を別の場所へ使い、違う経路を探すほど得点を伸ばせる</li>
       <li>6回使い切っても、30秒までは波の結果を待つ</li>
       <li>公式は候補Cの固定配置</li>
@@ -869,7 +870,7 @@ function presentFeedback(text,{status='impact',duration=1100}={}){
 function showHitFeedback(hit){
   if(!hit||!Number.isFinite(hit.points))return;
   const category=HIT_FEEDBACK_LABELS[hit.category]??'命中';
-  presentFeedback(`${hit.judgement??'HIT'}・${category}`);
+  presentFeedback(`命中確認：${hit.judgement??'HIT'}・${category}`,{status:'impact'});
 }
 
 function formatRouteCategoryCounts(counts){
@@ -892,9 +893,10 @@ function showRouteFeedback(summary){
     summary.points>0?summary.awardedCategoryCounts:summary.candidateCategoryCounts
   );
   const categoryDetail=categoryCounts?`｜経路 ${categoryCounts}`:'';
+  const stateLabel=parts.join('・')||'確定';
   const text=summary.points>0
-    ?`${parts.join('・')} +${summary.points}｜代表 ${detail}${categoryDetail}`
-    :`${parts.join('・')||'発見済み'}${categoryDetail}｜別の経路を探そう`;
+    ?`得点確定：+${summary.points}（${stateLabel}）｜代表 ${detail}${categoryDetail}`
+    :`発見済み（得点なし）${categoryDetail}｜別の経路を探そう`;
   presentFeedback(text,{status:summary.routeStatus??'known',duration:1400});
 }
 

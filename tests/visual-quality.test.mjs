@@ -46,6 +46,9 @@ test('hit feedback distinguishes new, improved, and known routes without sound',
   assert.match(main,/summary\.candidateCategoryCounts/);
   assert.match(main,/｜経路 \$\{categoryCounts\}/);
   assert.match(main,/代表 \$\{detail\}/);
+  assert.match(main,/命中確認：\$\{hit\.judgement/);
+  assert.match(main,/得点確定：\+\$\{summary\.points\}/);
+  assert.match(main,/発見済み（得点なし）/);
   assert.match(main,/別の経路を探そう/);
   assert.match(main,/duration:1400/);
   assert.match(main,/showHitFeedback\(hit\)/);
@@ -53,6 +56,7 @@ test('hit feedback distinguishes new, improved, and known routes without sound',
   assert.match(main,/namioshi\.guide\.completed\.\$\{OFFICIAL_RULE_VERSION\}/);
   assert.match(styles,/\.hitFeedback\{/);
   assert.match(styles,/\.hitFeedback\.show\{/);
+  assert.match(styles,/\.hitFeedback\[data-route-status="impact"\]/);
   assert.match(styles,/\.hitFeedback\{[\s\S]*?overflow-wrap:anywhere/);
   assert.match(styles,/data-route-status="known"/);
   assert.match(styles,/z-index:5/);
@@ -85,7 +89,7 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   assert.match(main,/class="legendMark legendBeacon"/);
   assert.match(main,/<b>波<\/b>：/);
   assert.match(main,/<b>反射板<\/b>：光る線/);
-  assert.match(main,/<b>ビーコン<\/b>：白く光る点。波が重なると得点です/);
+  assert.match(main,/<b>ビーコン<\/b>：白く光る点。波が重なると命中し、精算時に得点が確定します/);
   assert.doesNotMatch(main,/棒に波/);
   assert.match(styles,/\.legendLine\{/);
   assert.match(styles,/\.playStatus\{/);
@@ -96,8 +100,9 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
 
 test('rules and practice entry explain scoring and the post-tap wait',()=>{
   const main=source('src/main.js');
-  assert.match(main,/ビーコンに波が重なると得点。反射板に当てるだけでは得点にならない/);
+  assert.match(main,/ビーコンに波が重なると命中。反射板に当てるだけでは得点にならない/);
   assert.match(main,/基準点は直接20点、壁100点、反射板180点、2回反射300点/);
+  assert.match(main,/命中確認は接触時、得点は波の精算時に「得点確定」として表示する/);
   assert.match(main,/6回使い切っても、30秒までは波の結果を待つ/);
   assert.match(main,/毎回変わる配置で反射経路を練習します/);
   assert.match(main,/ランキング外。練習結果は送信しません/);

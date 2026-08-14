@@ -67,3 +67,10 @@ test('play status explains the objective and the six-tap wait state',()=>{
   assert.match(main,/function updatePlayStatus\(force=false\)/);
   assert.match(main,/updatePlayStatus\(\);/);
 });
+
+test('play feedback labels contact confirmation separately from score settlement',()=>{
+  assert.match(main,/function showHitFeedback\(hit\)[\s\S]*?命中確認：/);
+  assert.match(main,/function showRouteFeedback\(summary\)[\s\S]*?得点確定：\+\$\{summary\.points\}/);
+  assert.match(main,/発見済み（得点なし）/);
+  assert.match(main,/命中確認は接触時、得点は波の精算時/);
+});
