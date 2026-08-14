@@ -1880,3 +1880,9 @@ Phase 8Aの自動試験はNode.js標準テストで127件を実行する。Chrom
 - `tools/strategy-analysis.snapshot.json`へ分析版、client/rule/layout、seed範囲、時刻、座標領域、分位点定義、calibration、holdout、境界探索、2地点baseline、複数Hz結果を固定する。設計fixtureは同地点・2地点の両baseline最高標本へ1.25倍以上を維持する。
 - 自動受入後も、人の初見3〜5プレイ、実ブラウザの音なし表示、iPhone・iPad、WebGL復旧、反復性能は未確認として残す。初回案内の成功必須化と練習配置制約は別工程とする。
 - ランキング、Supabase、Ready化、マージ、Phase 8C・8Dへは進めない。
+
+## 21. 2026-08-14 PR #60統合後・案内と練習配置の後続Draft
+
+PR #60のマージコミット `61f73be4b116761c2dbb08daba3811399e55fd01` を基準に、競技ルール変更とは独立した小さな後続Draftを進める。初回案内はガラス反射を1回確認するまで本番開始ボタンを無効にし、成功前のHOME復帰は許可する。練習モードは反射板の端点を盤内へ収め、ビーコン中心との距離を28px以上に制約し、最大96回の候補探索後も固定fallbackで同じ制約を守る。
+
+自動受入はseed 1〜10000、`npm test` 138/138、build、verify、配置分析、SVG、容量、差分検査、Draft ActionsのNode.js 18・20・22成功とする。公式配置、波速110、得点台帳、ランキング、Supabaseは変更しない。実ブラウザ、iPhone・iPad、人の初見再現性、Ready化、マージは未確認または未承認のまま残す。

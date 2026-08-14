@@ -204,6 +204,8 @@ p{line-height:1.55;color:#bad9e8}
 .guideOverlay.show{display:block}
 .guideOverlay h2{margin:0;color:#ffe8a2;font-size:22px}
 .guideOverlay p{margin:8px 0;color:#d7e8f4;font-size:14px;line-height:1.55}
+.guideOverlay .guideStatus{margin:10px 0;color:#ffe8a2;font-weight:800}
+.guideOverlay .btn:disabled{opacity:.48;cursor:not-allowed}
 .guideButtons{display:grid;gap:7px}
 .guideButtons .btn{margin-top:0;padding:11px;font-size:15px}
 
