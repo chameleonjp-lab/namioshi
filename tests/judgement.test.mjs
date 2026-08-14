@@ -165,10 +165,48 @@ test('simultaneous roots produce one route summary with awarded and known totals
     candidateCount:routeEvents[0].candidateCount,
     newRoutes:routeEvents[0].newRoutes,
     improvedRoutes:routeEvents[0].improvedRoutes,
-    knownRoutes:routeEvents[0].knownRoutes
-  },{points:48,rootCount:2,candidateCount:4,newRoutes:2,improvedRoutes:0,knownRoutes:2});
+    knownRoutes:routeEvents[0].knownRoutes,
+    candidateCategoryCounts:routeEvents[0].candidateCategoryCounts,
+    awardedCategoryCounts:routeEvents[0].awardedCategoryCounts
+  },{
+    points:48,
+    rootCount:2,
+    candidateCount:4,
+    newRoutes:2,
+    improvedRoutes:0,
+    knownRoutes:2,
+    candidateCategoryCounts:{direct:4,wall:0,glass:0,double:0},
+    awardedCategoryCounts:{direct:2,wall:0,glass:0,double:0}
+  });
   assert.equal(world.score,48);
   assert.equal(routeEvents[0].points,world.score);
+});
+
+test('route summary exposes every awarded reflection category',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const beacons=[
+    {id:'category-direct',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0},
+    {id:'category-wall',x:200,y:100,baseX:200,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0}
+  ];
+  world.beacons=beacons;
+  world.glass=[];
+  world.waves=[];
+  const routeEvents=[];
+  world.onRoute=event=>routeEvents.push(event);
+
+  const direct=world.addWave(0,100,0,'direct',{rootTapId:'category-root'});
+  direct.hitCandidates.set(beacons[0].id,{category:'direct',score:24,error:0,precision:1,targetX:100,targetY:100,waveId:direct.id,reflectionDepth:0,pathIntersections:[],pending:true});
+  world.commitWaveHit(direct,beacons[0]);
+  const wall=world.addWave(0,100,1,'wall',{rootTapId:'category-root'});
+  wall.hitCandidates.set(beacons[1].id,{category:'wall',score:100,error:0,precision:1,targetX:200,targetY:100,waveId:wall.id,reflectionDepth:1,pathIntersections:[{surfaceKey:'wall:l'}],pending:true});
+  world.commitWaveHit(wall,beacons[1]);
+  world.settleRoots(['category-root']);
+
+  assert.equal(routeEvents.length,1);
+  assert.deepEqual(routeEvents[0].candidateCategoryCounts,{direct:1,wall:1,glass:0,double:0});
+  assert.deepEqual(routeEvents[0].awardedCategoryCounts,{direct:1,wall:1,glass:0,double:0});
+  assert.equal(routeEvents[0].points,124);
 });
 
 test('a finalized root cannot mutate either score ledger',()=>{

@@ -167,6 +167,7 @@ p{line-height:1.55;color:#bad9e8}
   letter-spacing:.04em;
   line-height:1.35;
   text-align:center;
+  overflow-wrap:anywhere;
   pointer-events:none;
   opacity:0;
   transform:translate(-50%,8px) scale(.92);

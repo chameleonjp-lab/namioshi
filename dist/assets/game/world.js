@@ -30,6 +30,15 @@ const clampVector=(x,y,maximum)=>{
 };
 const OFFICIAL_RANDOM_SEED=0xfc71e804;
 const LIFETIME_EPSILON=1e-9;
+const SCORE_CATEGORIES=Object.freeze(['direct','wall','glass','double']);
+
+function emptyCategoryCounts(){
+  return{direct:0,wall:0,glass:0,double:0};
+}
+
+function countCategory(counts,candidate){
+  if(SCORE_CATEGORIES.includes(candidate.category))counts[candidate.category]++;
+}
 
 function isBetterCandidate(candidate,previous){
   if(!previous)return true;
@@ -241,6 +250,9 @@ export class World{
     this.rebuildRouteScore();
     const candidates=[...this.bestHits].filter(([,candidate])=>rootSet.has(candidate.rootTapId));
     const contributingHitKeys=new Set();
+    const candidateCategoryCounts=emptyCategoryCounts();
+    const awardedCategoryCounts=emptyCategoryCounts();
+    for(const[,candidate]of candidates)countCategory(candidateCategoryCounts,candidate);
     let points=0;
     let newRoutes=0;
     let improvedRoutes=0;
@@ -251,6 +263,7 @@ export class World{
       const addedPoints=candidate.score-(previous?.score??0);
       if(addedPoints<=0)continue;
       points+=addedPoints;
+      countCategory(awardedCategoryCounts,candidate);
       if(previous)improvedRoutes++;
       else newRoutes++;
       contributingHitKeys.add(candidate.sourceHitKey);
@@ -270,7 +283,9 @@ export class World{
       candidateCount:candidates.length,
       newRoutes,
       improvedRoutes,
-      knownRoutes
+      knownRoutes,
+      candidateCategoryCounts,
+      awardedCategoryCounts
     });
   }
 

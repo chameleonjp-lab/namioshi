@@ -814,6 +814,14 @@ function showHitFeedback(hit){
   presentFeedback(`${hit.judgement??'HIT'}・${category}`);
 }
 
+function formatRouteCategoryCounts(counts){
+  if(!counts||typeof counts!=='object')return'';
+  return Object.entries(HIT_FEEDBACK_LABELS)
+    .filter(([category])=>Number.isFinite(counts[category])&&counts[category]>0)
+    .map(([category,label])=>counts[category]===1?label:`${label}×${counts[category]}`)
+    .join('・');
+}
+
 function showRouteFeedback(summary){
   if(!summary||!Number.isFinite(summary.points))return;
   const parts=[];
@@ -822,9 +830,13 @@ function showRouteFeedback(summary){
   if(summary.knownRoutes)parts.push(`発見済み${summary.knownRoutes}`);
   const category=HIT_FEEDBACK_LABELS[summary.category]??'命中';
   const detail=`${summary.judgement??'HIT'}・${category}`;
+  const categoryCounts=formatRouteCategoryCounts(
+    summary.points>0?summary.awardedCategoryCounts:summary.candidateCategoryCounts
+  );
+  const categoryDetail=categoryCounts?`｜経路 ${categoryCounts}`:'';
   const text=summary.points>0
-    ?`${parts.join('・')} +${summary.points}｜代表 ${detail}`
-    :`${parts.join('・')||'発見済み'}｜別の経路を探そう`;
+    ?`${parts.join('・')} +${summary.points}｜代表 ${detail}${categoryDetail}`
+    :`${parts.join('・')||'発見済み'}${categoryDetail}｜別の経路を探そう`;
   presentFeedback(text,{status:summary.routeStatus??'known',duration:1400});
 }
 
