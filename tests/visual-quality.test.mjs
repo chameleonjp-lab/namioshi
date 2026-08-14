@@ -57,3 +57,18 @@ test('hit feedback distinguishes new, improved, and known routes without sound',
   assert.match(styles,/data-route-status="known"/);
   assert.match(styles,/z-index:5/);
 });
+
+test('result screen explains the best route and one next goal',()=>{
+  const main=source('src/main.js');
+  const styles=source('src/ui/styles.css');
+  assert.match(main,/id="resultBestRoute"/);
+  assert.match(main,/id="resultNextGoal"/);
+  assert.match(main,/function formatRoutePath\(route\)/);
+  assert.match(main,/function formatBestRoute\(route\)/);
+  assert.match(main,/world\.getBestRoute\(\)/);
+  assert.match(main,/最高経路：/);
+  assert.match(main,/次の目標：/);
+  assert.match(main,/judgementFromPrecision\(route\.precision\)/);
+  assert.match(styles,/\.resultHighlight\{/);
+  assert.match(styles,/\.resultGoal\{/);
+});

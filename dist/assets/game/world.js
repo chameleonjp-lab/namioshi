@@ -711,4 +711,14 @@ export class World{
   getDiscoveredRouteCount(){
     return this.routeBestHits.size;
   }
+
+  getBestRoute(){
+    let best=null;
+    for(const candidate of this.routeBestHits.values()){
+      if(!best||isBetterCandidate(candidate,best))best=candidate;
+    }
+    return best
+      ?{...best,pathIntersections:(best.pathIntersections??[]).map(intersection=>({...intersection}))}
+      :null;
+  }
 }

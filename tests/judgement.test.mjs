@@ -136,6 +136,34 @@ test('the route ledger keeps one award for the same beacon and ordered path',()=
   );
 });
 
+test('world exposes the highest finalized route for result guidance',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const beacons=[
+    {id:'best-direct',x:100,y:100,baseX:100,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0},
+    {id:'best-double',x:200,y:100,baseX:200,baseY:100,radius:0,flash:0,vx:0,vy:0,shakeX:0,shakeY:0,shakeVx:0,shakeVy:0}
+  ];
+  world.beacons=beacons;
+  world.glass=[];
+  world.waves=[];
+
+  const direct=world.addWave(0,100,0,'direct',{rootTapId:'best-root'});
+  direct.hitCandidates.set(beacons[0].id,{category:'direct',score:24,error:0,precision:1,targetX:100,targetY:100,waveId:direct.id,reflectionDepth:0,pathIntersections:[],pending:true});
+  world.commitWaveHit(direct,beacons[0]);
+  const double=world.addWave(0,100,2,'glass',{rootTapId:'best-root'});
+  double.hitCandidates.set(beacons[1].id,{category:'double',score:360,error:1,precision:.9,targetX:200,targetY:100,waveId:double.id,reflectionDepth:2,pathIntersections:[{surfaceKey:'wall:l'},{surfaceKey:'glass:a'}],pending:true});
+  world.commitWaveHit(double,beacons[1]);
+  world.settleRoots(['best-root']);
+
+  const best=world.getBestRoute();
+  assert.equal(best?.score,360);
+  assert.equal(best?.sourceHitKey,'best-root:best-double');
+  assert.deepEqual(best?.pathIntersections,[{surfaceKey:'wall:l'},{surfaceKey:'glass:a'}]);
+  assert.notStrictEqual(best?.pathIntersections,double.hitCandidates.get(beacons[1].id).pathIntersections);
+  world.reset();
+  assert.equal(world.getBestRoute(),null);
+});
+
 test('simultaneous roots produce one route summary with awarded and known totals',()=>{
   const world=new World({random:()=>.5});
   world.reset();
