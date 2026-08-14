@@ -152,6 +152,7 @@ p{line-height:1.55;color:#bad9e8}
 }
 .playLegend.show{display:grid}
 .playLegend b{color:#f4dfff}
+.playStatus{padding-bottom:5px;margin-bottom:1px;border-bottom:1px solid rgba(255,226,138,.28);color:#fff0b0;font-weight:800}
 .legendLine{display:flex;align-items:center;gap:7px;min-width:0}
 .legendLine>span:last-child{min-width:0}
 .legendMark{display:block;flex:0 0 auto;position:relative}

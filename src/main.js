@@ -20,14 +20,15 @@ app.innerHTML=`
   <div class="pill">タップ <span id="tp">0</span>/6</div>
 </div>
 <div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
-<div id="playLegend" class="playLegend" role="note" aria-label="プレイ中の見方">
+<div id="playLegend" class="playLegend" role="note" aria-label="プレイ中の目的と見方">
+  <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点です。</div>
   <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波</b>：タップ位置から広がり、ビーコンに重ねます</span></div>
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
-  <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。別の経路を探すほど得点が伸びます</span></div>
+  <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると得点です</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当ててみてください。まず反射板への命中を1回確認してから案内を終えます。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。まず反射板への命中を1回確認してから案内を終えます。</p>
   <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">反射板に波を当てると、ここで成功を確認できます。</p>
   <div class="guideButtons">
     <button id="guideContinue" class="btn" type="button" disabled>反射板に当てて本番へ</button>
@@ -44,15 +45,15 @@ app.innerHTML=`
     <div class="modeGrid" role="group" aria-label="ゲームモード">
       <div class="modeCard officialCard">
         <p class="modeTitle">公式モード</p>
-        <p class="modeDescription">候補C・開港型。全員が同じ配置で遊びます。</p>
+        <p class="modeDescription">30秒・6タップ。全員が同じ配置で遊びます。</p>
         <button id="startOfficial" class="btn" type="button">公式モード開始</button>
         <p class="small">ランキング送信はPhase 5で開始します。</p>
       </div>
       <div class="modeCard">
         <p class="modeTitle">練習モード</p>
-        <p class="modeDescription">毎回変わるランダム配置で遊びます。</p>
+        <p class="modeDescription">30秒・6タップ。毎回変わる配置で反射経路を練習します。</p>
         <button id="startPractice" class="btn secondary" type="button">練習モード開始</button>
-        <p class="small">練習結果はランキングへ送信しません。</p>
+        <p class="small">ランキング外。練習結果は送信しません。</p>
       </div>
     </div>
     <button id="soundToggle" class="btn secondary" type="button" aria-pressed="false">効果音：なし</button>
@@ -74,11 +75,13 @@ app.innerHTML=`
       <li>タップは最大6回</li>
       <li>制限時間は30秒</li>
       <li>光る線の反射板に波を当てると、波の向きが変わる</li>
-      <li>波を3つのビーコンへ重ねる</li>
+      <li>ビーコンに波が重なると得点。反射板に当てるだけでは得点にならない</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
+      <li>基準点は直接20点、壁100点、反射板180点、2回反射300点。命中精度で変動する</li>
       <li>1回のタップでは、各ビーコンへの一番高い経路だけを判定</li>
       <li>同じビーコンへ同じ順番で通った経路を繰り返しても、点は増えない</li>
       <li>6回を別の場所へ使い、違う経路を探すほど得点を伸ばせる</li>
+      <li>6回使い切っても、30秒までは波の結果を待つ</li>
       <li>公式は候補Cの固定配置</li>
       <li>練習はランダム配置でランキング送信なし</li>
     </ul>
@@ -144,6 +147,7 @@ let viewport=createViewport(1,1);
 let lastHudScore=-1;
 let lastHudTaps=-1;
 let lastHudTime=-1;
+let lastPlayStatus='';
 let countdownTimer=0;
 let countdownId=0;
 let tutorialMode=false;
@@ -226,6 +230,27 @@ function setState(nextState){
   $('startPractice').disabled=busy;
   $('again').disabled=busy;
   focusStateTarget(nextState);
+}
+
+function playStatusText(){
+  if(tutorialMode){
+    return'案内：反射板に当てて波の向きを変え、白いビーコンへ重ねてみましょう。';
+  }
+  if(world.taps>=MAX_TAPS){
+    return world.waves.length>0
+      ?`6回使い切りました。波の結果を待っています。${PLAY_SECONDS}秒の終了時に結果を表示します。`
+      :`6回使い切り、波も消えました。${PLAY_SECONDS}秒の終了時に結果を表示します。`;
+  }
+  return'目的：波をビーコンに重ねる。反射板経由は高得点です。';
+}
+
+function updatePlayStatus(force=false){
+  const element=$('playStatus');
+  if(!element)return;
+  const text=playStatusText();
+  if(!force&&text===lastPlayStatus)return;
+  element.textContent=text;
+  lastPlayStatus=text;
 }
 
 function clearCountdown(){
@@ -531,6 +556,7 @@ function startGuide(){
   lastHudScore=-1;
   lastHudTaps=-1;
   lastHudTime=-1;
+  lastPlayStatus='';
   setState('PLAYING');
   hud(true);
 }
@@ -560,6 +586,7 @@ function play(){
   lastHudScore=-1;
   lastHudTaps=-1;
   lastHudTime=-1;
+  lastPlayStatus='';
   setState('PLAYING');
   hud(true);
 }
@@ -668,6 +695,7 @@ function hud(force=false){
     $('tm').textContent=time===Infinity?'∞':time.toFixed(1);
     lastHudTime=time;
   }
+  updatePlayStatus(force);
 }
 
 function degrade(average){
@@ -727,6 +755,7 @@ function loop(timestamp){
     updatePlayTime(now);
     const playFrame=rememberPlayFrame(advanceSimulation(now));
     updatePlayTime(now);
+    updatePlayStatus();
     const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
     if(playFrame.shouldFinish)finish();
