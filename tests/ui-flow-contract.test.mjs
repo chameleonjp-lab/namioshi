@@ -68,6 +68,14 @@ test('play status explains the objective and the ten-tap wait state',()=>{
   assert.match(main,/updatePlayStatus\(\);/);
 });
 
+test('reflection tap timing prompt follows the shared availability predicate',()=>{
+  assert.match(main,/id="reflectionTapPrompt" class="reflectionTapPrompt"/);
+  assert.match(main,/function updateReflectionTapPrompt\(\)\{[\s\S]*?state==='PLAYING'&&!tutorialMode[\s\S]*?world\.waves\.some\(wave=>world\.isReflectionTapAvailable\(wave\)\)/);
+  assert.match(main,/prompt\.hidden=!available/);
+  assert.match(main,/setState\(nextState\)[\s\S]*?updateReflectionTapPrompt\(\);/);
+  assert.match(main,/updatePlayStatus\(force\);[\s\S]*?updateReflectionTapPrompt\(\);/);
+});
+
 test('play feedback labels contact confirmation separately from score settlement',()=>{
   assert.match(main,/function showHitFeedback\(hit\)[\s\S]*?命中確認：/);
   assert.match(main,/function showRouteFeedback\(summary\)[\s\S]*?得点確定：\+\$\{summary\.points\}/);
