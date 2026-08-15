@@ -110,6 +110,8 @@ test('home provides an accessible sound-effects switch',()=>{
   assert.match(main,/world\.onHit=hit=>\{[\s\S]*?playHitSound\(hit\);[\s\S]*?playCue\('WATER_SPLASH'\);[\s\S]*?playHitHaptic\(hit\);[\s\S]*?showHitFeedback\(hit\);[\s\S]*?\}/);
   assert.match(main,/audioReady\.then\(ready=>\{[\s\S]*?playCue\('TAP'\);[\s\S]*?playCue\('WATER_TAP'\)/);
   assert.match(main,/world\.onRoute=summary=>\{[\s\S]*?if\(summary\?\.points>0\)playCue\('WATER_SCORE'\)/);
+  assert.match(main,/world\.onReflectionTap=tap=>\{[\s\S]*?playCue\(tap\?\.judgement\?\?'GOOD'\)/);
+  assert.match(main,/world\.onReflectionTap=tap=>\{[\s\S]*?playCue\('WATER_RIPPLE'\)/);
   assert.match(main,/document\.addEventListener\('visibilitychange',syncAudioVisibility\)/);
   assert.match(main,/addEventListener\('pagehide',[\s\S]*?setAudioActive\(false\)/);
   assert.match(main,/addEventListener\('pageshow',syncAudioVisibility\)/);
@@ -157,7 +159,7 @@ test('judgement sound cues become higher and richer for better hits',async()=>{
   assert.equal(new Set(signatures).size,names.length);
   assert.deepEqual(names.map(name=>SOUND_CUES[name][0].frequency),[320,460,600,760]);
   assert.deepEqual(names.map(name=>SOUND_CUES[name].length),[1,1,2,3]);
-  for(const name of ['TAP','WALL_REFLECT','GLASS_REFLECT','DOUBLE_HIT','RESULT','WATER_TAP','WATER_WALL','WATER_GLASS','WATER_SPLASH','WATER_SCORE','WATER_SETTLE']){
+  for(const name of ['TAP','WALL_REFLECT','GLASS_REFLECT','DOUBLE_HIT','RESULT','WATER_TAP','WATER_WALL','WATER_GLASS','WATER_SPLASH','WATER_SCORE','WATER_RIPPLE','WATER_SETTLE']){
     assert.ok(SOUND_CUES[name]?.length>0,`${name} cue must exist`);
   }
 });

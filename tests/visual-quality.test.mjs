@@ -87,15 +87,18 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   assert.match(main,/class="legendMark legendWave"/);
   assert.match(main,/class="legendMark legendBoard"/);
   assert.match(main,/class="legendMark legendBeacon"/);
+  assert.match(main,/class="legendMark legendTap"/);
   assert.match(main,/<b>波<\/b>：/);
   assert.match(main,/<b>反射板<\/b>：光る線/);
   assert.match(main,/<b>ビーコン<\/b>：白く光る点。波が重なると命中し、精算時に得点が確定します/);
+  assert.match(main,/<b>反射波タップ<\/b>：反射後の輪に重ねてタップすると、深度に応じて\+10〜40点/);
   assert.doesNotMatch(main,/棒に波/);
   assert.match(styles,/\.legendLine\{/);
   assert.match(styles,/\.playStatus\{/);
   assert.match(styles,/\.legendWave\{/);
   assert.match(styles,/\.legendBoard\{/);
   assert.match(styles,/\.legendBeacon\{/);
+  assert.match(styles,/\.legendTap\{/);
 });
 
 test('rules and practice entry explain scoring and the post-tap wait',()=>{
@@ -106,4 +109,7 @@ test('rules and practice entry explain scoring and the post-tap wait',()=>{
   assert.match(main,/\$\{MAX_TAPS\}回使い切っても、30秒までは波の結果を待つ/);
   assert.match(main,/毎回変わる配置で反射経路を練習します/);
   assert.match(main,/ランキング外。練習結果は送信しません/);
+  assert.match(main,/反射した波の輪をタイミングよくタップすると、深度1は10〜20点、深度2は20〜40点/);
+  assert.match(main,/id="scoreReflectionTap"/);
+  assert.match(main,/反射波タップ：\+\$\{tap\.points\}/);
 });

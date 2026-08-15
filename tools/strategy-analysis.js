@@ -17,7 +17,8 @@ import {World} from '../src/game/world.js';
 const FULL_ROUND_TIMESTAMPS=Object.freeze([1000,4000,7000,10000,13000,16000,19000,22000,25000,28000]);
 
 export const STRATEGY_ANALYSIS_CONFIG=Object.freeze({
-  analysisVersion:'namioshi-strategy-analysis-003',
+  analysisVersion:'namioshi-strategy-analysis-004',
+  inputAction:'root',
   waveSpeed:WAVE_SPEED,
   percentileMethod:'sorted[floor((n-1)*ratio)]',
   coordinateDomain:Object.freeze({xMin:0,xMax:LOGICAL_WIDTH,yMin:0,yMax:LOGICAL_HEIGHT}),
@@ -80,7 +81,10 @@ export function simulateStrategy(events,refreshRate=60){
   world.reset({mode:GAME_MODE.OFFICIAL});
   const queue=new TimedInputQueue();
   queue.reset(0);
-  for(const [x,y,timestamp] of events)queue.enqueue({x,y,timestamp});
+  // Strategy fixtures describe root-wave placement. Reflection taps are a
+  // separate optional action and are covered by World unit tests instead of
+  // silently changing the historical placement distribution.
+  for(const [x,y,timestamp] of events)queue.enqueue({x,y,timestamp,action:'root'});
   const runner=new FixedStepRunner();
   runner.reset(0);
   let scoreDrops=0;
@@ -95,7 +99,7 @@ export function simulateStrategy(events,refreshRate=60){
   const update=(step,{boundaryTimestamp})=>{
     const previousScore=world.score;
     world.step(step,{countTime:false});
-    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y,{action:input.action??'root'}));
     if(world.score<previousScore)scoreDrops++;
   };
   for(let frame=1;frame<=refreshRate*31;frame++){
@@ -291,6 +295,7 @@ export function analyzeStrategy(){
     layoutFingerprint:OFFICIAL_LAYOUT_FINGERPRINT,
     waveSpeed:WAVE_SPEED,
     scoreHardCeiling:SCORE_HARD_CEILING,
+    reflectionTap:'excluded from root-placement baselines; covered by World unit fixtures',
     percentileMethod:STRATEGY_ANALYSIS_CONFIG.percentileMethod,
     coordinateDomain:STRATEGY_ANALYSIS_CONFIG.coordinateDomain,
     randomTimestamps:STRATEGY_ANALYSIS_CONFIG.random.timestamps,

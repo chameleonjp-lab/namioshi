@@ -4,9 +4,11 @@
 
 ## 現行Draft（10回タップ・水系SE）
 
-現行main `c3ec10a6e74467bfd8e8ba727b02c634541d01d2`を基準に、根の波を最大10回へ増やし、hard ceilingを10800点へ更新します。競技ルールは`namioshi-v3-strategy-003`、client versionは`namioshi-v3.3.0-official004`、seasonは`prelaunch-v3`です。旧6回・6480点の端末ベストやランキング記録は新ルールへ移行しません。
+現行main `72a3d5d97602c59d202b50c3b46605561f47ba6a`を基準に、根の波を最大10回へ維持し、反射波タップの技能ボーナスを追加します。hard ceilingは11200点（経路10800点＋反射波タップ最大400点）です。競技ルールは`namioshi-v3-reflection-tap-004`、client versionは`namioshi-v3.4.0-official005`、seasonは`prelaunch-v4`です。旧ルールの端末ベストやランキング記録は新ルールへ移行しません。
 
 効果音を有効にした場合、タップ＝波紋、壁・反射板＝返る波、ビーコン命中＝水しぶき、得点確定＝水滴、RESULT＝静かな水面という水系の短い合成音を重ねます。初期設定オフと、音なしでも読める画面文言は維持します。Draft PRは作成しますが、マージは行いません。
+
+反射後の波の輪へタイミングよくタップすると、根波ごとに1回だけ深度1は10〜20点、深度2は20〜40点を加点します。輪からの距離で精度を決め、通常の経路台帳とは別の内訳へ記録します。
 
 ## v3仕様文書
 
@@ -81,7 +83,7 @@ Pointer入力は画面座標から360×640の座標へ変換し、余白上の�
 配置ID: candidate-c-open-harbor
 指紋: fnv1a-fc71e804
 配置版: namioshi-v3-layout-study-001
-競技ルール版: namioshi-v3-strategy-003
+競技ルール版: namioshi-v3-reflection-tap-004
 ```
 
 公式モードは、ビーコンの初期位置、速度、ガラス片を固定し、初期化時に`Math.random()`を使いません。

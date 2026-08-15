@@ -21,14 +21,15 @@ app.innerHTML=`
 </div>
 <div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
 <div id="playLegend" class="playLegend" role="note" aria-label="プレイ中の目的と見方">
-  <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点です。</div>
+  <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。</div>
   <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波</b>：タップ位置から広がり、ビーコンに重ねます</span></div>
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
   <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると命中し、精算時に得点が確定します</span></div>
+  <div class="legendLine"><span class="legendMark legendTap" aria-hidden="true"></span><span><b>反射波タップ</b>：反射後の輪に重ねてタップすると、深度に応じて+10〜40点（根波ごとに1回）</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。白いビーコン（点）へ波を重ねると得点です。まず反射板への命中を1回確認してから案内を終えます。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。白いビーコン（点）へ波を重ねると得点です。反射後の波の輪をタップすると、小さな技能ボーナスを得られます。まず反射板への命中を1回確認してから案内を終えます。</p>
   <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">反射板に波を当てると、ここで成功を確認できます。</p>
   <div class="guideButtons">
     <button id="guideContinue" class="btn" type="button" disabled>反射板に当てて本番へ</button>
@@ -38,7 +39,7 @@ app.innerHTML=`
 <section id="HOME" class="screen freshStart show" aria-labelledby="homeTitle" aria-hidden="false">
   <div class="panel">
     <h1 id="homeTitle">namioshi</h1>
-    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探す30秒ゲームです。同じ経路は最高点だけが残ります。</p>
+    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探す30秒ゲームです。反射後の波の輪をタップすると技能ボーナス、同じ経路は最高点だけが残ります。</p>
     <label class="srOnly" for="name">名前</label>
     <input id="name" class="input" maxlength="20" placeholder="名前" autocomplete="nickname" aria-describedby="nameHint">
     <p id="nameHint" class="srOnly">公式結果と練習結果の表示に使います。</p>
@@ -78,6 +79,7 @@ app.innerHTML=`
       <li>ビーコンに波が重なると命中。反射板に当てるだけでは得点にならない</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
       <li>基準点は直接20点、壁100点、反射板180点、2回反射300点。命中精度で変動する</li>
+      <li>反射した波の輪をタイミングよくタップすると、深度1は10〜20点、深度2は20〜40点。1つの根波につき1回まで</li>
       <li>1回のタップでは、各ビーコンへの一番高い経路だけを判定</li>
       <li>同じビーコンへ同じ順番で通った経路を繰り返しても、点は増えない</li>
       <li>命中確認は接触時、得点は波の精算時に「得点確定」として表示する</li>
@@ -107,6 +109,7 @@ app.innerHTML=`
       <p>壁反射 <b id="scoreWall">0</b>点</p>
       <p>反射板 <b id="scoreGlass">0</b>点</p>
       <p>2回反射 <b id="scoreDouble">0</b>点</p>
+      <p>反射波タップ <b id="scoreReflectionTap">0</b>点</p>
     </div>
     <p id="resultRouteStatus" class="resultStatus">今回の有効ルート：<b id="routeCount">0</b>件</p>
     <p id="resultBestRoute" class="resultStatus resultHighlight" role="status" aria-live="polite"></p>
@@ -242,7 +245,7 @@ function playStatusText(){
       ?`${MAX_TAPS}回使い切りました。波の結果を待っています。${PLAY_SECONDS}秒の終了時に結果を表示します。`
       :`${MAX_TAPS}回使い切り、波も消えました。${PLAY_SECONDS}秒の終了時に結果を表示します。`;
   }
-  return'目的：波をビーコンに重ねる。反射板経由は高得点です。';
+  return'目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。';
 }
 
 function updatePlayStatus(force=false){
@@ -284,7 +287,7 @@ function updatePlayTime(timestamp){
 }
 
 function applyTimedInput(input){
-  world.tap(input.x,input.y);
+  world.tap(input.x,input.y,{action:input.action??'auto'});
 }
 
 function advanceSimulation(timestamp){
@@ -388,11 +391,23 @@ function bindCanvasInput(){
       return;
     }
     const point=clientToLogical(event.clientX,event.clientY,target.getBoundingClientRect(),viewport);
-    if(point&&timedInputs.enqueueWithinLimit({
-      x:point.x,
-      y:point.y,
-      timestamp:inputTimestamp
-    },{accepted:world.taps,maximum:MAX_TAPS})){
+    const reflectionTarget=point&&world.findReflectionTapTarget(point.x,point.y);
+    const input={
+      x:point?.x,
+      y:point?.y,
+      timestamp:inputTimestamp,
+      action:reflectionTarget?'reflection':'root'
+    };
+    const pendingReflectionCount=timedInputs.pending.reduce((count,entry)=>
+      count+(entry.action==='reflection'?1:0),0);
+    const accepted=point&&(reflectionTarget
+      ?pendingReflectionCount<MAX_TAPS&&timedInputs.enqueue(input)
+      :timedInputs.enqueueWithinLimit(input,{
+        accepted:world.taps,
+        maximum:MAX_TAPS,
+        pendingCount:entry=>entry.action!=='reflection'
+      }));
+    if(accepted){
       playHaptic('TAP');
       void audioReady.then(ready=>{
         if(ready&&state==='PLAYING'&&!rendererSuspended){
@@ -639,6 +654,7 @@ function resultNextGoal(breakdown,routeCount){
   if(routeCount===0)return'次の目標：まずビーコンに1回波を重ねる';
   if(breakdown.glass<=0)return'次の目標：反射板を使う経路を1回成功させる';
   if(breakdown.double<=0)return'次の目標：2回反射を1回成功させる';
+  if((breakdown.reflectionTap??0)<=0)return'次の目標：反射した波の輪を1回タップしてボーナスを得る';
   return'次の目標：別の経路を探して最高経路を更新する';
 }
 
@@ -670,6 +686,7 @@ function finish(){
   $('scoreWall').textContent=String(breakdown.wall);
   $('scoreGlass').textContent=String(breakdown.glass);
   $('scoreDouble').textContent=String(breakdown.double);
+  $('scoreReflectionTap').textContent=String(breakdown.reflectionTap??0);
   const routeCount=world.getDiscoveredRouteCount();
   $('routeCount').textContent=String(routeCount);
   $('resultBestRoute').textContent=formatBestRoute(world.getBestRoute());
@@ -919,6 +936,16 @@ world.onHit=hit=>{
   playCue('WATER_SPLASH');
   playHitHaptic(hit);
   showHitFeedback(hit);
+};
+world.onReflectionTap=tap=>{
+  playCue(tap?.judgement??'GOOD');
+  playCue('WATER_RIPPLE');
+  playHitHaptic(tap);
+  const depth=tap?.reflections>=2?'2回反射':'反射';
+  presentFeedback(`反射波タップ：+${tap.points}（${tap.judgement}・${depth}）`,{
+    status:'reflection-tap',
+    duration:1200
+  });
 };
 world.onRoute=summary=>{
   showRouteFeedback(summary);

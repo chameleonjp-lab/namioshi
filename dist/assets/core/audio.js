@@ -51,6 +51,10 @@ export const SOUND_CUES=Object.freeze({
     {frequency:280,duration:.1,type:'sine',volume:.016},
     {frequency:420,duration:.1,type:'sine',delay:.06,volume:.014}
   ]),
+  WATER_RIPPLE:Object.freeze([
+    {frequency:230,duration:.07,type:'sine',volume:.016},
+    {frequency:460,duration:.08,type:'triangle',delay:.035,volume:.012}
+  ]),
   WATER_SETTLE:Object.freeze([
     {frequency:180,duration:.12,type:'sine',volume:.012},
     {frequency:270,duration:.12,type:'sine',delay:.08,volume:.01}

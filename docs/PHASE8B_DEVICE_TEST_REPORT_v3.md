@@ -167,6 +167,6 @@ Phase 8Bは未完了である。PR #59配信後のCloud Chromeでは入力なし
 - 得点、物理、保存、ランキング、Supabaseは変更していない。実ブラウザ、iPhone・iPad、案内が盤面を隠しすぎないこと、人の初見理解、ランキング再開、Ready化、マージは未確認または未承認のまま維持する。
 # 現行Draft追補（10回タップ・水系効果音）
 
-PR #66統合後main `c3ec10a6e74467bfd8e8ba727b02c634541d01d2`を基準に、根の波を最大10回へ変更し、水系SEを追加するDraftを検証する。現行ルール版は`namioshi-v3-strategy-003`、client versionは`namioshi-v3.3.0-official004`、seasonは`prelaunch-v3`、hard ceilingは10800点である。旧6回・6480点の端末記録は分離する。
+PR #67統合後main `72a3d5d97602c59d202b50c3b46605561f47ba6a`を基準に、反射波タップの技能ボーナスを追加するDraftを検証する。現行ルール版は`namioshi-v3-reflection-tap-004`、client versionは`namioshi-v3.4.0-official005`、seasonは`prelaunch-v4`、hard ceilingは11200点（経路10800＋技能400）である。旧6回・6480点と旧v3の端末記録は分離する。
 
-Node自動試験、build、strategy snapshot、音なし表示は自動確認対象とする。水系SEの聞き分け、10回表示の実機視認性、iPhone・iPad、初見プレイ、ランキング再開、Ready化、マージは未確認・未承認として記録する。
+Node自動試験、build、strategy snapshot、技能ボーナスの重複抑制、音なし表示は自動確認対象とする。反射弧の狙いやすさ、水系SEの聞き分け、10回表示の実機視認性、iPhone・iPad、初見プレイ、ランキング再開、Ready化、マージは未確認・未承認として記録する。

@@ -74,20 +74,25 @@ export class TimedInputQueue{
     // The browser event stream is the source of same-time ordering.  Do not
     // accept caller-supplied order values that could reorder that stream.
     const order=this.nextOrder++;
-    this.entries.push({
+    const entry={
       x,
       y:pointY,
       timestamp:time,
       order
-    });
+    };
+    if(input.action==='reflection')entry.action='reflection';
+    else if(input.action==='root')entry.action='root';
+    this.entries.push(entry);
     this.entries.sort((left,right)=>left.timestamp-right.timestamp||left.order-right.order);
     return true;
   }
 
-  enqueueWithinLimit(input,{accepted=0,maximum=Number.POSITIVE_INFINITY}={}){
+  enqueueWithinLimit(input,{accepted=0,maximum=Number.POSITIVE_INFINITY,pendingCount=null}={}){
     if(!Number.isFinite(accepted)||accepted<0)return false;
     if(!(Number.isFinite(maximum)||maximum===Number.POSITIVE_INFINITY)||maximum<0)return false;
-    if(accepted+this.entries.length>=maximum)return false;
+    const countPending=typeof pendingCount==='function'?pendingCount:()=>1;
+    const pending=this.entries.reduce((count,entry)=>count+(countPending(entry)?1:0),0);
+    if(accepted+pending>=maximum)return false;
     return this.enqueue(input);
   }
 
