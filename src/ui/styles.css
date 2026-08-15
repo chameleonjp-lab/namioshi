@@ -188,6 +188,11 @@ p{line-height:1.55;color:#bad9e8}
   opacity:1;
   transform:translate(-50%,0) scale(1);
 }
+.hitFeedback[data-route-status="impact"]{
+  border-color:rgba(88,240,255,.62);
+  color:#d9f8ff;
+  box-shadow:0 0 24px rgba(88,240,255,.24);
+}
 .hitFeedback[data-route-status="known"]{
   border-color:rgba(181,205,219,.52);
   color:#d7e6ee;
