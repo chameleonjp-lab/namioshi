@@ -11,6 +11,7 @@ import {
   MAX_TAPS,
   MAX_WAVES,
   PLAY_SECONDS,
+  REFLECTION_TAP_RANGE,
   WALL_REFLECTION_ENERGY,
   WAVE_SPEED,
   WAVE_LIFETIME
@@ -19,7 +20,7 @@ import {judgementFromPrecision} from './judgement.js';
 import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
 import {createReflectionPath,traceReflectionPath} from './reflection-path.js';
-import {candidateScore,scoreCategory,scoreRouteKey} from './scoring.js';
+import {candidateScore,reflectionTapScore,scoreCategory,scoreRouteKey} from './scoring.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const clampVector=(x,y,maximum)=>{
@@ -76,11 +77,13 @@ export class World{
   reflectionEffects=[];
   bestHits=new Map();
   routeBestHits=new Map();
+  reflectionTapAwards=new Map();
   finalizedRoots=new Set();
   waveSequence=1;
   onHit=()=>{};
   onRoute=()=>{};
   onReflect=()=>{};
+  onReflectionTap=()=>{};
 
   constructor({random=Math.random}={}){
     if(typeof random!=='function')throw new TypeError('random source must be a function');
@@ -113,18 +116,98 @@ export class World{
     this.reflectionEffects=[];
     this.bestHits=new Map();
     this.routeBestHits=new Map();
+    this.reflectionTapAwards=new Map();
     this.finalizedRoots=new Set();
     this.waveSequence=1;
     this.beacons=layout.beacons;
     this.glass=layout.glass;
   }
 
-  tap(x,y){
+  tap(x,y,{action='auto'}={}){
+    if(action!=='root'){
+      const target=this.findReflectionTapTarget(x,y);
+      if(target)return this.registerReflectionTap(target,x,y);
+      if(action==='reflection')return false;
+    }
     if(this.taps>=MAX_TAPS)return false;
     const tapNumber=this.taps+1;
     const wave=this.addWave(x,y,0,'direct',{rootTapId:`tap-${tapNumber}`});
     if(!wave)return false;
     this.taps=tapNumber;
+    return true;
+  }
+
+  /**
+   * Find the closest visible reflected-wave ring beneath a tap. The tap may
+   * be slightly inside or outside the ring to account for pointer accuracy,
+   * but the projected point must still be on the finite reflected path.
+   */
+  findReflectionTapTarget(x,y){
+    if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+    let best=null;
+    for(const wave of this.waves){
+      const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
+      const rootTapId=wave.rootTapId;
+      if(
+        depth<=0||
+        wave.reflectionTapUsed||
+        this.reflectionTapAwards.has(rootTapId)||
+        this.finalizedRoots.has(rootTapId)||
+        !Number.isFinite(wave.radius)||
+        wave.radius<=0
+      )continue;
+      const distance=Math.hypot(x-wave.originX,y-wave.originY);
+      if(distance<=1e-7)continue;
+      const radialError=Math.abs(distance-wave.radius);
+      const tapRange=Math.max(REFLECTION_TAP_RANGE,wave.width*1.5);
+      if(radialError>tapRange)continue;
+      const projectionScale=wave.radius/distance;
+      const projectedX=wave.originX+(x-wave.originX)*projectionScale;
+      const projectedY=wave.originY+(y-wave.originY)*projectionScale;
+      if(!this.traceWavePath(wave,projectedX,projectedY).valid)continue;
+      const precision=Math.max(0,Math.min(1,1-radialError/tapRange));
+      const candidate={
+        wave,
+        rootTapId,
+        reflectionDepth:depth,
+        radialError,
+        precision,
+        projectedX,
+        projectedY
+      };
+      if(
+        !best||
+        candidate.radialError<best.radialError-1e-9||
+        candidate.radialError<=best.radialError+1e-9&&candidate.reflectionDepth>best.reflectionDepth||
+        candidate.radialError<=best.radialError+1e-9&&candidate.reflectionDepth===best.reflectionDepth&&wave.id<best.wave.id
+      )best=candidate;
+    }
+    return best;
+  }
+
+  registerReflectionTap(target,x,y){
+    if(!target?.wave||this.reflectionTapAwards.has(target.rootTapId))return false;
+    if(this.reflectionTapAwards.size>=MAX_TAPS)return false;
+    const points=reflectionTapScore(target.reflectionDepth,target.precision);
+    const award={
+      rootTapId:target.rootTapId,
+      waveId:target.wave.id,
+      reflections:target.reflectionDepth,
+      reflectionDepth:target.reflectionDepth,
+      precision:target.precision,
+      judgement:judgementFromPrecision(target.precision),
+      radialError:target.radialError,
+      x,
+      y,
+      points,
+      score:points,
+      routeStatus:'reflection-tap'
+    };
+    target.wave.reflectionTapUsed=true;
+    this.reflectionTapAwards.set(target.rootTapId,award);
+    this.burst(x,y);
+    this.rebuildRouteScore();
+    this.onReflectionTap({...award});
     return true;
   }
 
@@ -205,6 +288,7 @@ export class World{
       score+=candidate.score;
       breakdown[candidate.category]+=candidate.score;
     }
+    score+=this.getReflectionTapScore();
     this.routeBestHits=routes;
     this.scoreBreakdown=breakdown;
     this.score=score;
@@ -705,7 +789,22 @@ export class World{
   }
 
   getScoreBreakdown(){
-    return{...this.scoreBreakdown};
+    const breakdown={...this.scoreBreakdown};
+    const reflectionTap=this.getReflectionTapScore();
+    if(reflectionTap>0)breakdown.reflectionTap=reflectionTap;
+    return breakdown;
+  }
+
+  getReflectionTapScore(){
+    let score=0;
+    for(const award of this.reflectionTapAwards.values())score+=award.score;
+    return score;
+  }
+
+  getScoreLedgerSum(){
+    let score=this.getReflectionTapScore();
+    for(const candidate of this.routeBestHits.values())score+=candidate.score;
+    return score;
   }
 
   getDiscoveredRouteCount(){

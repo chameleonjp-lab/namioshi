@@ -52,7 +52,7 @@ test('legacy numeric play count is treated as the official count',()=>{
 test('a best score from the previous rule remains separate',()=>{
   const storage=new MemoryStorage();
   storage.setItem('namioshi.bestScore','6400');
-  assert.match(STORAGE_KEYS.bestScore,/namioshi-v3-strategy-003/);
+  assert.match(STORAGE_KEYS.bestScore,/namioshi-v3-reflection-tap-004/);
   assert.equal(readPlayerState(storage).bestScore,null);
   const result=recordPlayResult({mode:'official',score:1200,displayName:'新ルール'},storage);
   assert.equal(result.bestScore,1200);

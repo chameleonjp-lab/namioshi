@@ -20,6 +20,10 @@ if(process.argv.includes('--write')){
 
 if(result.waveSpeed!==110)failures.push(`wave speed ${result.waveSpeed} is not 110`);
 if(result.maxTaps!==10)failures.push(`max taps ${result.maxTaps} is not 10`);
+if(result.scoreHardCeiling!==11200)failures.push(`score hard ceiling ${result.scoreHardCeiling} is not 11200`);
+if(result.reflectionTap!=='excluded from root-placement baselines; covered by World unit fixtures'){
+  failures.push('strategy baselines must remain root-placement-only while reflection taps use dedicated World fixtures');
+}
 for(const [label,entry] of Object.entries(result.random)){
   if(entry.runs!==1000)failures.push(`${label} random run count ${entry.runs} is not 1000`);
   if(entry.q10<1100)failures.push(`${label} random q10 ${entry.q10} is below 1100`);

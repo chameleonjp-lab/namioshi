@@ -227,6 +227,23 @@ test('the exact play deadline accepts 29,999ms and reserves ten equal-time input
   assert.deepEqual(delivered,[0,1,2,3,4,5,6,7,8,9]);
 });
 
+test('reflection actions remain queued without consuming a pending root-tap slot',()=>{
+  const queue=new TimedInputQueue();
+  queue.reset(0);
+  for(let index=0;index<MAX_TAPS;index++){
+    assert.equal(queue.enqueue({x:index,y:index,timestamp:index,action:'root'}),true);
+  }
+  assert.equal(queue.enqueue({x:100,y:100,timestamp:20,action:'reflection'}),true);
+  assert.equal(queue.enqueueWithinLimit({x:200,y:200,timestamp:21,action:'root'},{
+    accepted:0,
+    maximum:MAX_TAPS,
+    pendingCount:entry=>entry.action!=='reflection'
+  }),false);
+  const actions=[];
+  queue.drainThrough(20,input=>actions.push(input.action));
+  assert.equal(actions.at(-1),'reflection');
+});
+
 test('an input exactly on a fixed boundary drains after that step',()=>{
   const queue=new TimedInputQueue();
   queue.reset(0);

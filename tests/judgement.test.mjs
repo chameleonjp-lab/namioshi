@@ -637,6 +637,94 @@ test('one accepted tap creates one root wave and reflection depth stops at two',
   assert.equal(world.waves.filter(wave=>wave.parentWaveId===depthTwo.waveId).length,0);
 });
 
+test('a well-timed reflected-wave tap awards one bounded bonus without a root wave',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const reflectionPath=createReflectionPath({
+    surfaceKey:'wall:skill',
+    surfaceKind:'wall',
+    x1:50,
+    y1:0,
+    x2:50,
+    y2:200,
+    parentOriginX:100,
+    parentOriginY:100,
+    childOriginX:0,
+    childOriginY:100
+  });
+  const wave=world.addWave(0,100,1,'wall',{
+    rootTapId:'skill-root',
+    reflectionPath,
+    radius:100,
+    speed:0
+  });
+  const awards=[];
+  world.onReflectionTap=award=>awards.push(award);
+
+  assert.equal(world.tap(100,100),true);
+  assert.equal(world.taps,0);
+  assert.equal(world.waves.length,1);
+  assert.equal(world.score,20);
+  assert.equal(world.getReflectionTapScore(),20);
+  assert.equal(world.getScoreBreakdown().reflectionTap,20);
+  assert.equal(awards.length,1);
+  assert.equal(awards[0].judgement,'PERFECT');
+  assert.equal(awards[0].reflections,1);
+  assert.equal(world.tap(100,100),true);
+  assert.equal(world.taps,1);
+  assert.equal(world.score,20);
+  assert.equal(world.getReflectionTapScore(),20);
+  assert.equal(wave.reflectionTapUsed,true);
+});
+
+test('a double-reflection tap reaches at most forty points and remains available after root taps end',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  for(let index=0;index<10;index++)assert.equal(world.tap(300+index,600),true);
+  const first=createReflectionPath({
+    surfaceKey:'wall:skill-first',
+    surfaceKind:'wall',
+    x1:50,
+    y1:0,
+    x2:50,
+    y2:200,
+    parentOriginX:100,
+    parentOriginY:100,
+    childOriginX:0,
+    childOriginY:100
+  });
+  const second=createReflectionPath({
+    previous:first,
+    surfaceKey:'glass:skill-second',
+    surfaceKind:'glass',
+    x1:150,
+    y1:0,
+    x2:150,
+    y2:200,
+    parentOriginX:0,
+    parentOriginY:100,
+    childOriginX:200,
+    childOriginY:100
+  });
+  world.addWave(200,100,2,'glass',{
+    rootTapId:'skill-double-root',
+    reflectionPath:second,
+    radius:200,
+    speed:0
+  });
+  assert.equal(world.tap(0,100),true);
+  assert.equal(world.taps,10);
+  assert.equal(world.score,40);
+  assert.equal(world.getScoreBreakdown().reflectionTap,40);
+  assert.equal(world.tap(0,100),false);
+});
+
 test('the same tap and beacon keep only the highest candidate score',()=>{
   const world=new World({random:()=>.5});
   world.reset();
@@ -692,4 +780,10 @@ test('score bases distinguish direct, wall, reflector, and double reflection',as
     scoring.candidateScore('glass',1),
     scoring.candidateScore('double',1)
   ],[24,120,216,360]);
+  assert.deepEqual([
+    scoring.reflectionTapScore(1,0),
+    scoring.reflectionTapScore(1,1),
+    scoring.reflectionTapScore(2,0),
+    scoring.reflectionTapScore(2,1)
+  ],[10,20,20,40]);
 });
