@@ -2,6 +2,7 @@ import {
   CLIENT_VERSION,
   LOGICAL_HEIGHT,
   LOGICAL_WIDTH,
+  MAX_TAPS,
   OFFICIAL_LAYOUT_FINGERPRINT,
   OFFICIAL_LAYOUT_ID,
   OFFICIAL_LAYOUT_VERSION,
@@ -13,10 +14,10 @@ import {GAME_MODE} from '../src/game/modes.js';
 import {advancePlayFrame,FixedStepRunner,TimedInputQueue} from '../src/game/session.js';
 import {World} from '../src/game/world.js';
 
-const FULL_ROUND_TIMESTAMPS=Object.freeze([1000,6000,11000,16000,21000,26000]);
+const FULL_ROUND_TIMESTAMPS=Object.freeze([1000,4000,7000,10000,13000,16000,19000,22000,25000,28000]);
 
 export const STRATEGY_ANALYSIS_CONFIG=Object.freeze({
-  analysisVersion:'namioshi-strategy-analysis-002',
+  analysisVersion:'namioshi-strategy-analysis-003',
   waveSpeed:WAVE_SPEED,
   percentileMethod:'sorted[floor((n-1)*ratio)]',
   coordinateDomain:Object.freeze({xMin:0,xMax:LOGICAL_WIDTH,yMin:0,yMax:LOGICAL_HEIGHT}),
@@ -28,11 +29,15 @@ export const STRATEGY_ANALYSIS_CONFIG=Object.freeze({
   }),
   designedInputs:Object.freeze([
     Object.freeze([60,310,1000]),
-    Object.freeze([270,220,6000]),
-    Object.freeze([240,280,11000]),
-    Object.freeze([300,280,16000]),
-    Object.freeze([120,250,21000]),
-    Object.freeze([90,280,26000])
+    Object.freeze([300,260,4000]),
+    Object.freeze([60,280,7000]),
+    Object.freeze([270,260,10000]),
+    Object.freeze([300,480,13000]),
+    Object.freeze([120,500,16000]),
+    Object.freeze([90,280,19000]),
+    Object.freeze([240,240,22000]),
+    Object.freeze([150,120,25000]),
+    Object.freeze([330,100,28000])
   ]),
   repeated:Object.freeze({
     timestamps:FULL_ROUND_TIMESTAMPS,
@@ -280,6 +285,7 @@ export function analyzeStrategy(){
     analysisVersion:STRATEGY_ANALYSIS_CONFIG.analysisVersion,
     clientVersion:CLIENT_VERSION,
     ruleVersion:OFFICIAL_RULE_VERSION,
+    maxTaps:MAX_TAPS,
     layoutId:OFFICIAL_LAYOUT_ID,
     layoutVersion:OFFICIAL_LAYOUT_VERSION,
     layoutFingerprint:OFFICIAL_LAYOUT_FINGERPRINT,

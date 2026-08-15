@@ -3,12 +3,32 @@ export const SOUND_STORAGE_KEY='namioshi.settings.sound';
 export const SOUND_CUES=Object.freeze({
   ENABLE:Object.freeze([{frequency:440,duration:.06,type:'sine',volume:.035}]),
   TAP:Object.freeze([{frequency:180,duration:.07,type:'triangle',volume:.04}]),
+  // Low, short layered tones make the optional cues read as water without
+  // requiring a downloaded audio asset. They are intentionally quieter than
+  // judgement cues so the action remains understandable when several events
+  // settle close together.
+  WATER_TAP:Object.freeze([
+    {frequency:145,duration:.09,type:'sine',volume:.018},
+    {frequency:290,duration:.055,type:'triangle',delay:.03,volume:.012}
+  ]),
   WALL_REFLECT:Object.freeze([{frequency:260,duration:.055,type:'triangle',volume:.028}]),
+  WATER_WALL:Object.freeze([
+    {frequency:210,duration:.07,type:'triangle',volume:.014},
+    {frequency:140,duration:.09,type:'sine',delay:.035,volume:.01}
+  ]),
   GLASS_REFLECT:Object.freeze([
     {frequency:520,duration:.07,type:'sine',volume:.026},
     {frequency:720,duration:.06,type:'sine',delay:.035,volume:.022}
   ]),
+  WATER_GLASS:Object.freeze([
+    {frequency:390,duration:.06,type:'sine',volume:.014},
+    {frequency:260,duration:.08,type:'sine',delay:.04,volume:.011}
+  ]),
   HIT:Object.freeze([{frequency:320,duration:.075,type:'triangle',volume:.038}]),
+  WATER_SPLASH:Object.freeze([
+    {frequency:95,duration:.08,type:'triangle',volume:.02},
+    {frequency:250,duration:.05,type:'sine',delay:.02,volume:.015}
+  ]),
   GOOD:Object.freeze([{frequency:460,duration:.085,type:'triangle',volume:.04}]),
   GREAT:Object.freeze([
     {frequency:600,duration:.08,type:'sine',volume:.04},
@@ -26,6 +46,14 @@ export const SOUND_CUES=Object.freeze({
   RESULT:Object.freeze([
     {frequency:330,duration:.12,type:'sine',volume:.035},
     {frequency:494,duration:.12,type:'sine',delay:.075,volume:.03}
+  ]),
+  WATER_SCORE:Object.freeze([
+    {frequency:280,duration:.1,type:'sine',volume:.016},
+    {frequency:420,duration:.1,type:'sine',delay:.06,volume:.014}
+  ]),
+  WATER_SETTLE:Object.freeze([
+    {frequency:180,duration:.12,type:'sine',volume:.012},
+    {frequency:270,duration:.12,type:'sine',delay:.08,volume:.01}
   ])
 });
 

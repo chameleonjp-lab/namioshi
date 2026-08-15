@@ -209,7 +209,7 @@ test('timed input queue orders equal timestamps and uses a half-open deadline',(
   assert.deepEqual(second,[7]);
 });
 
-test('the exact play deadline accepts 29,999ms and reserves only six equal-time inputs',()=>{
+test('the exact play deadline accepts 29,999ms and reserves ten equal-time inputs',()=>{
   const queue=new TimedInputQueue();
   queue.reset(0);
   queue.closeBefore(30000);
@@ -224,7 +224,7 @@ test('the exact play deadline accepts 29,999ms and reserves only six equal-time 
   assert.equal(queue.enqueue({x:8,y:8,timestamp:30001}),false);
   const delivered=[];
   queue.drainThrough(30000,input=>delivered.push(input.x));
-  assert.deepEqual(delivered,[0,1,2,3,4,5]);
+  assert.deepEqual(delivered,[0,1,2,3,4,5,6,7,8,9]);
 });
 
 test('an input exactly on a fixed boundary drains after that step',()=>{
