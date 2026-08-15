@@ -199,7 +199,7 @@ test('the play contract gives the player time and decisions to plan reflections'
   const config=await import(new URL('../src/config.js',import.meta.url));
   const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
   assert.equal(config.PLAY_SECONDS,30);
-  assert.equal(config.MAX_TAPS,6);
+  assert.equal(config.MAX_TAPS,10);
   assert.match(main,/反射板/);
   assert.match(main,/id="scoreGlass"/);
   assert.match(main,/id="guideOverlay"/);

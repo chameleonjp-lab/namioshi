@@ -56,7 +56,7 @@ test('enabled service accepts official scores once and sends the versioned contr
     p_display_name:'player',
     p_game_slug:'namioshi',
     p_score:100,
-    p_client_version:'namioshi-v3.2.0-official003',
+    p_client_version:'namioshi-v3.3.0-official004',
     p_play_id:'play-1',
     p_rule_version:OFFICIAL_RULE_VERSION,
     p_season:RANKING_SEASON
@@ -90,7 +90,7 @@ test('practice mode, invalid values, and unsafe play IDs are rejected before fet
   let calls=0;
   const service=createRankingService({enabled:true,fetchImpl:async()=>{calls++;return response()}});
   await assert.rejects(service.submitScore('player',100,{playId:'practice',mode:'practice'}),error=>error.code==='RANKING_MODE_REJECTED');
-  await assert.rejects(service.submitScore('player',6481,{playId:'too-high'}),error=>error.code==='RANKING_INVALID_SCORE');
+  await assert.rejects(service.submitScore('player',10801,{playId:'too-high'}),error=>error.code==='RANKING_INVALID_SCORE');
   await assert.rejects(service.submitScore('',100,{playId:'empty-name'}),error=>error.code==='RANKING_INVALID_NAME');
   await assert.rejects(service.submitScore('player',100,{playId:'not safe'}),error=>error.code==='RANKING_INVALID_PLAY_ID');
   assert.equal(calls,0);

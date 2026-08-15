@@ -19,12 +19,13 @@ if(process.argv.includes('--write')){
 }
 
 if(result.waveSpeed!==110)failures.push(`wave speed ${result.waveSpeed} is not 110`);
+if(result.maxTaps!==10)failures.push(`max taps ${result.maxTaps} is not 10`);
 for(const [label,entry] of Object.entries(result.random)){
   if(entry.runs!==1000)failures.push(`${label} random run count ${entry.runs} is not 1000`);
   if(entry.q10<1100)failures.push(`${label} random q10 ${entry.q10} is below 1100`);
-  if(entry.median>2100)failures.push(`${label} random median ${entry.median} exceeds 2100`);
-  if(entry.q90>2600)failures.push(`${label} random q90 ${entry.q90} exceeds 2600`);
-  if(entry.maximum>3500)failures.push(`${label} random maximum ${entry.maximum} exceeds 3500`);
+  if(entry.median>2700)failures.push(`${label} random median ${entry.median} exceeds 2700`);
+  if(entry.q90>3400)failures.push(`${label} random q90 ${entry.q90} exceeds 3400`);
+  if(entry.maximum>4600)failures.push(`${label} random maximum ${entry.maximum} exceeds 4600`);
   if(entry.zeroScores!==0)failures.push(`${label} random has ${entry.zeroScores} zero scores`);
   if(entry.doubleShareMedian<.25||entry.doubleShareMedian>.45){
     failures.push(`${label} double-reflection median share ${entry.doubleShareMedian} is outside 0.25..0.45`);
@@ -56,7 +57,7 @@ if(result.twoPointBaseline.ratioFromDesigned<1.25){
 if(result.twoPointBaseline.scoreDrops!==0||result.twoPointBaseline.integrityFailures!==0){
   failures.push('two-point baseline has score drops or integrity failures');
 }
-if(result.designed.score<4200)failures.push(`designed score ${result.designed.score} is below 4200`);
+if(result.designed.score<7000)failures.push(`designed score ${result.designed.score} is below 7000`);
 if(result.designed.ratioToCalibrationMedian<2){
   failures.push(`designed/calibration ratio ${result.designed.ratioToCalibrationMedian} is below 2`);
 }

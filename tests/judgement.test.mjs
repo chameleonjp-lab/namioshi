@@ -673,7 +673,7 @@ test('the same tap and beacon keep only the highest candidate score',()=>{
   assert.equal(Object.values(world.getScoreBreakdown()).reduce((total,points)=>total+points,0),world.score);
 });
 
-test('world ignores taps after the six-tap limit',async()=>{
+test('world ignores taps after the ten-tap limit',async()=>{
   const {MAX_TAPS}=await import(new URL('../src/config.js',import.meta.url));
   const world=new World({random:()=>.5});
   world.reset();

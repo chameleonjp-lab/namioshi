@@ -1,5 +1,7 @@
 # namioshi サーバーランキング契約 v1
 
+> 現行Draftの契約値: `namioshi-v3.3.0-official004` / `namioshi-v3-strategy-003` / `prelaunch-v3` / 0〜10800点。旧6回・6480点の値は歴史資料であり、新seasonへ移行しない。
+
 状態: 未適用・未有効化
 
 基準: `main` の Pull Request #46 統合後（`2ceb5a4`）
@@ -19,10 +21,10 @@
   "p_display_name": "プレイヤー名",
   "p_game_slug": "namioshi",
   "p_score": 1230,
-  "p_client_version": "namioshi-v3.2.0-official003",
+  "p_client_version": "namioshi-v3.3.0-official004",
   "p_play_id": "端末内で一度だけ作る識別子",
-  "p_rule_version": "namioshi-v3-strategy-002",
-  "p_season": "prelaunch-v2"
+  "p_rule_version": "namioshi-v3-strategy-003",
+  "p_season": "prelaunch-v3"
 }
 ```
 
@@ -31,7 +33,7 @@
 - ランキング設定が有効か
 - `game_slug`が`namioshi`か
 - 名前が1〜20文字か
-- スコアが0〜6480点の整数か
+- スコアが0〜10800点の整数か
 - 許可したクライアント版、ルール版、seasonか
 - `play_id`が安全な文字だけで1〜128文字か
 - 同じ`play_id`の再送が同じ内容なら、同じ結果を返すか

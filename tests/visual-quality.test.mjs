@@ -52,7 +52,7 @@ test('hit feedback distinguishes new, improved, and known routes without sound',
   assert.match(main,/別の経路を探そう/);
   assert.match(main,/duration:1400/);
   assert.match(main,/showHitFeedback\(hit\)/);
-  assert.match(main,/world\.onRoute=showRouteFeedback/);
+  assert.match(main,/world\.onRoute=summary=>\{[\s\S]*?showRouteFeedback\(summary\)/);
   assert.match(main,/namioshi\.guide\.completed\.\$\{OFFICIAL_RULE_VERSION\}/);
   assert.match(styles,/\.hitFeedback\{/);
   assert.match(styles,/\.hitFeedback\.show\{/);
@@ -103,7 +103,7 @@ test('rules and practice entry explain scoring and the post-tap wait',()=>{
   assert.match(main,/ビーコンに波が重なると命中。反射板に当てるだけでは得点にならない/);
   assert.match(main,/基準点は直接20点、壁100点、反射板180点、2回反射300点/);
   assert.match(main,/命中確認は接触時、得点は波の精算時に「得点確定」として表示する/);
-  assert.match(main,/6回使い切っても、30秒までは波の結果を待つ/);
+  assert.match(main,/\$\{MAX_TAPS\}回使い切っても、30秒までは波の結果を待つ/);
   assert.match(main,/毎回変わる配置で反射経路を練習します/);
   assert.match(main,/ランキング外。練習結果は送信しません/);
 });

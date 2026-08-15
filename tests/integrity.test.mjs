@@ -276,7 +276,7 @@ test('a valid two-surface route keeps both finite crossings in reverse order',()
   );
 });
 
-test('the structural wave bound keeps all six timed taps available',()=>{
+test('the structural wave bound keeps all ten timed taps available',()=>{
   assert.equal(
     MAX_WAVES,
     MAX_TAPS*(1+REFLECTIVE_SURFACE_COUNT+REFLECTIVE_SURFACE_COUNT*(REFLECTIVE_SURFACE_COUNT-1))
@@ -291,7 +291,7 @@ test('the structural wave bound keeps all six timed taps available',()=>{
     accepted.push(world.tap(0,190));
   }
 
-  assert.deepEqual(accepted,[true,true,true,true,true,true]);
+  assert.deepEqual(accepted,Array.from({length:MAX_TAPS},()=>true));
   assert.equal(world.tap(0,190),false);
   assert.equal(world.taps,MAX_TAPS);
   assert.ok(world.waves.length<=MAX_WAVES);
@@ -449,7 +449,7 @@ test('hit shake is bounded and returns to the unchanged base trajectory',()=>{
   assert.ok(Math.hypot(beacon.vx,beacon.vy)<165);
 });
 
-test('the six-root three-beacon score ledger cannot exceed 6480 points',()=>{
+test('the ten-root three-beacon score ledger cannot exceed 10800 points',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   world.w=1000;
@@ -508,8 +508,8 @@ test('the six-root three-beacon score ledger cannot exceed 6480 points',()=>{
   world.step(1/60);
   world.finalizePendingHits();
 
-  assert.equal(world.bestHits.size,18);
-  assert.equal(world.routeBestHits.size,18);
-  assert.equal(world.score,6480);
-  assert.equal(Object.values(world.getScoreBreakdown()).reduce((sum,value)=>sum+value,0),6480);
+  assert.equal(world.bestHits.size,30);
+  assert.equal(world.routeBestHits.size,30);
+  assert.equal(world.score,10800);
+  assert.equal(Object.values(world.getScoreBreakdown()).reduce((sum,value)=>sum+value,0),10800);
 });

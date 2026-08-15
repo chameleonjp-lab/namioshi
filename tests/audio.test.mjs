@@ -106,9 +106,10 @@ test('home provides an accessible sound-effects switch',()=>{
   assert.match(main,/setSoundEnabled\(!isSoundEnabled\(\)\)/);
   assert.match(main,/setAttribute\('aria-pressed',String\(enabled\)\)/);
   assert.match(main,/function start\(mode\)\{[\s\S]*?\$\('name'\)\.blur\(\);\n  void wake\(\);/);
-  assert.match(main,/world\.onReflect=reflection=>\{[\s\S]*?const cue=reflection\.kind==='glass'\?'GLASS_REFLECT':'WALL_REFLECT';[\s\S]*?playCue\(cue\)/);
-  assert.match(main,/world\.onHit=hit=>\{playHitSound\(hit\);playHitHaptic\(hit\);showHitFeedback\(hit\)\}/);
-  assert.match(main,/audioReady\.then\(ready=>\{if\(ready&&state==='PLAYING'&&!rendererSuspended\)playCue\('TAP'\)\}\)/);
+  assert.match(main,/world\.onReflect=reflection=>\{[\s\S]*?const cue=reflection\.kind==='glass'\?'GLASS_REFLECT':'WALL_REFLECT';[\s\S]*?const waterCue=reflection\.kind==='glass'\?'WATER_GLASS':'WATER_WALL';[\s\S]*?playCue\(cue\);[\s\S]*?playCue\(waterCue\)/);
+  assert.match(main,/world\.onHit=hit=>\{[\s\S]*?playHitSound\(hit\);[\s\S]*?playCue\('WATER_SPLASH'\);[\s\S]*?playHitHaptic\(hit\);[\s\S]*?showHitFeedback\(hit\);[\s\S]*?\}/);
+  assert.match(main,/audioReady\.then\(ready=>\{[\s\S]*?playCue\('TAP'\);[\s\S]*?playCue\('WATER_TAP'\)/);
+  assert.match(main,/world\.onRoute=summary=>\{[\s\S]*?if\(summary\?\.points>0\)playCue\('WATER_SCORE'\)/);
   assert.match(main,/document\.addEventListener\('visibilitychange',syncAudioVisibility\)/);
   assert.match(main,/addEventListener\('pagehide',[\s\S]*?setAudioActive\(false\)/);
   assert.match(main,/addEventListener\('pageshow',syncAudioVisibility\)/);
@@ -156,7 +157,7 @@ test('judgement sound cues become higher and richer for better hits',async()=>{
   assert.equal(new Set(signatures).size,names.length);
   assert.deepEqual(names.map(name=>SOUND_CUES[name][0].frequency),[320,460,600,760]);
   assert.deepEqual(names.map(name=>SOUND_CUES[name].length),[1,1,2,3]);
-  for(const name of ['TAP','WALL_REFLECT','GLASS_REFLECT','DOUBLE_HIT','RESULT']){
+  for(const name of ['TAP','WALL_REFLECT','GLASS_REFLECT','DOUBLE_HIT','RESULT','WATER_TAP','WATER_WALL','WATER_GLASS','WATER_SPLASH','WATER_SCORE','WATER_SETTLE']){
     assert.ok(SOUND_CUES[name]?.length>0,`${name} cue must exist`);
   }
 });
