@@ -15,6 +15,8 @@ test('WebGL renders wave thickness as reusable triangle bands',()=>{
   assert.match(webgl,/arcBand=new Float32Array/);
   assert.match(drawWave,/TRIANGLE_STRIP/);
   assert.match(drawWave,/TRIANGLES/);
+  assert.match(webgl,/drawReflectionTapHint/);
+  assert.match(webgl,/world\.isReflectionTapAvailable\(wave\)/);
   assert.doesNotMatch(drawWave,/lineWidth/);
 });
 
@@ -28,6 +30,8 @@ test('water and beacon rendering keep two-layer surface cues and hit expansion',
   assert.match(webgl,/const pulse=\.5\+\.5\*Math\.sin/);
   assert.match(canvas,/createRadialGradient/);
   assert.match(canvas,/strokeWaveBand/);
+  assert.match(canvas,/reflectionTapHint/);
+  assert.match(canvas,/world\.isReflectionTapAvailable\(wave\)/);
   assert.match(canvas,/const pulse=\.5\+\.5\*Math\.sin/);
   assert.match(canvas,/fillReflectionArcPoints/);
 });
