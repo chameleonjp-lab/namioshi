@@ -137,6 +137,17 @@ export class World{
     return true;
   }
 
+  isReflectionTapAvailable(wave){
+    const depth=Math.max(0,wave?.reflectionDepth??wave?.reflections??0);
+    return Boolean(
+      wave&&
+      depth>0&&
+      !wave.reflectionTapUsed&&
+      !this.reflectionTapAwards.has(wave.rootTapId)&&
+      !this.finalizedRoots.has(wave.rootTapId)
+    );
+  }
+
   /**
    * Find the closest visible reflected-wave ring beneath a tap. The tap may
    * be slightly inside or outside the ring to account for pointer accuracy,
@@ -149,10 +160,7 @@ export class World{
       const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
       const rootTapId=wave.rootTapId;
       if(
-        depth<=0||
-        wave.reflectionTapUsed||
-        this.reflectionTapAwards.has(rootTapId)||
-        this.finalizedRoots.has(rootTapId)||
+        !this.isReflectionTapAvailable(wave)||
         !Number.isFinite(wave.radius)||
         wave.radius<=0
       )continue;

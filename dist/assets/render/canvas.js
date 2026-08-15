@@ -42,6 +42,21 @@ export class CanvasView{
     }
   }
 
+  reflectionTapHint(context,wave,time){
+    const pulse=.18+.10*(.5+.5*Math.sin(time*.008+(wave.id??0)));
+    context.save();
+    this.wavePath(context,wave);
+    context.strokeStyle=`rgba(255,226,123,${pulse})`;
+    context.lineWidth=this.waveVisualWidth(wave)+8;
+    context.stroke();
+    this.wavePath(context,wave);
+    context.strokeStyle=`rgba(255,238,165,${.46+pulse})`;
+    context.lineWidth=2;
+    context.setLineDash([4,6]);
+    context.stroke();
+    context.restore();
+  }
+
   strokeWaveBand(context,wave,red,green,blue,alpha,width){
     this.wavePath(context,wave);
     context.strokeStyle='rgba('+red+','+green+','+blue+','+Math.min(1,alpha+.20)+')';
@@ -169,6 +184,7 @@ export class CanvasView{
     for(const wave of world.waves){
       const [red,green,blue]=this.waveStroke(wave);
       const alpha=Math.max(0,1-wave.age/wave.life)*.78;
+      if(world.isReflectionTapAvailable(wave))this.reflectionTapHint(context,wave,time);
       this.strokeWaveBand(context,wave,red,green,blue,alpha,this.waveVisualWidth(wave));
     }
     for(const beacon of world.beacons){

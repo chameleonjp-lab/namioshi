@@ -1,13 +1,13 @@
 # Phase 7C 音・振動レポート
 
-## 現行Draft追補
+## 現行main追補
 
 10回タップDraftでは、既存の判定音と音量設定を維持したまま、水系の低音量cueを追加する。タップは波紋、壁・反射板反射は返る波、ビーコン命中は水しぶき、正の得点確定は水滴、反射波タップは`WATER_RIPPLE`、RESULTは静かな水面として再生する。初期設定オフ、音なしでも読めるHTML表示、画面非表示・ページ終了時の停止は変えない。実ブラウザと実機での聞き分けは未確認である。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 基準main: `0ecadccda073a79397caf32e31115bb1d116f904`
+- 基準main: `5a02f5aa337d848fca1a86f93bc94aaee9ba5c2f`（PR #68統合後）
 - 目的: 既存の効果音を維持し、対応環境だけで任意の振動通知を加える
 - ランキング: `RANKING_SERVICE_STATE.enabled=false`を維持
 

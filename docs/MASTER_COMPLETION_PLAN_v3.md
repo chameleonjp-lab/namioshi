@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `f10a77159eafed3dce0b347332723a75ac46a882`（Pull Request #58マージ後のmain）
+- 進捗反映基準: `5a02f5aa337d848fca1a86f93bc94aaee9ba5c2f`（Pull Request #68マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: Codeberg Pages の `/namioshi/`
 - 正式表示名: `namioshi`
@@ -1925,3 +1925,9 @@ PR #65統合後のmain `550b09b8d1e04124001d8cf3812c218854a11441`を基準に、
 PR #67統合後のmain `72a3d5d97602c59d202b50c3b46605561f47ba6a`を基準に、次のDraftは反射後の波の輪を狙う技能タップを追加する。30秒、根波10回、波速110、寿命3秒、最大2回反射、得点基礎値、公式配置の座標・指紋・配置版、二段階台帳は維持する。経路上限10800点へ深度別の反射波タップ最大400点を別加算し、総hard ceilingを11200点へ更新する。client/rule/seasonは`namioshi-v3.4.0-official005` / `namioshi-v3-reflection-tap-004` / `prelaunch-v4`へ分離する。
 
 タップ、壁・反射板反射、ビーコン命中、得点確定、RESULTに水系の短い合成cueを追加する。効果音は初期オフ、音なしでも読める画面文言、visibility/pagehide停止、ランキング無効を維持する。戦略分析は10入力の共通時刻列とsnapshotへ更新し、Draft作成後もマージしない。
+
+## 27. 2026-08-15 PR #68統合後・反射波タップ視認性補助
+
+PR #68のマージコミット`5a02f5aa337d848fca1a86f93bc94aaee9ba5c2f`を基準に、反射波タップの見つけやすさを補修する。未使用で寿命内の有限反射弧だけへ淡い黄色の補助表示を重ね、技能ボーナス取得後、根波確定後、寿命終了後は表示しない。
+
+Worldの対象判定をWebGLとCanvas 2Dで共通利用し、補助表示が反射弧の有限範囲を隠さないこと、得点・判定範囲・物理・台帳を変更しないことを自動試験で固定する。実ブラウザ、iPhone・iPad、人の初見再現性、ランキング再開、Supabase適用、Ready化は未確認または未承認のまま維持する。

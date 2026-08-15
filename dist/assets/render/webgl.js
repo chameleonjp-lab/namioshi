@@ -355,6 +355,16 @@ export class WebGLView{
     this.drawBand(this.ringBand,vertexCount,gl.TRIANGLE_STRIP,color[0],color[1],color[2],color[3]);
   }
 
+  drawReflectionTapHint(wave,time){
+    const depth=wave.reflectionDepth??wave.reflections??0;
+    if(depth<=0)return;
+    const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
+    if(pointCount===0)return;
+    const pulse=.18+.10*(.5+.5*Math.sin(time*.008+(wave.id??0)));
+    const vertexCount=fillArcBandPoints(this.arcPoints,pointCount,this.arcBand,waveVisualWidth(wave)+8);
+    this.drawBand(this.arcBand,vertexCount,this.gl.TRIANGLES,1,.86,.32,pulse);
+  }
+
   render(world,time,quality){
     const gl=this.gl;
     this.useFullViewport();
@@ -412,6 +422,7 @@ export class WebGLView{
     }
     for(const wave of world.waves){
       const fade=Math.max(0,1-wave.age/wave.life);
+      if(world.isReflectionTapAvailable(wave))this.drawReflectionTapHint(wave,time);
       this.drawWave(wave,fade);
     }
     for(const beacon of world.beacons){

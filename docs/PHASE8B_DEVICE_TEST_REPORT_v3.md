@@ -7,8 +7,8 @@ Phase 8AのNode.js標準テストで代替できない、ブラウザ表示、�
 ## 検収対象コミット
 
 - 対象: `chameleonjp-lab/namioshi`
-- 現行main: `4689107`（PR #59統合後）
-- 後続候補: `agent/namioshi-strategy-rules`
+- 現行main: `5a02f5aa337d848fca1a86f93bc94aaee9ba5c2f`（PR #68統合後）
+- 後続候補: `agent/namioshi-reflection-tap-hint`
 - ランキング: `RANKING_SERVICE_STATE.enabled=false`
 - Supabase: SQL適用、本番疎通、ランキング再開を行わない
 

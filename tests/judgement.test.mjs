@@ -680,6 +680,38 @@ test('a well-timed reflected-wave tap awards one bounded bonus without a root wa
   assert.equal(wave.reflectionTapUsed,true);
 });
 
+test('reflection tap availability follows the one-award and finalized-root limits',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const reflectionPath=createReflectionPath({
+    surfaceKey:'wall:hint',
+    surfaceKind:'wall',
+    x1:50,
+    y1:0,
+    x2:50,
+    y2:200,
+    parentOriginX:100,
+    parentOriginY:100,
+    childOriginX:0,
+    childOriginY:100
+  });
+  const wave=world.addWave(0,100,1,'wall',{
+    rootTapId:'hint-root',
+    reflectionPath,
+    radius:100,
+    speed:0
+  });
+  assert.equal(world.isReflectionTapAvailable(wave),true);
+  world.finalizedRoots.add(wave.rootTapId);
+  assert.equal(world.isReflectionTapAvailable(wave),false);
+  world.finalizedRoots.delete(wave.rootTapId);
+  wave.reflectionTapUsed=true;
+  assert.equal(world.isReflectionTapAvailable(wave),false);
+});
+
 test('a double-reflection tap reaches at most forty points and remains available after root taps end',()=>{
   const world=new World({random:()=>.5});
   world.reset();
