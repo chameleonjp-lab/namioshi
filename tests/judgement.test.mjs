@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {MAX_WAVES} from '../src/config.js';
+import {MAX_TAPS,MAX_WAVES} from '../src/config.js';
 import {HIT_JUDGEMENT,judgementFromPrecision} from '../src/game/judgement.js';
 import {createReflectionPath} from '../src/game/reflection-path.js';
 import {scoreRouteKey} from '../src/game/scoring.js';
+import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from '../src/render/reflection-arcs.js';
 import {World} from '../src/game/world.js';
 
 test('hit precision has four stable judgement levels',()=>{
@@ -710,6 +711,38 @@ test('reflection tap availability follows the one-award and finalized-root limit
   world.finalizedRoots.delete(wave.rootTapId);
   wave.reflectionTapUsed=true;
   assert.equal(world.isReflectionTapAvailable(wave),false);
+  wave.reflectionTapUsed=false;
+  for(let index=0;index<MAX_TAPS;index++){
+    world.reflectionTapAwards.set(`filled-${index}`,{score:10});
+  }
+  assert.equal(world.isReflectionTapAvailable(wave),false);
+});
+
+test('reflection tap availability matches the finite arc drawn by the renderers',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  assert.equal(world.tap(140,520,{action:'root'}),true);
+  const points=new Float32Array(REFLECTION_ARC_SEGMENTS*4);
+  let noArcFrames=0;
+  let visibleFrames=0;
+  for(let frame=0;frame<60;frame++){
+    world.step(1/60);
+    const reflected=world.waves.filter(wave=>wave.reflectionDepth>0);
+    if(!reflected.length)continue;
+    const visible=reflected.some(wave=>
+      fillReflectionArcPoints(wave,points,REFLECTION_ARC_SEGMENTS)>0
+    );
+    const available=reflected.some(wave=>world.isReflectionTapAvailable(wave));
+    if(visible){
+      visibleFrames++;
+      assert.equal(available,true);
+    }else{
+      noArcFrames++;
+      assert.equal(available,false);
+    }
+  }
+  assert.ok(noArcFrames>=40);
+  assert.ok(visibleFrames>0);
 });
 
 test('a double-reflection tap reaches at most forty points and remains available after root taps end',()=>{
