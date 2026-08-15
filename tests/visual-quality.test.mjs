@@ -86,6 +86,8 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   const styles=source('src/ui/styles.css');
   assert.match(main,/id="playLegend" class="playLegend" role="note"/);
   assert.match(main,/id="playStatus" class="playStatus" role="status"/);
+  assert.match(main,/id="reflectionTapPrompt" class="reflectionTapPrompt" role="status"[^>]*hidden/);
+  assert.match(main,/黄色い反射弧に重ねてタップ：技能ボーナス \+10〜40点/);
   assert.match(main,/目的：波をビーコンに重ねる/);
   assert.match(main,/反射板経由は高得点/);
   assert.match(main,/class="legendMark legendWave"/);
@@ -99,6 +101,8 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   assert.doesNotMatch(main,/棒に波/);
   assert.match(styles,/\.legendLine\{/);
   assert.match(styles,/\.playStatus\{/);
+  assert.match(styles,/\.reflectionTapPrompt\{/);
+  assert.match(styles,/reflectionTapPromptPulse/);
   assert.match(styles,/\.legendWave\{/);
   assert.match(styles,/\.legendBoard\{/);
   assert.match(styles,/\.legendBeacon\{/);

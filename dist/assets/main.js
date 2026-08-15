@@ -22,6 +22,7 @@ app.innerHTML=`
 <div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
 <div id="playLegend" class="playLegend" role="note" aria-label="プレイ中の目的と見方">
   <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。</div>
+  <div id="reflectionTapPrompt" class="reflectionTapPrompt" role="status" aria-live="polite" aria-atomic="true" hidden>黄色い反射弧に重ねてタップ：技能ボーナス +10〜40点（根波ごとに1回）</div>
   <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波</b>：タップ位置から広がり、ビーコンに重ねます</span></div>
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
   <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると命中し、精算時に得点が確定します</span></div>
@@ -233,6 +234,7 @@ function setState(nextState){
   $('startOfficial').disabled=busy;
   $('startPractice').disabled=busy;
   $('again').disabled=busy;
+  updateReflectionTapPrompt();
   focusStateTarget(nextState);
 }
 
@@ -255,6 +257,13 @@ function updatePlayStatus(force=false){
   if(!force&&text===lastPlayStatus)return;
   element.textContent=text;
   lastPlayStatus=text;
+}
+
+function updateReflectionTapPrompt(){
+  const prompt=$('reflectionTapPrompt');
+  if(!prompt)return;
+  const available=state==='PLAYING'&&!tutorialMode&&world.waves.some(wave=>world.isReflectionTapAvailable(wave));
+  prompt.hidden=!available;
 }
 
 function clearCountdown(){
@@ -720,6 +729,7 @@ function hud(force=false){
     lastHudTime=time;
   }
   updatePlayStatus(force);
+  updateReflectionTapPrompt();
 }
 
 function degrade(average){
