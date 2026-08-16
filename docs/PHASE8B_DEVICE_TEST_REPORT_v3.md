@@ -7,8 +7,8 @@ Phase 8AのNode.js標準テストで代替できない、ブラウザ表示、�
 ## 検収対象コミット
 
 - 対象: `chameleonjp-lab/namioshi`
-- 現行main: `4385d14c633c0d7d39c9b8b80b5fa2c277a6ff0c`（PR #71統合後）
-- 後続候補: `agent/namioshi-post71-docs-and-audit`
+- 現行main: `a7bc11fa9c4fd109541f5dfc844a6793afc02da8`（PR #77マージ後）
+- 後続候補: `agent/namioshi-post77-acceptance-status-20260817`
 - ランキング: `RANKING_SERVICE_STATE.enabled=false`
 - Supabase: SQL適用、本番疎通、ランキング再開を行わない
 
@@ -186,9 +186,18 @@ Node自動試験、build、strategy snapshot、技能ボーナスの重複抑制
 
 次の手動確認対象は、実ブラウザでの10回後の自動RESULT遷移、iPhone・iPadでの波の表示と終了タイミング、初見プレイでの反射経路理解、水系SEの聞き分けである。未確認のままランキング、Supabase、Ready化、公開判定へ進まない。
 
-## 2026-08-17 PR #77 Draftの自動検証更新
+## 2026-08-17 PR #77統合後の自動検証更新
 
-- 対象Draft head: `43113fd846907bd0c21b958e6b9bc3d3ea541bca`
-- Node.js 18・20・22のG2 Build Verification #161が成功した（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）。
+- 対象main: `a7bc11fa9c4fd109541f5dfc844a6793afc02da8`（PR #77マージ済み）
+- Node.js 18・20・22のG2 Build Verification #164が成功した（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）。
 - 反射子波は物理・得点処理を約3秒で止め、表示・技能ボーナスのタップ対象を最大10秒まで残す。プレイ説明はカウントダウン中のみ常時表示し、PLAYING中は上部ボタンで任意に開閉する。
-- 自動検証は実ブラウザ・iPhone・iPad・初見操作・視認性・終了タイミングの合格へ置き換えない。ランキング、Supabase、Ready化、公開判定、マージは停止中である。
+- 自動検証は実ブラウザ・iPhone・iPad・初見操作・視認性・終了タイミングの合格へ置き換えない。PR #77はmainへ統合済みで、ランキング、Supabase、Ready化、公開判定は停止中である。
+
+
+## 2026-08-17 PR #77統合後・次期受入ゲート
+
+- 対象main: `a7bc11fa9c4fd109541f5dfc844a6793afc02da8`（PR #77マージ済み）。
+- 自動検証済み: 155テスト、build、dist検証、配置・戦略分析、SVG、容量、20/30/60/120Hz一致、根波10回、物理・得点寿命約3秒、表示・反射波タップ対象最大10秒、説明トグル、表示中波待機。
+- 手動未確認: 実ブラウザでの10秒表示・反射波タップ・RESULT遷移、iPhone・iPadの表示と操作、初見3〜5プレイ、水系SEの聞き分け、長時間・反復・休止復帰・発熱。
+- このレポートで実施していない端末結果、音、振動、性能、スクリーンショットを推測で記録しない。
+- ランキング、Supabase、Ready化、公開判定は停止中。実機結果が得られた場合だけ、対象コミット・手順・証拠を追記する。
