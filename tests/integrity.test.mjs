@@ -344,8 +344,8 @@ test('a direct wave keeps three seconds while reflected children keep ten second
   world.step(.01);
 
   assert.equal(world.score,0);
-  assert.equal(world.waves.length,0);
-  assert.ok(world.waveFades.length>0);
+  assert.equal(world.waves.some(wave=>wave.reflectionDepth===0),false);
+  assert.ok(world.waves.some(wave=>wave.reflectionDepth>0&&wave.lifetime===REFLECTED_WAVE_LIFETIME)||world.waveFades.length>0);
   world.step(.2);
   assert.equal(world.waveFades.length,0);
 
