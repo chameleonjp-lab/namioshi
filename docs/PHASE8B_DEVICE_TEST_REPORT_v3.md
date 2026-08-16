@@ -178,3 +178,10 @@ Phase 8Bは未完了である。PR #59配信後のCloud Chromeでは入力なし
 PR #67統合後main `72a3d5d97602c59d202b50c3b46605561f47ba6a`を基準に、反射波タップの技能ボーナスを追加するDraftを検証する。現行ルール版は`namioshi-v3-reflection-tap-004`、client versionは`namioshi-v3.4.0-official005`、seasonは`prelaunch-v4`、hard ceilingは11200点（経路10800＋技能400）である。旧6回・6480点と旧v3の端末記録は分離する。
 
 Node自動試験、build、strategy snapshot、技能ボーナスの重複抑制、音なし表示は自動確認対象とする。反射弧の狙いやすさ、水系SEの聞き分け、10回表示の実機視認性、iPhone・iPad、初見プレイ、ランキング再開、Ready化、マージは未確認・未承認として記録する。
+
+
+## 2026-08-16 PR #73統合後・未確認項目
+
+基準mainは`148ff54ea516f24ffe02501fdb4797ff915adad5`（PR #73統合後）である。自動テスト153件、build、dist検証、配置・戦略分析、レイアウト確認、容量確認、GitHub Actions G2 Build Verification #131は成功した。
+
+次の手動確認対象は、実ブラウザでの10回後の自動RESULT遷移、iPhone・iPadでの波の表示と終了タイミング、初見プレイでの反射経路理解、水系SEの聞き分けである。未確認のままランキング、Supabase、Ready化、公開判定へ進まない。
