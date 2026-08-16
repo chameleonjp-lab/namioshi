@@ -338,7 +338,8 @@ test('a non-perfect candidate commits once in the lifetime-final slice',()=>{
     previousRadius:99,
     speed:0,
     width:10,
-    lifetime:.01
+    lifetime:.01,
+    physicsLifetime:.01
   });
   const hits=[];
   world.onHit=value=>hits.push(value);
@@ -512,6 +513,7 @@ test('reflected waves inherit the parent timing and lose reflection energy',()=>
   const root=world.addWave(10,200,0,'direct',{rootTapId:'root-timing'});
   root.radius=11;
   root.age=1.25;
+  root.displayAge=root.age;
   root.energy=1;
   const reflections=[];
   world.onReflect=value=>reflections.push(value);
