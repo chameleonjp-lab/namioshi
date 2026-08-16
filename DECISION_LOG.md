@@ -287,3 +287,12 @@ safe-areaと横画面はCSSで余白と配置を調整し、画面回転や`visu
 153. カウントダウン中は説明パネルを表示し、PLAYING中は上部の「説明を表示／説明を閉じる」ボタンで任意に開閉する。説明はHTMLテキストで、閉じても入力・得点・物理へ影響しない。
 154. 競技ルール版を`namioshi-v3-reflection-wave-lifetime-005`、client versionを`namioshi-v3.5.0-official006`、ranking seasonを`prelaunch-v5`へ分離した。旧端末ベスト、ランキング記録、初回案内完了キーを新ルールへ混ぜない。
 155. PR #77はDraftのまま検証し、GitHub Actions、実ブラウザ、iPhone・iPad、初見操作、ランキング再開、Ready化を確認するまでマージしない。
+
+
+## 2026-08-17 PR #77統合後の現行判断
+
+156. PR #77のマージコミット`a7bc11fa9c4fd109541f5dfc844a6793afc02da8`を現行mainとして扱う。PR #77のDraft前提は履歴であり、現在はmainへ統合済みである。
+157. 現行ルールは根波10回、物理・得点寿命約3秒、表示・反射波タップ対象最大10秒、COUNTDOWN説明、PLAYING説明トグル、表示中波待機、競技ルール版`namioshi-v3-reflection-wave-lifetime-005`とする。初期の6回という決定は履歴資料に限定する。
+158. G2 Build Verification #164（Node.js 18・20・22、155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）の成功を自動検証の証拠とする。実ブラウザ・実機・初見プレイの合格へ置き換えない。
+159. 実ブラウザでの10秒表示・反射波タップ・RESULT遷移、iPhone・iPadの視認性、初見3〜5プレイ、水系SEの聞き分け、長時間・反復・休止復帰・発熱は未確認としてPhase 8Bへ残す。
+160. ランキング、Supabase SQL/RPC・本番疎通、公式記録、Ready化、公開判定は停止する。次のDraftはマージ済み状態と未確認ゲートの文書同期だけを行い、ユーザーの承認なくマージしない。
