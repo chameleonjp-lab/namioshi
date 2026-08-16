@@ -1,4 +1,63 @@
-# CURRENT_TASK: PR #77・反射波10秒とプレイ説明トグル（Draft）
+# CURRENT_TASK: PR #77マージ後・Phase 8B次期受入ゲート
+
+## 基準
+
+- 対象: `chameleonjp-lab/namioshi`
+- 現行main: `a7bc11fa9c4fd109541f5dfc844a6793afc02da8`（Pull Request #77のマージコミット）
+- 次の対応ブランチ: `agent/namioshi-post77-acceptance-status-20260817`
+- 次のPull RequestはDraftのままにする
+- GitHubへのpush／Draft PR作成は行うが、マージ操作は行わない
+- `RANKING_SERVICE_STATE.enabled=false`を維持する
+
+## PR #77で完成した範囲
+
+- 根波の入力上限は10回。反射子波の物理・得点寿命は約3秒、表示と反射波タップ対象は最大10秒。
+- 根波10回後は、固定step・入力キュー・表示中の波（反射輪を含む）が空になるまで待ってRESULTへ進む。
+- COUNTDOWNは説明を表示し、PLAYINGは上部の「説明を表示／説明を閉じる」で任意開閉する。
+- 波速110、得点式、二段階台帳、反射波タップ技能ボーナス、hard ceiling11200点、水系SE、公式・練習の保存分離は維持する。
+- 競技ルール版は`namioshi-v3-reflection-wave-lifetime-005`、client versionは`namioshi-v3.5.0-official006`、seasonは`prelaunch-v5`。
+- Node.js 18・20・22のG2 Build Verification #164（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）は成功済み。
+
+## 現在の判定
+
+自動検証とPR #77のmain統合は完了した。これは実ブラウザ・実機・初見プレイの合格を意味しない。ランキング、Supabase、Ready化、公開判定は停止中である。
+
+## 次のDraftの目的（文書・検収状態の同期）
+
+今回のDraftは、PR #77のマージ済み状態をCURRENT_TASK、README、MASTER、REVIEW_CHECKLIST、Phase 8B、DECISION_LOGへ反映し、未確認ゲートを次の検収単位として固定する。ゲームコード、得点、物理、入力、描画、音、保存、ランキング、Supabaseは変更しない。
+
+## 次の受入ゲート
+
+- 実ブラウザで、反射輪が最大10秒表示され、反射波タップを受け付け、波と入力が消えた後にRESULTへ遷移すること。
+- iPhone・iPadの狭い画面で、COUNTDOWNの説明、PLAYINGのトグル、反射輪、待機表示、RESULTが盤面を隠さず読めること。
+- 初見3〜5プレイで、ビーコン命中、反射板経由、反射輪タップ、得点確定の順序を理解・再現できること。
+- 水系SEの聞き分け、音なし時のHTML表示、長時間・反復・休止復帰・発熱を確認すること。
+- 未確認項目を自動試験済みと扱わず、結果と対象コミットをPhase 8Bへ記録すること。
+
+## 未対応・停止中
+
+- 実ブラウザ、iPhone・iPad、初見操作、音の聞き分け、長時間・反復・休止復帰・発熱は未確認。
+- ランキング再開、Supabase SQL/RPC適用、本番疎通、公式記録、Ready化、公開判定はユーザー承認まで停止。
+- PR #77のマージ済み状態を確認するだけのため、今回のDraftではコードを再変更しない。
+
+## 検証手順
+
+```bash
+node --test tests/*.test.mjs
+node tools/analyze-strategy.mjs --check
+node tools/analyze-layouts.mjs --check
+node tools/render-layout-previews.mjs --check
+node scripts/build.mjs
+node scripts/verify-dist.mjs
+node scripts/report-size.mjs
+git diff --check
+```
+
+自動検証の成功は、実ブラウザ・実機の合格へ置き換えない。
+
+---
+
+# 過去CURRENT_TASK記録（PR #77以前）
 
 ## 基準
 
