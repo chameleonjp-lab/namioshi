@@ -1,32 +1,12 @@
-import {reflectionPathReaches} from '../game/reflection-path.js';
+import {
+  REFLECTION_ARC_SEGMENTS,
+  isReflectionPointVisible,
+  reflectionDepth
+} from '../game/reflection-arc-visibility.js';
 
-export const REFLECTION_ARC_SEGMENTS=96;
+export {REFLECTION_ARC_SEGMENTS,isReflectionPointVisible};
 
 const TWO_PI=Math.PI*2;
-
-function reflectionDepth(wave){
-  return Math.max(0,wave?.reflectionDepth??wave?.reflections??0);
-}
-
-function reflectionPathDepth(path){
-  let depth=0;
-  for(let current=path;current;current=current.previous)depth++;
-  return depth;
-}
-
-/**
- * A reflected wave is drawn only where its unfolded line reaches every
- * recorded finite surface in the recorded order.  Scoring uses the same
- * path contract; this helper keeps the visible ring from claiming that an
- * unreachable part of the mirror circle can hit a beacon.
- */
-export function isReflectionPointVisible(wave,x,y,scratch=null){
-  const depth=reflectionDepth(wave);
-  if(depth===0)return true;
-  if(!wave?.reflectionPath)return false;
-  if(reflectionPathDepth(wave.reflectionPath)!==depth)return false;
-  return reflectionPathReaches(wave.originX,wave.originY,x,y,wave.reflectionPath,scratch);
-}
 
 /**
  * Fill `target` with independent line segments for the finite part of a
@@ -44,7 +24,11 @@ export function fillReflectionArcPoints(
   if(target.length<segments*4){
     throw new RangeError('reflection arc buffer is too small');
   }
-  if(reflectionDepth(wave)===0)return 0;
+  if(
+    reflectionDepth(wave)===0||
+    !Number.isFinite(wave.radius)||
+    wave.radius<=0
+  )return 0;
 
   let count=0;
   const intersectionScratch={x:0,y:0};

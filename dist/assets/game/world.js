@@ -19,6 +19,7 @@ import {
 import {judgementFromPrecision} from './judgement.js';
 import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
+import {hasVisibleReflectionArc} from './reflection-arc-visibility.js';
 import {createReflectionPath,traceReflectionPath} from './reflection-path.js';
 import {candidateScore,reflectionTapScore,scoreCategory,scoreRouteKey} from './scoring.js';
 
@@ -144,7 +145,9 @@ export class World{
       depth>0&&
       !wave.reflectionTapUsed&&
       !this.reflectionTapAwards.has(wave.rootTapId)&&
-      !this.finalizedRoots.has(wave.rootTapId)
+      !this.finalizedRoots.has(wave.rootTapId)&&
+      this.reflectionTapAwards.size<MAX_TAPS&&
+      hasVisibleReflectionArc(wave)
     );
   }
 
