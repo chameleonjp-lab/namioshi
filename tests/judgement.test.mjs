@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {MAX_TAPS,MAX_WAVES} from '../src/config.js';
+import {MAX_TAPS,MAX_WAVES,REFLECTED_WAVE_LIFETIME} from '../src/config.js';
 import {HIT_JUDGEMENT,judgementFromPrecision} from '../src/game/judgement.js';
 import {createReflectionPath} from '../src/game/reflection-path.js';
 import {scoreRouteKey} from '../src/game/scoring.js';
@@ -521,7 +521,7 @@ test('reflected waves inherit the parent timing and lose reflection energy',()=>
 
   assert.equal(child.radius,root.radius);
   assert.equal(child.age,root.age);
-  assert.equal(child.lifetime,root.lifetime);
+  assert.equal(child.lifetime,Math.max(root.lifetime,REFLECTED_WAVE_LIFETIME));
   assert.equal(child.life,root.life);
   assert.equal(child.energy,.72);
   assert.equal(child.reflectionDepth,1);
