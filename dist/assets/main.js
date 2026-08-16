@@ -3,7 +3,7 @@ import {judgementFromPrecision} from './game/judgement.js';
 import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,settlePlayDeadline,shouldFinishWhenIdle,TimedInputQueue} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
-import {MAX_TAPS,OFFICIAL_RULE_VERSION,PLAY_SECONDS,WAVE_LIFETIME} from './config.js';
+import {MAX_TAPS,OFFICIAL_RULE_VERSION,PLAY_SECONDS,REFLECTED_WAVE_LIFETIME,WAVE_LIFETIME} from './config.js';
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
@@ -20,6 +20,7 @@ app.innerHTML=`
   <div class="pill">タップ <span id="tp">0</span>/${MAX_TAPS}</div>
 </div>
 <div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
+<button id="playLegendToggle" class="playLegendToggle secondary" type="button" aria-controls="playLegend" aria-expanded="false">説明を表示</button>
 <div id="playLegend" class="playLegend" role="note" aria-label="プレイ中の目的と見方">
   <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。</div>
   <div id="reflectionTapPrompt" class="reflectionTapPrompt" role="status" aria-live="polite" aria-atomic="true" hidden>黄色い反射弧に重ねてタップ：技能ボーナス +10〜40点（根波ごとに1回）</div>
@@ -27,7 +28,7 @@ app.innerHTML=`
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
   <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると命中し、精算時に得点が確定します</span></div>
   <div class="legendLine"><span class="legendMark legendTap" aria-hidden="true"></span><span><b>反射波タップ</b>：反射後の輪に重ねてタップすると、深度に応じて+10〜40点（根波ごとに1回）</span></div>
-  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波の寿命</b>：波は約${WAVE_LIFETIME}秒で自然に消えます。タップしても、出ている波は消えません</span></div>
+  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波の寿命</b>：通常の波は約${WAVE_LIFETIME}秒、反射後の輪は最大${REFLECTED_WAVE_LIFETIME}秒表示され、技能ボーナスのタップ対象です。加点と反射処理は約${WAVE_LIFETIME}秒以内です。タップしても、出ている波は消えません</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
@@ -157,6 +158,7 @@ let lastPlayStatus='';
 let countdownTimer=0;
 let countdownId=0;
 let tutorialMode=false;
+let playLegendOpen=false;
 let guideCompletedInMemory=false;
 let guideReflectionConfirmed=false;
 const fixedSteps=new FixedStepRunner();
@@ -223,7 +225,8 @@ function setState(nextState){
     $(screen)?.setAttribute?.('aria-hidden',String(!visible));
   }
   $('hud').classList.toggle('show',nextState==='PLAYING');
-  $('playLegend').classList.toggle('show',nextState==='PLAYING');
+  if(nextState!=='PLAYING')playLegendOpen=false;
+  updatePlayLegend();
   if(nextState!=='PLAYING'){
     $('hitFeedback').classList.remove('show');
     if(hitFeedbackTimer){clearTimeout(hitFeedbackTimer);hitFeedbackTimer=0;}
@@ -239,13 +242,25 @@ function setState(nextState){
   focusStateTarget(nextState);
 }
 
+function updatePlayLegend(){
+  const countdownVisible=state==='COUNTDOWN';
+  const guideVisible=state==='PLAYING'&&tutorialMode;
+  const open=state==='PLAYING'&&!tutorialMode&&playLegendOpen;
+  const visible=countdownVisible||guideVisible||open;
+  $('playLegend').classList.toggle('show',visible);
+  $('playLegend').setAttribute('aria-hidden',String(!visible));
+  $('playLegendToggle').classList.toggle('show',state==='PLAYING'&&!tutorialMode);
+  $('playLegendToggle').setAttribute('aria-expanded',String(open));
+  $('playLegendToggle').textContent=open?'説明を閉じる':'説明を表示';
+}
+
 function playStatusText(){
   if(tutorialMode){
     return'案内：反射板に当てて波の向きを変え、白いビーコンへ重ねてみましょう。';
   }
   if(world.taps>=MAX_TAPS){
     return world.waves.length>0
-      ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。波は約${WAVE_LIFETIME}秒で消えます。`
+      ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。通常の波は約${WAVE_LIFETIME}秒、反射後の輪は最大${REFLECTED_WAVE_LIFETIME}秒表示されます（加点と反射処理は約${WAVE_LIFETIME}秒以内）。`
       :`${MAX_TAPS}回使い切り、入力と波の精算が終わりました。結果を表示します。`;
   }
   return'目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。';
@@ -620,6 +635,7 @@ function leaveGuide(startGame){
 
 function play(){
   clearCountdown();
+  playLegendOpen=false;
   tutorialMode=false;
   world.reset({mode:selectedMode});
   resetPlayClock();
@@ -973,6 +989,11 @@ world.onReflectionTap=tap=>{
 world.onRoute=summary=>{
   showRouteFeedback(summary);
   if(summary?.points>0)playCue('WATER_SCORE');
+};
+$('playLegendToggle').onclick=()=>{
+  if(state!=='PLAYING'||tutorialMode)return;
+  playLegendOpen=!playLegendOpen;
+  updatePlayLegend();
 };
 $('soundToggle').onclick=()=>{
   const enabled=setSoundEnabled(!isSoundEnabled());

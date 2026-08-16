@@ -7,6 +7,7 @@ import {
   MAX_TAPS,
   MAX_WAVES,
   QUALITY,
+  REFLECTED_WAVE_LIFETIME,
   REFLECTIVE_SURFACE_COUNT,
   SCORE_HARD_CEILING
 } from '../src/config.js';
@@ -313,7 +314,7 @@ test('quality limits background waves and particles without hiding scoring waves
   assert.match(canvas,/const particleCount=Math\.min\(QUALITY\[quality\]\?\.particles\?/);
 });
 
-test('a wave cannot move or score beyond its three-second lifetime',()=>{
+test('a direct wave keeps three seconds while reflected children keep ten seconds',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   world.w=1000;
@@ -343,8 +344,8 @@ test('a wave cannot move or score beyond its three-second lifetime',()=>{
   world.step(.01);
 
   assert.equal(world.score,0);
-  assert.equal(world.waves.length,0);
-  assert.ok(world.waveFades.length>0);
+  assert.equal(world.waves.some(wave=>wave.reflectionDepth===0),false);
+  assert.ok(world.waves.some(wave=>wave.reflectionDepth>0&&wave.lifetime===REFLECTED_WAVE_LIFETIME)||world.waveFades.length>0);
   world.step(.2);
   assert.equal(world.waveFades.length,0);
 
@@ -371,7 +372,8 @@ test('a wave cannot move or score beyond its three-second lifetime',()=>{
     finalFrameReflections.some(event=>event.surfaceKey==='glass:glass-c4'&&event.contactAge<3),
     true
   );
-  assert.equal(expiringReflections.waves.length,0);
+  assert.equal(expiringReflections.waves.some(wave=>wave.reflectionDepth===0),false);
+  assert.ok(expiringReflections.waves.some(wave=>wave.reflectionDepth>0&&wave.lifetime===REFLECTED_WAVE_LIFETIME));
 
   const finalSlice=new World({random:()=>.5});
   finalSlice.reset();
@@ -402,11 +404,13 @@ test('a wave cannot move or score beyond its three-second lifetime',()=>{
   });
 
   finalSlice.step(1/60);
+  finalSlice.finalizePendingHits();
 
   assert.equal(finalEvents.some(event=>event.surfaceKey==='glass:final-gate'&&event.contactAge<3),true);
   assert.equal(finalSlice.bestHits.get('final-slice:final-slice-target')?.category,'glass');
   assert.equal(finalSlice.score,216);
-  assert.equal(finalSlice.waves.length,0);
+  assert.equal(finalSlice.waves.some(wave=>wave.reflectionDepth===0),false);
+  assert.ok(finalSlice.waves.some(wave=>wave.reflectionDepth>0&&wave.lifetime===REFLECTED_WAVE_LIFETIME));
 });
 
 test('hit shake is bounded and returns to the unchanged base trajectory',()=>{

@@ -29,6 +29,10 @@ export class CanvasView{
     return Math.max(3,wave.width*.46);
   }
 
+  waveRadius(wave){
+    return Number.isFinite(wave.displayRadius)?wave.displayRadius:wave.radius;
+  }
+
   wavePath(context,wave){
     context.beginPath();
     if((wave.reflectionDepth??wave.reflections??0)>0){
@@ -38,7 +42,7 @@ export class CanvasView{
         context.lineTo(this.arcPoints[point+2],this.arcPoints[point+3]);
       }
     }else{
-      context.arc(wave.originX,wave.originY,wave.radius,0,Math.PI*2);
+      context.arc(wave.originX,wave.originY,this.waveRadius(wave),0,Math.PI*2);
     }
   }
 
@@ -183,7 +187,8 @@ export class CanvasView{
     }
     for(const wave of world.waves){
       const [red,green,blue]=this.waveStroke(wave);
-      const alpha=Math.max(0,1-wave.age/wave.life)*.78;
+      const age=Number.isFinite(wave.displayAge)?wave.displayAge:wave.age;
+      const alpha=Math.max(0,1-age/wave.life)*.78;
       if(world.isReflectionTapAvailable(wave))this.reflectionTapHint(context,wave,time);
       this.strokeWaveBand(context,wave,red,green,blue,alpha,this.waveVisualWidth(wave));
     }

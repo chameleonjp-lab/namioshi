@@ -7,6 +7,10 @@ import {
 export {REFLECTION_ARC_SEGMENTS,isReflectionPointVisible};
 
 const TWO_PI=Math.PI*2;
+function waveRadius(wave){
+  return Number.isFinite(wave.displayRadius)?wave.displayRadius:wave.radius;
+}
+
 
 /**
  * Fill `target` with independent line segments for the finite part of a
@@ -26,8 +30,8 @@ export function fillReflectionArcPoints(
   }
   if(
     reflectionDepth(wave)===0||
-    !Number.isFinite(wave.radius)||
-    wave.radius<=0
+    !Number.isFinite(waveRadius(wave))||
+    waveRadius(wave)<=0
   )return 0;
 
   let count=0;
@@ -36,13 +40,13 @@ export function fillReflectionArcPoints(
     const startAngle=index/segments*TWO_PI;
     const endAngle=(index+1)/segments*TWO_PI;
     const middleAngle=(startAngle+endAngle)*.5;
-    const middleX=wave.originX+Math.cos(middleAngle)*wave.radius;
-    const middleY=wave.originY+Math.sin(middleAngle)*wave.radius;
+    const middleX=wave.originX+Math.cos(middleAngle)*waveRadius(wave);
+    const middleY=wave.originY+Math.sin(middleAngle)*waveRadius(wave);
     if(!isReflectionPointVisible(wave,middleX,middleY,intersectionScratch))continue;
-    target[count++]=wave.originX+Math.cos(startAngle)*wave.radius;
-    target[count++]=wave.originY+Math.sin(startAngle)*wave.radius;
-    target[count++]=wave.originX+Math.cos(endAngle)*wave.radius;
-    target[count++]=wave.originY+Math.sin(endAngle)*wave.radius;
+    target[count++]=wave.originX+Math.cos(startAngle)*waveRadius(wave);
+    target[count++]=wave.originY+Math.sin(startAngle)*waveRadius(wave);
+    target[count++]=wave.originX+Math.cos(endAngle)*waveRadius(wave);
+    target[count++]=wave.originY+Math.sin(endAngle)*waveRadius(wave);
   }
   return count;
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {MAX_TAPS,MAX_WAVES} from '../src/config.js';
+import {MAX_TAPS,MAX_WAVES,REFLECTED_WAVE_LIFETIME,WAVE_LIFETIME} from '../src/config.js';
 import {HIT_JUDGEMENT,judgementFromPrecision} from '../src/game/judgement.js';
 import {createReflectionPath} from '../src/game/reflection-path.js';
 import {scoreRouteKey} from '../src/game/scoring.js';
@@ -338,7 +338,8 @@ test('a non-perfect candidate commits once in the lifetime-final slice',()=>{
     previousRadius:99,
     speed:0,
     width:10,
-    lifetime:.01
+    lifetime:.01,
+    physicsLifetime:.01
   });
   const hits=[];
   world.onHit=value=>hits.push(value);
@@ -512,6 +513,7 @@ test('reflected waves inherit the parent timing and lose reflection energy',()=>
   const root=world.addWave(10,200,0,'direct',{rootTapId:'root-timing'});
   root.radius=11;
   root.age=1.25;
+  root.displayAge=root.age;
   root.energy=1;
   const reflections=[];
   world.onReflect=value=>reflections.push(value);
@@ -521,8 +523,11 @@ test('reflected waves inherit the parent timing and lose reflection energy',()=>
 
   assert.equal(child.radius,root.radius);
   assert.equal(child.age,root.age);
-  assert.equal(child.lifetime,root.lifetime);
-  assert.equal(child.life,root.life);
+  assert.equal(child.lifetime,Math.max(root.lifetime,REFLECTED_WAVE_LIFETIME));
+  assert.equal(child.life,Math.max(root.life,REFLECTED_WAVE_LIFETIME));
+  assert.equal(child.physicsLifetime,WAVE_LIFETIME);
+  assert.equal(child.displayAge,root.age);
+  assert.equal(child.displayRadius,root.radius);
   assert.equal(child.energy,.72);
   assert.equal(child.reflectionDepth,1);
   assert.equal(child.reflectedBy,'wall:l');

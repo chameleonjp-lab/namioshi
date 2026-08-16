@@ -7,6 +7,7 @@ import{
   submitScore
 }from'../src/services/ranking.js';
 import{
+  CLIENT_VERSION,
   OFFICIAL_RULE_VERSION,
   RANKING_SEASON,
   SUPABASE_PUBLISHABLE_KEY,
@@ -56,7 +57,7 @@ test('enabled service accepts official scores once and sends the versioned contr
     p_display_name:'player',
     p_game_slug:'namioshi',
     p_score:100,
-    p_client_version:'namioshi-v3.4.0-official005',
+    p_client_version:CLIENT_VERSION,
     p_play_id:'play-1',
     p_rule_version:OFFICIAL_RULE_VERSION,
     p_season:RANKING_SEASON

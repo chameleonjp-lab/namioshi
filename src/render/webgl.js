@@ -20,6 +20,10 @@ const VISUAL_WAVE_WIDTH={
   double:.90
 };
 
+function waveRadius(wave){
+  return Number.isFinite(wave.displayRadius)?wave.displayRadius:wave.radius;
+}
+
 function waveVisualWidth(wave){
   const category=wave.reflections>=2
     ?'double'
@@ -33,8 +37,9 @@ function waveVisualWidth(wave){
 
 function fillRingBandPoints(target,wave){
   const halfWidth=waveVisualWidth(wave)*.5;
-  const innerRadius=Math.max(0,wave.radius-halfWidth);
-  const outerRadius=wave.radius+halfWidth;
+  const radius=waveRadius(wave);
+  const innerRadius=Math.max(0,radius-halfWidth);
+  const outerRadius=radius+halfWidth;
   for(let index=0;index<=SEGMENTS;index++){
     const offset=index*4;
     const cos=UNIT_CIRCLE_COS[index];
@@ -302,7 +307,7 @@ export class WebGLView{
       const offset=index*4;
       this.waveData[offset]=wave.originX;
       this.waveData[offset+1]=wave.originY;
-      this.waveData[offset+2]=wave.radius;
+      this.waveData[offset+2]=waveRadius(wave);
       this.waveData[offset+3]=wave.width;
     }
     gl.uniform1i(info.uniforms.waveCount,visibleCount);
@@ -421,7 +426,8 @@ export class WebGLView{
       this.drawLine(this.tmp,2,gl.LINES,2,1,.86,.4,alpha);
     }
     for(const wave of world.waves){
-      const fade=Math.max(0,1-wave.age/wave.life);
+      const age=Number.isFinite(wave.displayAge)?wave.displayAge:wave.age;
+      const fade=Math.max(0,1-age/wave.life);
       if(world.isReflectionTapAvailable(wave))this.drawReflectionTapHint(wave,time);
       this.drawWave(wave,fade);
     }

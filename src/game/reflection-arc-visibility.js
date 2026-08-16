@@ -3,6 +3,10 @@ import {reflectionPathReaches} from './reflection-path.js';
 export const REFLECTION_ARC_SEGMENTS=96;
 
 const TWO_PI=Math.PI*2;
+function waveRadius(wave){
+  return Number.isFinite(wave.displayRadius)?wave.displayRadius:wave.radius;
+}
+
 
 export function reflectionDepth(wave){
   return Math.max(0,wave?.reflectionDepth??wave?.reflections??0);
@@ -40,8 +44,8 @@ export function countVisibleReflectionArcSegments(
     !Number.isInteger(segments)||
     segments<4||
     reflectionDepth(wave)===0||
-    !Number.isFinite(wave.radius)||
-    wave.radius<=0
+    !Number.isFinite(waveRadius(wave))||
+    waveRadius(wave)<=0
   )return 0;
 
   let count=0;
@@ -50,8 +54,8 @@ export function countVisibleReflectionArcSegments(
     const startAngle=index/segments*TWO_PI;
     const endAngle=(index+1)/segments*TWO_PI;
     const middleAngle=(startAngle+endAngle)*.5;
-    const middleX=wave.originX+Math.cos(middleAngle)*wave.radius;
-    const middleY=wave.originY+Math.sin(middleAngle)*wave.radius;
+    const middleX=wave.originX+Math.cos(middleAngle)*waveRadius(wave);
+    const middleY=wave.originY+Math.sin(middleAngle)*waveRadius(wave);
     if(isReflectionPointVisible(wave,middleX,middleY,intersectionScratch))count++;
   }
   return count;

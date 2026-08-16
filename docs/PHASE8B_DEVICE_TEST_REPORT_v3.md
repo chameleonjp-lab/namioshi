@@ -185,3 +185,10 @@ Node自動試験、build、strategy snapshot、技能ボーナスの重複抑制
 基準mainは`148ff54ea516f24ffe02501fdb4797ff915adad5`（PR #73統合後）である。自動テスト153件、build、dist検証、配置・戦略分析、レイアウト確認、容量確認、GitHub Actions G2 Build Verification #131は成功した。
 
 次の手動確認対象は、実ブラウザでの10回後の自動RESULT遷移、iPhone・iPadでの波の表示と終了タイミング、初見プレイでの反射経路理解、水系SEの聞き分けである。未確認のままランキング、Supabase、Ready化、公開判定へ進まない。
+
+## 2026-08-17 PR #77 Draftの自動検証更新
+
+- 対象Draft head: `43113fd846907bd0c21b958e6b9bc3d3ea541bca`
+- Node.js 18・20・22のG2 Build Verification #161が成功した（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）。
+- 反射子波は物理・得点処理を約3秒で止め、表示・技能ボーナスのタップ対象を最大10秒まで残す。プレイ説明はカウントダウン中のみ常時表示し、PLAYING中は上部ボタンで任意に開閉する。
+- 自動検証は実ブラウザ・iPhone・iPad・初見操作・視認性・終了タイミングの合格へ置き換えない。ランキング、Supabase、Ready化、公開判定、マージは停止中である。
