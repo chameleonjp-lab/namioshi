@@ -140,7 +140,7 @@ test('deadline backlog drains in bounded chunks without waiting for more render 
   runner.reset(0);
   const update=(step,{boundaryTimestamp})=>{
     world.step(step,{countTime:false});
-    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y,{action:'root'}));
   };
 
   let frame=null;
@@ -442,7 +442,7 @@ test('visible backlog is settled when a hidden page resumes after the deadline',
     runner.reset(0);
     const update=(step,{boundaryTimestamp})=>{
       world.step(step,{countTime:false});
-      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y,{action:'root'}));
     };
 
     for(let frame=1;frame<=Math.round(refreshRate*29.8);frame++){
@@ -515,7 +515,7 @@ test('a pre-deadline input is applied at the terminal boundary after a visibilit
   runner.reset(0);
   const update=(step,{boundaryTimestamp})=>{
     world.step(step,{countTime:false});
-    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+    queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y,{action:'root'}));
   };
 
   for(let stepIndex=1;stepIndex<=1799;stepIndex++){
@@ -541,7 +541,7 @@ test('a pre-deadline input is applied at the terminal boundary after a visibilit
   assert.equal(world.taps,0);
 
   queue.closeBefore(30000);
-  assert.equal(queue.drainThrough(30000,input=>world.tap(input.x,input.y)),1);
+  assert.equal(queue.drainThrough(30000,input=>world.tap(input.x,input.y,{action:'root'})),1);
   world.finalizePendingHits();
   assert.equal(queue.length,0);
   assert.equal(world.taps,1);
@@ -613,7 +613,7 @@ test('timestamped input results are identical across render rates and long frame
     const apply=(step,{boundaryTimestamp})=>{
       // Inputs at t=10ms are applied after the 16.667ms step, never inside it.
       world.step(step,{countTime:false});
-      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y,{action:'root'}));
     };
     for(const wallTimestamp of frameTimes){
       if(wallTimestamp>=30000)queue.closeAt(30000);
@@ -667,7 +667,7 @@ test('deadline finalization keeps late official hits deterministic across render
     let finished=false;
     const update=(step,{boundaryTimestamp})=>{
       world.step(step,{countTime:false});
-      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y));
+      queue.drainThrough(boundaryTimestamp,input=>world.tap(input.x,input.y,{action:'root'}));
     };
     for(let frame=1;frame<=refreshRate*32&&!finished;frame++){
       const playFrame=advancePlayFrame({
