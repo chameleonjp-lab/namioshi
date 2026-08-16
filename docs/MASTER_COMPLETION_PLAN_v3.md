@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `148ff54ea516f24ffe02501fdb4797ff915adad5`（Pull Request #73実装・#74文書同期後のmain）
+- 進捗反映基準: `a7bc11fa9c4fd109541f5dfc844a6793afc02da8`（Pull Request #77マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: GitHub Pages の `https://chameleonjp-lab.github.io/namioshi/`（公開判定未確認）
 - 正式表示名: `namioshi`
@@ -1979,4 +1979,14 @@ PR #73のマージコミット`148ff54ea516f24ffe02501fdb4797ff915adad5`を次�
 
 PR #77では、反射子波の物理・得点寿命を3秒のまま保ち、表示と反射波タップの対象だけを最大10秒へ分離した。根波10回、得点式、経路台帳、hard ceiling11200点は維持する。カウントダウン中は説明を表示し、PLAYING中は上部ボタンから任意に開閉する。表示中の反射輪が残る間は早期RESULTへ進めない。
 
-G2 Build Verification #161はNode.js 18・20・22の全ジョブ成功（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）。実ブラウザ、iPhone・iPad、初見再現性、10秒表示の視認性と終了タイミング、ランキング再開、Ready化、マージは未確認または未承認のまま維持する。
+G2 Build Verification #164はNode.js 18・20・22の全ジョブ成功（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）。PR #77は`a7bc11fa9c4fd109541f5dfc844a6793afc02da8`としてmainへ統合済みである。実ブラウザ、iPhone・iPad、初見再現性、10秒表示の視認性と終了タイミングは未確認、ランキング再開・Ready化・公開判定は停止中とする。
+
+
+## 32. 2026-08-17 PR #77統合後・次期受入ゲート
+
+- 現行main: `a7bc11fa9c4fd109541f5dfc844a6793afc02da8`（PR #77マージ済み）。
+- 完了: 根波10回、反射子波の物理・得点寿命約3秒と表示・技能タップ対象最大10秒の分離、COUNTDOWN説明、PLAYING説明トグル、10回後の表示中波待機、競技ルール版分離。
+- 自動検証: G2 Build Verification #164をNode.js 18・20・22で成功（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）。
+- 未確認: 実ブラウザでの10秒表示・反射波タップ・RESULT遷移、iPhone・iPadの視認性、初見3〜5プレイの理解・再現、水系SEの聞き分け、長時間・反復・休止復帰・発熱。
+- 停止: ランキング、Supabase SQL/RPC・本番疎通、公式記録、Ready化、公開判定。
+- 次のDraftは文書と検収状態の同期だけを行い、ゲームコード、得点、物理、入力、描画、音、保存、ランキング、Supabaseを変更しない。実機結果が得られた場合は対象コミットと手順をPhase 8Bへ記録する。
