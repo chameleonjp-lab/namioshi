@@ -62,7 +62,7 @@ test('input and renderer fallback contracts remain connected to the UI flow',()=
 
 test('play status explains the objective and the ten-tap wait state',()=>{
   assert.match(main,/function playStatusText\(\)\{[\s\S]*?world\.taps>=MAX_TAPS[\s\S]*?world\.waves\.length>0/);
-  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。入力と波の精算を待っています。通常の波は約\$\{WAVE_LIFETIME\}秒、反射後の波は最大\$\{REFLECTED_WAVE_LIFETIME\}秒で消えます/);
+  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。入力と波の精算を待っています。通常の波は約\$\{WAVE_LIFETIME\}秒、反射後の輪は最大\$\{REFLECTED_WAVE_LIFETIME\}秒表示されます（加点と反射処理は約\$\{WAVE_LIFETIME\}秒以内）/);
   assert.match(main,/\$\{MAX_TAPS\}回使い切り、入力と波の精算が終わりました。結果を表示します/);
   assert.match(main,/function updatePlayStatus\(force=false\)/);
   assert.match(main,/updatePlayStatus\(\);/);
