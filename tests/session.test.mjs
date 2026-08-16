@@ -11,7 +11,7 @@ import {
   shouldFinishWhenIdle,
   TimedInputQueue
 } from '../src/game/session.js';
-import {MAX_TAPS} from '../src/config.js';
+import {MAX_TAPS,REFLECTED_WAVE_LIFETIME,WAVE_LIFETIME} from '../src/config.js';
 import {World} from '../src/game/world.js';
 import {GAME_MODE} from '../src/game/modes.js';
 
@@ -58,7 +58,7 @@ test('a full root-tap round ends when every wave and queued input are settled',(
   for(let index=0;index<MAX_TAPS;index++){
     assert.equal(world.tap(24+index*30,120+index*35,{action:'root'}),true);
   }
-  for(let frame=0;frame<Math.ceil(4*60);frame++)world.step(1/60,{countTime:false});
+  for(let frame=0;frame<Math.ceil((REFLECTED_WAVE_LIFETIME+1)*60);frame++)world.step(1/60,{countTime:false});
   assert.equal(world.taps,MAX_TAPS);
   assert.equal(world.waves.length,0);
   assert.equal(shouldFinishWhenIdle({
@@ -77,6 +77,17 @@ test('a full root-tap round ends when every wave and queued input are settled',(
   assert.match(main,/if\(playFrame\.shouldFinish\|\|shouldFinishIdlePlay\(\)\)finish\(\)/);
 });
 
+
+test('reflected waves remain available for up to ten seconds',()=>{
+  const world=new World();
+  world.reset({mode:GAME_MODE.OFFICIAL});
+  assert.equal(world.tap(10,320,{action:'root'}),true);
+  for(let frame=0;frame<60;frame++)world.step(1/60,{countTime:false});
+  const reflected=world.waves.find(wave=>wave.reflectionDepth>0);
+  assert.ok(reflected,'a near-wall root tap should create a reflected wave');
+  assert.equal(reflected.lifetime,REFLECTED_WAVE_LIFETIME);
+  assert.equal(world.waves.some(wave=>wave.reflectionDepth===0&&wave.lifetime===WAVE_LIFETIME),false);
+});
 
 test('an empty play still finalizes after a long deadline frame',()=>{
   const runner=new FixedStepRunner();
