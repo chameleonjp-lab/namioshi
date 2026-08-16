@@ -7,6 +7,7 @@ import {
   MAX_TAPS,
   MAX_WAVES,
   QUALITY,
+  REFLECTED_WAVE_LIFETIME,
   REFLECTIVE_SURFACE_COUNT,
   SCORE_HARD_CEILING
 } from '../src/config.js';
@@ -313,7 +314,7 @@ test('quality limits background waves and particles without hiding scoring waves
   assert.match(canvas,/const particleCount=Math\.min\(QUALITY\[quality\]\?\.particles\?/);
 });
 
-test('a wave cannot move or score beyond its three-second lifetime',()=>{
+test('a direct wave keeps three seconds while reflected children keep ten seconds',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   world.w=1000;
@@ -371,7 +372,8 @@ test('a wave cannot move or score beyond its three-second lifetime',()=>{
     finalFrameReflections.some(event=>event.surfaceKey==='glass:glass-c4'&&event.contactAge<3),
     true
   );
-  assert.equal(expiringReflections.waves.length,0);
+  assert.equal(expiringReflections.waves.some(wave=>wave.reflectionDepth===0),false);
+  assert.ok(expiringReflections.waves.some(wave=>wave.reflectionDepth>0&&wave.lifetime===REFLECTED_WAVE_LIFETIME));
 
   const finalSlice=new World({random:()=>.5});
   finalSlice.reset();
