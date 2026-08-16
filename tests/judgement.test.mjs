@@ -522,7 +522,7 @@ test('reflected waves inherit the parent timing and lose reflection energy',()=>
   assert.equal(child.radius,root.radius);
   assert.equal(child.age,root.age);
   assert.equal(child.lifetime,Math.max(root.lifetime,REFLECTED_WAVE_LIFETIME));
-  assert.equal(child.life,root.life);
+  assert.equal(child.life,Math.max(root.life,REFLECTED_WAVE_LIFETIME));
   assert.equal(child.energy,.72);
   assert.equal(child.reflectionDepth,1);
   assert.equal(child.reflectedBy,'wall:l');
