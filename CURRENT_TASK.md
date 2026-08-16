@@ -1,10 +1,10 @@
-# CURRENT_TASK: PR #73統合後・次期検収ゲート（Draft）
+# CURRENT_TASK: PR #74統合後・文書正本化と次期検収ゲート（Draft）
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 基準main: `148ff54ea516f24ffe02501fdb4797ff915adad5`（Pull Request #73統合後）
-- 対応ブランチ: `agent/namioshi-post73-audit`
+- 基準main: `148ff54ea516f24ffe02501fdb4797ff915adad5`（Pull Request #73実装・#74文書同期後）
+- 対応ブランチ: `agent/namioshi-docs-post74-status-20260817-v2`
 - Pull RequestはDraftのままにする
 - ユーザー確認前にマージしない
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
@@ -19,11 +19,11 @@ PR #68で、反射後の有限弧を狙ってタップすると、深度1は10�
 
 ## 今回の目的
 
-PR #73統合後のmainを正本として記録し、波の寿命表示、既存波の保持、10回後の自動精算が取り込まれた状態を確認する。次の未確認項目を実ブラウザ・実機・初見操作の検収ゲートとして整理する。ゲームコード、得点、物理、入力、描画、音、ランキング、Supabaseはこの文書同期では変更しない。
+PR #74統合後のmainを正本として記録し、PR #73の波の寿命表示、既存波の保持、10回後の自動精算が取り込まれた状態と、文書間の現行ルール記述を確認する。次の未確認項目を実ブラウザ・実機・初見操作の検収ゲートとして整理する。ゲームコード、得点、物理、入力、描画、音、ランキング、Supabaseはこの文書同期では変更しない。
 
 ## 実装範囲
 
-- CURRENT_TASK、README、MASTER、REVIEW_CHECKLIST、Phase 8B記録の基準をPR #73マージ後へ同期する。
+- CURRENT_TASK、README、MASTER、SPEC、REVIEW_CHECKLIST、Phase 8B記録の基準をPR #74統合後へ同期する。
 - 波の寿命約3秒、既存波の保持、根波10回後の早期精算を現行仕様として記録する。
 - 自動テスト153件、build、dist検証、G2 Build Verification #131の成功を証跡へ記録する。
 - 実ブラウザ、iPhone・iPad、初見プレイ、音の聞き分け、長時間動作、ランキング再開、Supabase、Ready化は未確認のまま残す。
@@ -64,6 +64,7 @@ git diff --check
 ## 未確認として残す項目
 
 - 実ブラウザでタイミング案内が反射弧タップを理解しやすくすること
+- Cloud Browserの公開版では初回案内を表示できたが、canvas外側のクリックを複数回行ってもタップ0/10から進まず、反射板確認を完了できなかった。原因は未確定として実機検収を継続する
 - iPhone・iPadの狭い画面で案内、補助表示、通知が読みやすいこと
 - 初見3〜5プレイで技能ボーナスの狙い方を理解できること
 - 水系SEの聞き分け、WebGL復旧、長時間動作、ランキング再開、Supabase適用、Ready化

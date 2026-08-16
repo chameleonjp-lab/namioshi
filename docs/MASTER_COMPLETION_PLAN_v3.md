@@ -5,9 +5,9 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `4385d14c633c0d7d39c9b8b80b5fa2c277a6ff0c`（Pull Request #71マージ後のmain）
+- 進捗反映基準: `148ff54ea516f24ffe02501fdb4797ff915adad5`（Pull Request #73実装・#74文書同期後のmain）
 - 目標リリース: `namioshi v3.0.0`
-- 公開先候補: Codeberg Pages の `/namioshi/`
+- 公開先候補: GitHub Pages の `https://chameleonjp-lab.github.io/namioshi/`（公開判定未確認）
 - 正式表示名: `namioshi`
 - `game_slug`: `namioshi`
 
@@ -1963,3 +1963,14 @@ Pull Request #71のマージコミット`4385d14c633c0d7d39c9b8b80b5fa2c277a6ff0
 PR #73のマージコミット`148ff54ea516f24ffe02501fdb4797ff915adad5`を次の検収基準とする。波は約3秒で自然に消え、タップで既存波を削除せず、根波10回後に入力と物理波が空になれば早期にRESULTへ進む。自動テスト153件、build、dist検証、配置・戦略分析、レイアウト確認、容量確認、GitHub Actions G2 Build Verification #131は成功した。
 
 次の工程は、実ブラウザで10回後の終了表示とRESULT遷移を確認し、iPhone・iPadの波の視認性、初見操作の反射経路理解、水系SEの聞き分けを検収することである。ランキング、Supabase、Ready化、公開判定は確認完了まで停止する。未確認を自動試験済みとは扱わない。
+
+
+## 0. 2026-08-17 現行mainの状態（PR #74統合後）
+
+この章を現在判断の基準とする。後半のPR別追補は履歴であり、同じ項目について古い記述が残る場合は、この章と最新追補を優先する。
+
+- 基準main: `148ff54ea516f24ffe02501fdb4797ff915adad5`
+- 実装・自動検証済み: 30秒、根波10回、波寿命約3秒、既存波の保持、10回後の早期RESULT、反射経路と二段階台帳、反射波タップ技能ボーナス、画面案内、水系SE、Canvas 2D fallback、153テスト、build・dist・配置・戦略・容量検査。
+- 受入未確認: 実ブラウザでの終了表示、iPhone・iPadでの波の視認性と終了タイミング、初見プレイの反射経路理解、水系SEの聞き分け、長時間・反復・休止復帰・発熱。
+- 停止中: ランキング、Supabase実通信、公式記録の再開、公開判定、Ready化。
+- この追補でコード、得点、物理、入力、描画、音、ランキング、Supabaseは変更しない。
