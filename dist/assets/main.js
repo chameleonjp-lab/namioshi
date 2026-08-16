@@ -41,7 +41,7 @@ app.innerHTML=`
 <section id="HOME" class="screen freshStart show" aria-labelledby="homeTitle" aria-hidden="false">
   <div class="panel">
     <h1 id="homeTitle">namioshi</h1>
-    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探すゲームです。最大${PLAY_SECONDS}秒、波がすべて消えると結果へ進みます。反射後の波の輪をタップすると技能ボーナス、同じ経路は最高点だけが残ります。</p>
+    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探すゲームです。最大${PLAY_SECONDS}秒、${MAX_TAPS}回を使い切り、入力と波の精算が終わると結果へ進みます。反射後の波の輪をタップすると技能ボーナス、同じ経路は最高点だけが残ります。</p>
     <label class="srOnly" for="name">名前</label>
     <input id="name" class="input" maxlength="20" placeholder="名前" autocomplete="nickname" aria-describedby="nameHint">
     <p id="nameHint" class="srOnly">公式結果と練習結果の表示に使います。</p>
@@ -76,7 +76,7 @@ app.innerHTML=`
     <h1 id="rulesTitle" class="sectionTitle" tabindex="-1">RULES</h1>
     <ul class="rulesList">
       <li>タップは最大${MAX_TAPS}回</li>
-      <li>制限時間は最大${PLAY_SECONDS}秒。${MAX_TAPS}回使い切り、波がすべて消えると結果へ進む</li>
+      <li>制限時間は最大${PLAY_SECONDS}秒。${MAX_TAPS}回使い切り、入力と波の精算が終わると結果へ進む</li>
       <li>光る線の反射板に波を当てると、波の向きが変わる</li>
       <li>ビーコンに波が重なると命中。反射板に当てるだけでは得点にならない</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
@@ -86,7 +86,7 @@ app.innerHTML=`
       <li>同じビーコンへ同じ順番で通った経路を繰り返しても、点は増えない</li>
       <li>命中確認は接触時、得点は波の精算時に「得点確定」として表示する</li>
       <li>${MAX_TAPS}回を別の場所へ使い、違う経路を探すほど得点を伸ばせる</li>
-      <li>${MAX_TAPS}回使い切った後は、残っている波の結果を待ち、波がすべて消えると結果へ進む</li>
+      <li>${MAX_TAPS}回使い切った後は、入力と残っている波の精算を待ち、すべて終わると結果へ進む</li>
       <li>公式は候補Cの固定配置</li>
       <li>練習はランダム配置でランキング送信なし</li>
     </ul>
@@ -245,8 +245,8 @@ function playStatusText(){
   }
   if(world.taps>=MAX_TAPS){
     return world.waves.length>0
-      ?`${MAX_TAPS}回使い切りました。波の結果を待っています。波は約${WAVE_LIFETIME}秒で消えます。`
-      :`${MAX_TAPS}回使い切り、波も消えました。結果を表示します。`;
+      ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。波は約${WAVE_LIFETIME}秒で消えます。`
+      :`${MAX_TAPS}回使い切り、入力と波の精算が終わりました。結果を表示します。`;
   }
   return'目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。';
 }
