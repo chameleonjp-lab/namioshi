@@ -84,6 +84,7 @@ test('result screen explains the best route and one next goal',()=>{
 test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   const main=source('src/main.js');
   const styles=source('src/ui/styles.css');
+  assert.match(main,/id="playLegendToggle" class="playLegendToggle secondary"[^>]*aria-controls="playLegend"/);
   assert.match(main,/id="playLegend" class="playLegend" role="note"/);
   assert.match(main,/id="playStatus" class="playStatus" role="status"/);
   assert.match(main,/id="reflectionTapPrompt" class="reflectionTapPrompt" role="status"[^>]*hidden/);
@@ -98,9 +99,11 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   assert.match(main,/<b>反射板<\/b>：光る線/);
   assert.match(main,/<b>ビーコン<\/b>：白く光る点。波が重なると命中し、精算時に得点が確定します/);
   assert.match(main,/<b>反射波タップ<\/b>：反射後の輪に重ねてタップすると、深度に応じて\+10〜40点/);
-  assert.match(main,/<b>波の寿命<\/b>：波は約\$\{WAVE_LIFETIME\}秒で自然に消えます。タップしても、出ている波は消えません/);
+  assert.match(main,/<b>波の寿命<\/b>：通常の波は約\$\{WAVE_LIFETIME\}秒、反射後の波は最大\$\{REFLECTED_WAVE_LIFETIME\}秒で自然に消えます。タップしても、出ている波は消えません/);
   assert.doesNotMatch(main,/棒に波/);
   assert.match(styles,/\.legendLine\{/);
+  assert.match(styles,/\.playLegendToggle\{/);
+  assert.match(styles,/\.playLegendToggle\.show\{display:block\}/);
   assert.match(styles,/\.playStatus\{/);
   assert.match(styles,/\.reflectionTapPrompt\{/);
   assert.match(styles,/reflectionTapPromptPulse/);
