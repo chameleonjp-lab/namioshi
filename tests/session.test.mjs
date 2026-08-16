@@ -86,7 +86,13 @@ test('reflected waves remain available for up to ten seconds',()=>{
   const reflected=world.waves.find(wave=>wave.reflectionDepth>0);
   assert.ok(reflected,'a near-wall root tap should create a reflected wave');
   assert.equal(reflected.lifetime,REFLECTED_WAVE_LIFETIME);
+  assert.equal(reflected.physicsLifetime,WAVE_LIFETIME);
   assert.ok(world.waves.some(wave=>wave.reflectionDepth>0&&wave.lifetime===REFLECTED_WAVE_LIFETIME));
+  for(let frame=0;frame<Math.ceil((WAVE_LIFETIME+1)*60);frame++)world.step(1/60,{countTime:false});
+  const retained=world.waves.find(wave=>wave.id===reflected.id);
+  assert.ok(retained,'the reflected ring remains visible after physics stops');
+  assert.equal(retained.age,WAVE_LIFETIME);
+  assert.ok(retained.displayAge>WAVE_LIFETIME);
 });
 
 test('an empty play still finalizes after a long deadline frame',()=>{
