@@ -28,7 +28,7 @@ app.innerHTML=`
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
   <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると命中し、精算時に得点が確定します</span></div>
   <div class="legendLine"><span class="legendMark legendTap" aria-hidden="true"></span><span><b>反射波タップ</b>：反射後の輪に重ねてタップすると、深度に応じて+10〜40点（根波ごとに1回）</span></div>
-  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波の寿命</b>：通常の波は約${WAVE_LIFETIME}秒、反射後の波は最大${REFLECTED_WAVE_LIFETIME}秒で自然に消えます。タップしても、出ている波は消えません</span></div>
+  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波の寿命</b>：通常の波は約${WAVE_LIFETIME}秒、反射後の輪は最大${REFLECTED_WAVE_LIFETIME}秒表示され、技能ボーナスのタップ対象です。加点と反射処理は約${WAVE_LIFETIME}秒以内です。タップしても、出ている波は消えません</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
@@ -260,7 +260,7 @@ function playStatusText(){
   }
   if(world.taps>=MAX_TAPS){
     return world.waves.length>0
-      ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。通常の波は約${WAVE_LIFETIME}秒、反射後の波は最大${REFLECTED_WAVE_LIFETIME}秒で消えます。`
+      ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。通常の波は約${WAVE_LIFETIME}秒、反射後の輪は最大${REFLECTED_WAVE_LIFETIME}秒表示されます（加点と反射処理は約${WAVE_LIFETIME}秒以内）。`
       :`${MAX_TAPS}回使い切り、入力と波の精算が終わりました。結果を表示します。`;
   }
   return'目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。';
