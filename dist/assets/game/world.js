@@ -566,7 +566,6 @@ export class World{
       }
     }
     this.removeExpiredWaves();
-    this.settleCompletedRoots();    this.removeExpiredWaves();
     this.settleCompletedRoots();
 
     for(let index=this.waveFades.length-1;index>=0;index--){
