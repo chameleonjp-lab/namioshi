@@ -404,11 +404,13 @@ test('a direct wave keeps three seconds while reflected children keep ten second
   });
 
   finalSlice.step(1/60);
+  finalSlice.finalizePendingHits();
 
   assert.equal(finalEvents.some(event=>event.surfaceKey==='glass:final-gate'&&event.contactAge<3),true);
   assert.equal(finalSlice.bestHits.get('final-slice:final-slice-target')?.category,'glass');
   assert.equal(finalSlice.score,216);
-  assert.equal(finalSlice.waves.length,0);
+  assert.equal(finalSlice.waves.some(wave=>wave.reflectionDepth===0),false);
+  assert.ok(finalSlice.waves.some(wave=>wave.reflectionDepth>0&&wave.lifetime===REFLECTED_WAVE_LIFETIME));
 });
 
 test('hit shake is bounded and returns to the unchanged base trajectory',()=>{
