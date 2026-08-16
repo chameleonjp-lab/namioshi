@@ -62,10 +62,18 @@ test('input and renderer fallback contracts remain connected to the UI flow',()=
 
 test('play status explains the objective and the ten-tap wait state',()=>{
   assert.match(main,/function playStatusText\(\)\{[\s\S]*?world\.taps>=MAX_TAPS[\s\S]*?world\.waves\.length>0/);
-  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。入力と波の精算を待っています。波は約\$\{WAVE_LIFETIME\}秒で消えます/);
+  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。入力と波の精算を待っています。通常の波は約\$\{WAVE_LIFETIME\}秒、反射後の波は最大\$\{REFLECTED_WAVE_LIFETIME\}秒で消えます/);
   assert.match(main,/\$\{MAX_TAPS\}回使い切り、入力と波の精算が終わりました。結果を表示します/);
   assert.match(main,/function updatePlayStatus\(force=false\)/);
   assert.match(main,/updatePlayStatus\(\);/);
+});
+
+test('explanation stays visible during countdown and is optional during play',()=>{
+  assert.match(main,/id="playLegendToggle"[^>]*aria-controls="playLegend"/);
+  assert.match(main,/let playLegendOpen=false/);
+  assert.match(main,/function updatePlayLegend\(\)[\s\S]*?countdownVisible=state==='COUNTDOWN'[\s\S]*?open=state==='PLAYING'&&!tutorialMode&&playLegendOpen/);
+  assert.match(main,/playLegendToggle'\)\.onclick=\(\)=>\{[\s\S]*?playLegendOpen=!playLegendOpen/);
+  assert.match(main,/if\(nextState!=='PLAYING'\)playLegendOpen=false/);
 });
 
 test('reflection tap timing prompt follows the shared availability predicate',()=>{
