@@ -12,6 +12,7 @@ import {
   MAX_WAVES,
   PLAY_SECONDS,
   REFLECTION_TAP_RANGE,
+  REFLECTED_WAVE_LIFETIME,
   WALL_REFLECTION_ENERGY,
   WAVE_SPEED,
   WAVE_LIFETIME
@@ -656,7 +657,7 @@ export class World{
       width:wave.width,
       speed:wave.speed,
       age:wave.age,
-      lifetime:wave.lifetime,
+      lifetime:Math.max(wave.lifetime,REFLECTED_WAVE_LIFETIME),
       energy:wave.energy*energyMultiplier,
       reflectedBy:surfaceKey,
       reflectionPath,
