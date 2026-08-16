@@ -1,9 +1,9 @@
 import {World} from './game/world.js';
 import {judgementFromPrecision} from './game/judgement.js';
-import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,settlePlayDeadline,TimedInputQueue} from './game/session.js';
+import {advancePlayFrame,createPlayDeadline,FixedStepRunner,remainingPlaySeconds,settlePlayDeadline,shouldFinishWhenIdle,TimedInputQueue} from './game/session.js';
 import {clientToLogical,createViewport} from './game/viewport.js';
 import {GAME_MODE,modePresentation,normalizeGameMode,rankingPolicy} from './game/modes.js';
-import {MAX_TAPS,OFFICIAL_RULE_VERSION,PLAY_SECONDS} from './config.js';
+import {MAX_TAPS,OFFICIAL_RULE_VERSION,PLAY_SECONDS,WAVE_LIFETIME} from './config.js';
 import {WebGLView} from './render/webgl.js';
 import {CanvasView} from './render/canvas.js';
 import {share,shareText} from './services/share.js';
@@ -27,6 +27,7 @@ app.innerHTML=`
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
   <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると命中し、精算時に得点が確定します</span></div>
   <div class="legendLine"><span class="legendMark legendTap" aria-hidden="true"></span><span><b>反射波タップ</b>：反射後の輪に重ねてタップすると、深度に応じて+10〜40点（根波ごとに1回）</span></div>
+  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波の寿命</b>：波は約${WAVE_LIFETIME}秒で自然に消えます。タップしても、出ている波は消えません</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
@@ -40,20 +41,20 @@ app.innerHTML=`
 <section id="HOME" class="screen freshStart show" aria-labelledby="homeTitle" aria-hidden="false">
   <div class="panel">
     <h1 id="homeTitle">namioshi</h1>
-    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探す30秒ゲームです。反射後の波の輪をタップすると技能ボーナス、同じ経路は最高点だけが残ります。</p>
+    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探すゲームです。最大${PLAY_SECONDS}秒、波がすべて消えると結果へ進みます。反射後の波の輪をタップすると技能ボーナス、同じ経路は最高点だけが残ります。</p>
     <label class="srOnly" for="name">名前</label>
     <input id="name" class="input" maxlength="20" placeholder="名前" autocomplete="nickname" aria-describedby="nameHint">
     <p id="nameHint" class="srOnly">公式結果と練習結果の表示に使います。</p>
     <div class="modeGrid" role="group" aria-label="ゲームモード">
       <div class="modeCard officialCard">
         <p class="modeTitle">公式モード</p>
-        <p class="modeDescription">30秒・${MAX_TAPS}タップ。全員が同じ配置で遊びます。</p>
+        <p class="modeDescription">最大${PLAY_SECONDS}秒・${MAX_TAPS}タップ。全員が同じ配置で遊びます。</p>
         <button id="startOfficial" class="btn" type="button">公式モード開始</button>
         <p class="small">ランキング送信はPhase 5で開始します。</p>
       </div>
       <div class="modeCard">
         <p class="modeTitle">練習モード</p>
-        <p class="modeDescription">30秒・${MAX_TAPS}タップ。毎回変わる配置で反射経路を練習します。</p>
+        <p class="modeDescription">最大${PLAY_SECONDS}秒・${MAX_TAPS}タップ。毎回変わる配置で反射経路を練習します。</p>
         <button id="startPractice" class="btn secondary" type="button">練習モード開始</button>
         <p class="small">ランキング外。練習結果は送信しません。</p>
       </div>
@@ -75,7 +76,7 @@ app.innerHTML=`
     <h1 id="rulesTitle" class="sectionTitle" tabindex="-1">RULES</h1>
     <ul class="rulesList">
       <li>タップは最大${MAX_TAPS}回</li>
-      <li>制限時間は30秒</li>
+      <li>制限時間は最大${PLAY_SECONDS}秒。${MAX_TAPS}回使い切り、波がすべて消えると結果へ進む</li>
       <li>光る線の反射板に波を当てると、波の向きが変わる</li>
       <li>ビーコンに波が重なると命中。反射板に当てるだけでは得点にならない</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
@@ -85,7 +86,7 @@ app.innerHTML=`
       <li>同じビーコンへ同じ順番で通った経路を繰り返しても、点は増えない</li>
       <li>命中確認は接触時、得点は波の精算時に「得点確定」として表示する</li>
       <li>${MAX_TAPS}回を別の場所へ使い、違う経路を探すほど得点を伸ばせる</li>
-      <li>${MAX_TAPS}回使い切っても、30秒までは波の結果を待つ</li>
+      <li>${MAX_TAPS}回使い切った後は、残っている波の結果を待ち、波がすべて消えると結果へ進む</li>
       <li>公式は候補Cの固定配置</li>
       <li>練習はランダム配置でランキング送信なし</li>
     </ul>
@@ -244,8 +245,8 @@ function playStatusText(){
   }
   if(world.taps>=MAX_TAPS){
     return world.waves.length>0
-      ?`${MAX_TAPS}回使い切りました。波の結果を待っています。${PLAY_SECONDS}秒の終了時に結果を表示します。`
-      :`${MAX_TAPS}回使い切り、波も消えました。${PLAY_SECONDS}秒の終了時に結果を表示します。`;
+      ?`${MAX_TAPS}回使い切りました。波の結果を待っています。波は約${WAVE_LIFETIME}秒で消えます。`
+      :`${MAX_TAPS}回使い切り、波も消えました。結果を表示します。`;
   }
   return'目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。';
 }
@@ -297,6 +298,17 @@ function updatePlayTime(timestamp){
 
 function applyTimedInput(input){
   world.tap(input.x,input.y,{action:input.action??'auto'});
+}
+
+function shouldFinishIdlePlay(){
+  if(!fixedSteps.isCaughtUp())return false;
+  return shouldFinishWhenIdle({
+    taps:world.taps,
+    maximumTaps:MAX_TAPS,
+    activeWaves:world.waves.length,
+    pendingInputs:timedInputs.length,
+    tutorial:tutorialMode
+  });
 }
 
 function advanceSimulation(timestamp){
@@ -356,7 +368,7 @@ function suspendVisiblePlay(now){
     updatePlayTime(now);
     const playFrame=rememberPlayFrame(advanceSimulation(now));
     updatePlayTime(now);
-    if(playFrame.shouldFinish){
+    if(playFrame.shouldFinish||shouldFinishIdlePlay()){
       finish();
       return;
     }
@@ -679,6 +691,7 @@ function finish(){
     timedInputs.drainThrough(playDeadline,applyTimedInput);
   }
   world.finalizePendingHits();
+  world.waveFades.length=0;
   timedInputs.clear();
   fixedSteps.suspend();
   playDeadline=null;
@@ -792,7 +805,7 @@ function loop(timestamp){
     updatePlayStatus();
     const time=Number.isFinite(world.time)?Math.max(0,world.time):Number.POSITIVE_INFINITY;
     if(world.score!==lastHudScore||world.taps!==lastHudTaps||time!==lastHudTime&&Math.abs(time-lastHudTime)>=.1)hud();
-    if(playFrame.shouldFinish)finish();
+    if(playFrame.shouldFinish||shouldFinishIdlePlay())finish();
     else if(playFrame.deadlineExpired)scheduleDeadlineSettlement();
   }
   const shouldRender=state==='PLAYING'||lastStaticRenderTimestamp===null||now-lastStaticRenderTimestamp>=STATIC_RENDER_INTERVAL;

@@ -638,6 +638,23 @@ test('one accepted tap creates one root wave and reflection depth stops at two',
   assert.equal(world.waves.filter(wave=>wave.parentWaveId===depthTwo.waveId).length,0);
 });
 
+test('adding a root wave never removes an already active wave',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  assert.equal(world.tap(80,120,{action:'root'}),true);
+  world.step(.4,{countTime:false});
+  const existingIds=world.waves.map(wave=>wave.id);
+  assert.ok(existingIds.length>0);
+
+  assert.equal(world.tap(280,420,{action:'root'}),true);
+  assert.deepEqual(
+    world.waves.filter(wave=>existingIds.includes(wave.id)).map(wave=>wave.id),
+    existingIds
+  );
+});
+
 test('a well-timed reflected-wave tap awards one bounded bonus without a root wave',()=>{
   const world=new World({random:()=>.5});
   world.reset();

@@ -344,6 +344,9 @@ test('a wave cannot move or score beyond its three-second lifetime',()=>{
 
   assert.equal(world.score,0);
   assert.equal(world.waves.length,0);
+  assert.ok(world.waveFades.length>0);
+  world.step(.2);
+  assert.equal(world.waveFades.length,0);
 
   const exactBoundary=new World({random:()=>.5});
   exactBoundary.reset();

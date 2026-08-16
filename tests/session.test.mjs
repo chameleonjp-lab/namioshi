@@ -8,13 +8,14 @@ import {
   remainingPlaySeconds,
   settlePlayDeadline,
   shouldFinishPlay,
+  shouldFinishWhenIdle,
   TimedInputQueue
 } from '../src/game/session.js';
 import {MAX_TAPS} from '../src/config.js';
 import {World} from '../src/game/world.js';
 import {GAME_MODE} from '../src/game/modes.js';
 
-test('a play session ends only when its thirty-second timer expires',()=>{
+test('the thirty-second deadline helper still expires at zero',()=>{
   assert.equal(shouldFinishPlay(30),false);
   assert.equal(shouldFinishPlay(5.8),false);
   assert.equal(shouldFinishPlay(.001),false);
@@ -22,15 +23,58 @@ test('a play session ends only when its thirty-second timer expires',()=>{
   assert.equal(shouldFinishPlay(-.001),true);
 });
 
-test('using all taps and clearing all waves cannot end play early',()=>{
+test('a full root-tap round ends when every wave and queued input are settled',()=>{
+  assert.equal(shouldFinishWhenIdle(),false);
+  assert.equal(shouldFinishWhenIdle({
+    taps:MAX_TAPS,
+    maximumTaps:MAX_TAPS,
+    activeWaves:0,
+    pendingInputs:0,
+    tutorial:false
+  }),true);
+  assert.equal(shouldFinishWhenIdle({
+    taps:MAX_TAPS,
+    maximumTaps:MAX_TAPS,
+    activeWaves:1,
+    pendingInputs:0,
+    tutorial:false
+  }),false);
+  assert.equal(shouldFinishWhenIdle({
+    taps:MAX_TAPS,
+    maximumTaps:MAX_TAPS,
+    activeWaves:0,
+    pendingInputs:1,
+    tutorial:false
+  }),false);
+  assert.equal(shouldFinishWhenIdle({
+    taps:MAX_TAPS,
+    maximumTaps:MAX_TAPS,
+    activeWaves:0,
+    pendingInputs:0,
+    tutorial:true
+  }),false);
+  const world=new World();
+  world.reset({mode:GAME_MODE.OFFICIAL});
+  for(let index=0;index<MAX_TAPS;index++){
+    assert.equal(world.tap(24+index*30,120+index*35,{action:'root'}),true);
+  }
+  for(let frame=0;frame<Math.ceil(4*60);frame++)world.step(1/60,{countTime:false});
+  assert.equal(world.taps,MAX_TAPS);
+  assert.equal(world.waves.length,0);
+  assert.equal(shouldFinishWhenIdle({
+    taps:world.taps,
+    maximumTaps:MAX_TAPS,
+    activeWaves:world.waves.length,
+    pendingInputs:0,
+    tutorial:false
+  }),true);
   const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
-  assert.match(main,/const playFrame=rememberPlayFrame\(advanceSimulation\(now\)\)[\s\S]*?if\(playFrame\.shouldFinish\)finish\(\)/);
+  assert.match(main,/const playFrame=rememberPlayFrame\(advanceSimulation\(now\)\)[\s\S]*?if\(playFrame\.shouldFinish\|\|shouldFinishIdlePlay\(\)\)finish\(\)/);
   assert.match(main,/function finish\(\){\s*if\(state!=='PLAYING'\)return/);
   assert.match(main,/function finish\(\)[\s\S]*?timedInputs\.drainThrough\(playDeadline,applyTimedInput\)[\s\S]*?world\.finalizePendingHits\(\)[\s\S]*?timedInputs\.clear\(\)/);
   assert.match(main,/timedInputs\.reset\(start\)/);
-  const finish=main.match(/function finish\(\)\{[\s\S]*?\n\}/)?.[0]??'';
-  const loop=main.match(/function loop\(timestamp\)\{[\s\S]*?\n\}/)?.[0]??'';
-  assert.doesNotMatch(`${finish}\n${loop}`,/world\.taps\s*>=|world\.waves\.length\s*===\s*0/);
+  assert.match(main,/function shouldFinishIdlePlay\(\)\{[\s\S]*?shouldFinishWhenIdle\(/);
+  assert.match(main,/if\(playFrame\.shouldFinish\|\|shouldFinishIdlePlay\(\)\)finish\(\)/);
 });
 
 

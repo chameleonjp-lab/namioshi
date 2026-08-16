@@ -44,7 +44,7 @@ test('result flow keeps share, replay, mode selection, and exit paths available'
 
 
 test('renderer suspension keeps an expired deadline settlement alive',()=>{
-  assert.match(main,/function settleSuspendedDeadline\(now\)\{[\s\S]*?advanceSimulation\(playDeadline\)[\s\S]*?if\(playFrame\.shouldFinish\)finish\(\)/);
+  assert.match(main,/function settleSuspendedDeadline\(now\)\{[\s\S]*?advanceSimulation\(playDeadline\)[\s\S]*?if\(playFrame\.shouldFinish\|\|shouldFinishIdlePlay\(\)\)finish\(\)/);
   assert.match(main,/if\(rendererSuspended\)\{[\s\S]*?settleSuspendedDeadline\(now\);[\s\S]*?requestAnimationFrame\(loop\)/);
   assert.match(main,/function scheduleDeadlineSettlement\(\)[\s\S]*?setTimeout\(runDeadlineSettlementChunk,0\)/);
   assert.match(main,/function runDeadlineSettlementChunk\(\)[\s\S]*?settlePlayDeadline\([\s\S]*?maxFrames:DEADLINE_SETTLEMENT_FRAMES_PER_CHUNK[\s\S]*?scheduleDeadlineSettlement\(\)/);
@@ -62,8 +62,8 @@ test('input and renderer fallback contracts remain connected to the UI flow',()=
 
 test('play status explains the objective and the ten-tap wait state',()=>{
   assert.match(main,/function playStatusText\(\)\{[\s\S]*?world\.taps>=MAX_TAPS[\s\S]*?world\.waves\.length>0/);
-  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。波の結果を待っています/);
-  assert.match(main,/\$\{MAX_TAPS\}回使い切り、波も消えました/);
+  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。波の結果を待っています。波は約\$\{WAVE_LIFETIME\}秒で消えます/);
+  assert.match(main,/\$\{MAX_TAPS\}回使い切り、波も消えました。結果を表示します/);
   assert.match(main,/function updatePlayStatus\(force=false\)/);
   assert.match(main,/updatePlayStatus\(\);/);
 });

@@ -334,3 +334,27 @@ export function remainingPlaySeconds(deadline,timestamp){
 export function shouldFinishPlay(remainingTime){
   return remainingTime<=0;
 }
+
+/**
+ * A round may also finish before its wall-clock deadline once every root-wave
+ * slot has been used and the simulation has no wave (or queued input) left to
+ * settle. Reflection-wave skill taps do not consume root-wave slots, so the
+ * caller supplies the already-counted root taps and queue length explicitly.
+ * The first-time guide is intentionally excluded from this shortcut.
+ */
+export function shouldFinishWhenIdle({
+  taps=0,
+  maximumTaps=Number.POSITIVE_INFINITY,
+  activeWaves=0,
+  pendingInputs=0,
+  tutorial=false
+}={}){
+  return !tutorial&&
+    Number.isFinite(taps)&&
+    Number.isFinite(maximumTaps)&&
+    taps>=maximumTaps&&
+    Number.isFinite(activeWaves)&&
+    activeWaves===0&&
+    Number.isFinite(pendingInputs)&&
+    pendingInputs===0;
+}
