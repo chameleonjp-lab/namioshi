@@ -188,7 +188,7 @@ Node自動試験、build、strategy snapshot、技能ボーナスの重複抑制
 
 ## 2026-08-17 PR #77 Draftの自動検証更新
 
-- 対象Draft head: `1bb581fb6bf2cc4c9a9e5de1bda6446c32652961`
+- 対象Draft head: `43113fd846907bd0c21b958e6b9bc3d3ea541bca`
 - Node.js 18・20・22のG2 Build Verification #161が成功した（155テスト、build、verify、配置・戦略分析、SVG、容量、dist差分検査）。
 - 反射子波は物理・得点処理を約3秒で止め、表示・技能ボーナスのタップ対象を最大10秒まで残す。プレイ説明はカウントダウン中のみ常時表示し、PLAYING中は上部ボタンで任意に開閉する。
 - 自動検証は実ブラウザ・iPhone・iPad・初見操作・視認性・終了タイミングの合格へ置き換えない。ランキング、Supabase、Ready化、公開判定、マージは停止中である。
