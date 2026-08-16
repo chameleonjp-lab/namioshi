@@ -167,16 +167,16 @@ export class World{
       const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
       const rootTapId=wave.rootTapId;
       if(
-        !this.isReflectionTapAvailable(wave)||
-        !Number.isFinite(wave.radius)||
-        wave.radius<=0
+        !this.isReflectionTapAvailable(wave)
       )continue;
+      const visibleRadius=Number.isFinite(wave.displayRadius)?wave.displayRadius:wave.radius;
+      if(!Number.isFinite(visibleRadius)||visibleRadius<=0)continue;
       const distance=Math.hypot(x-wave.originX,y-wave.originY);
       if(distance<=1e-7)continue;
-      const radialError=Math.abs(distance-wave.radius);
+      const radialError=Math.abs(distance-visibleRadius);
       const tapRange=Math.max(REFLECTION_TAP_RANGE,wave.width*1.5);
       if(radialError>tapRange)continue;
-      const projectionScale=wave.radius/distance;
+      const projectionScale=visibleRadius/distance;
       const projectedX=wave.originX+(x-wave.originX)*projectionScale;
       const projectedY=wave.originY+(y-wave.originY)*projectionScale;
       if(!this.traceWavePath(wave,projectedX,projectedY).valid)continue;
@@ -237,11 +237,15 @@ export class World{
     speed=WAVE_SPEED,
     age=0,
     lifetime=WAVE_LIFETIME,
+    physicsLifetime=WAVE_LIFETIME,
     energy=1,
     reflectedBy=null,
     reflectionPath=null,
     emittedSurfaces=[],
-    previousRadius=radius
+    previousRadius=radius,
+    displayAge=age,
+    displayRadius=radius,
+    displayPreviousRadius=previousRadius
   }={}){
     if(this.waves.length>=MAX_WAVES)return null;
     const id=this.waveSequence++;
@@ -260,6 +264,10 @@ export class World{
       age,
       lifetime,
       life:lifetime,
+      physicsLifetime:Math.max(0,Number.isFinite(physicsLifetime)?physicsLifetime:WAVE_LIFETIME),
+      displayAge:Math.max(0,Number.isFinite(displayAge)?displayAge:age),
+      displayRadius:Number.isFinite(displayRadius)?displayRadius:radius,
+      displayPreviousRadius:Number.isFinite(displayPreviousRadius)?displayPreviousRadius:previousRadius,
       energy,
       reflections:reflectionDepth,
       reflectionDepth,
@@ -513,8 +521,14 @@ export class World{
     this.removeExpiredWaves();
     const wavesAtStepStart=[...this.waves].reverse();
     for(const wave of wavesAtStepStart){
-      const remainingLifetime=Math.max(0,wave.lifetime-wave.age);
-      const activeDt=Math.min(dt,remainingLifetime);
+      const physicsLifetime=Math.max(0,Number.isFinite(wave.physicsLifetime)?wave.physicsLifetime:WAVE_LIFETIME);
+      const displayLifetime=Math.max(0,Number.isFinite(wave.lifetime)?wave.lifetime:physicsLifetime);
+      const physicsAge=Math.max(0,Number.isFinite(wave.age)?wave.age:0);
+      const displayAge=Math.max(0,Number.isFinite(wave.displayAge)?wave.displayAge:physicsAge);
+      const remainingPhysics=Math.max(0,physicsLifetime-physicsAge);
+      const remainingDisplay=Math.max(0,displayLifetime-displayAge);
+      const activeDt=Math.min(dt,remainingPhysics);
+      const displayDt=Math.min(dt,remainingDisplay);
       const beaconTargets=activeDt<dt-LIFETIME_EPSILON
         ?beaconStarts.map(start=>{
           const sampled={...start};
@@ -522,18 +536,28 @@ export class World{
           return sampled;
         })
         :this.beacons;
-      const previousRadius=wave.radius;
+      const previousRadius=Number.isFinite(wave.radius)?wave.radius:1;
+      const previousDisplayRadius=Number.isFinite(wave.displayRadius)?wave.displayRadius:previousRadius;
+      const previousDisplayAge=displayAge;
       wave.previousRadius=previousRadius;
-      wave.age=Math.min(wave.lifetime,wave.age+activeDt);
-      wave.radius+=wave.speed*activeDt;
-      const propagationQueue=[{wave,startRadius:previousRadius,includeActiveContacts:false}];
+      wave.displayPreviousRadius=previousDisplayRadius;
+      wave.age=Math.min(physicsLifetime,physicsAge+activeDt);
+      wave.radius=previousRadius+wave.speed*activeDt;
+      wave.displayAge=Math.min(displayLifetime,previousDisplayAge+displayDt);
+      wave.displayRadius=previousDisplayRadius+wave.speed*displayDt;
+      const propagationQueue=activeDt>LIFETIME_EPSILON
+        ?[{wave:{...wave,previousRadius,age:wave.age,radius:wave.radius},startRadius:previousRadius,includeActiveContacts:false}]
+        :[];
       for(let queueIndex=0;queueIndex<propagationQueue.length;queueIndex++){
         const propagation=propagationQueue[queueIndex];
         const children=this.reflect(propagation.wave,propagation.startRadius,{
           includeActiveContacts:propagation.includeActiveContacts
         });
         this.scoreWave(propagation.wave,beaconTargets);
-        if(propagation.wave.age>=propagation.wave.lifetime-LIFETIME_EPSILON){
+        const childPhysicsLifetime=Number.isFinite(propagation.wave.physicsLifetime)
+          ?propagation.wave.physicsLifetime
+          :WAVE_LIFETIME;
+        if(propagation.wave.age>=childPhysicsLifetime-LIFETIME_EPSILON){
           this.flushWaveHits(propagation.wave);
         }
         for(const child of children){
@@ -542,6 +566,7 @@ export class World{
       }
     }
     this.removeExpiredWaves();
+    this.settleCompletedRoots();    this.removeExpiredWaves();
     this.settleCompletedRoots();
 
     for(let index=this.waveFades.length-1;index>=0;index--){
@@ -580,7 +605,8 @@ export class World{
   removeExpiredWaves(){
     const active=[];
     for(const wave of this.waves){
-      if(wave.lifetime-wave.age<=LIFETIME_EPSILON){
+      const displayAge=Number.isFinite(wave.displayAge)?wave.displayAge:wave.age;
+      if(wave.lifetime-displayAge<=LIFETIME_EPSILON){
         this.waveFades.push({wave,age:0,life:WAVE_FADE_LIFETIME});
       }else{
         active.push(wave);
@@ -618,12 +644,13 @@ export class World{
     energyMultiplier
   }){
     const distanceAfterContact=Math.max(0,wave.radius-activationRadius);
+    const physicsLifetime=Number.isFinite(wave.physicsLifetime)?wave.physicsLifetime:WAVE_LIFETIME;
     const contactAge=wave.speed>0
       ?Math.max(0,wave.age-distanceAfterContact/wave.speed)
       :wave.age;
     if(
       this.waves.length>=MAX_WAVES||
-      wave.lifetime-contactAge<=LIFETIME_EPSILON||
+      physicsLifetime-contactAge<=LIFETIME_EPSILON||
       wave.surfaceHistory.has(surfaceKey)||
       wave.emittedSurfaces.has(surfaceKey)
     )return null;
@@ -658,6 +685,10 @@ export class World{
       speed:wave.speed,
       age:wave.age,
       lifetime:Math.max(wave.lifetime,REFLECTED_WAVE_LIFETIME),
+      physicsLifetime,
+      displayAge:wave.displayAge??wave.age,
+      displayRadius:wave.radius,
+      displayPreviousRadius:activationRadius,
       energy:wave.energy*energyMultiplier,
       reflectedBy:surfaceKey,
       reflectionPath,
