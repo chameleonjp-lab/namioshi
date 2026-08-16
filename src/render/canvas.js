@@ -187,6 +187,12 @@ export class CanvasView{
       if(world.isReflectionTapAvailable(wave))this.reflectionTapHint(context,wave,time);
       this.strokeWaveBand(context,wave,red,green,blue,alpha,this.waveVisualWidth(wave));
     }
+    for(const fade of world.waveFades??[]){
+      const wave=fade.wave;
+      const [red,green,blue]=this.waveStroke(wave);
+      const alpha=Math.max(0,1-fade.age/fade.life)*.78;
+      this.strokeWaveBand(context,wave,red,green,blue,alpha,this.waveVisualWidth(wave));
+    }
     for(const beacon of world.beacons){
       const flash=beacon.flash||0;
       const pulse=.5+.5*Math.sin(time*.004+String(beacon.id).length);

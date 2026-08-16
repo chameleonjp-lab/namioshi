@@ -425,6 +425,9 @@ export class WebGLView{
       if(world.isReflectionTapAvailable(wave))this.drawReflectionTapHint(wave,time);
       this.drawWave(wave,fade);
     }
+    for(const fade of world.waveFades??[]){
+      this.drawWave(fade.wave,Math.max(0,1-fade.age/fade.life));
+    }
     for(const beacon of world.beacons){
       const flash=beacon.flash||0;
       const pulse=.5+.5*Math.sin(time*.004+String(beacon.id).length);

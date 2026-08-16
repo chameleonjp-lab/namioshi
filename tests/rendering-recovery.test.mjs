@@ -111,6 +111,17 @@ test('both renderers use finite reflection arcs instead of a reflected full circ
   assert.match(canvas,/context\.moveTo\(this\.arcPoints\[point\]/);
 });
 
+test('expired waves get only a short visual fade, never a physics lifetime extension',()=>{
+  const world=readFileSync(new URL('../src/game/world.js',import.meta.url),'utf8');
+  const canvas=readFileSync(new URL('../src/render/canvas.js',import.meta.url),'utf8');
+  const webgl=readFileSync(new URL('../src/render/webgl.js',import.meta.url),'utf8');
+  assert.match(world,/waveFades=\[\]/);
+  assert.match(world,/removeExpiredWaves\(\)/);
+  assert.match(world,/WAVE_FADE_LIFETIME=\.18/);
+  assert.match(canvas,/for\(const fade of world\.waveFades\?\?\[\]\)/);
+  assert.match(webgl,/for\(const fade of world\.waveFades\?\?\[\]\)/);
+});
+
 test('WebGL caches locations, reuses buffers, and precomputes circle samples',()=>{
   const webgl=readFileSync(new URL('../src/render/webgl.js',import.meta.url),'utf8');
 

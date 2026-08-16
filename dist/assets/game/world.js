@@ -32,6 +32,7 @@ const clampVector=(x,y,maximum)=>{
 };
 const OFFICIAL_RANDOM_SEED=0xfc71e804;
 const LIFETIME_EPSILON=1e-9;
+const WAVE_FADE_LIFETIME=.18;
 const SCORE_CATEGORIES=Object.freeze(['direct','wall','glass','double']);
 
 function emptyCategoryCounts(){
@@ -72,6 +73,7 @@ export class World{
   taps=0;
   time=PLAY_SECONDS;
   waves=[];
+  waveFades=[];
   beacons=[];
   glass=[];
   particles=[];
@@ -113,6 +115,7 @@ export class World{
     this.taps=0;
     this.time=PLAY_SECONDS;
     this.waves=[];
+    this.waveFades=[];
     this.particles=[];
     this.reflectionEffects=[];
     this.bestHits=new Map();
@@ -506,7 +509,7 @@ export class World{
       this.advanceBeacon(beacon,dt);
     }
 
-    this.waves=this.waves.filter(wave=>wave.lifetime-wave.age>LIFETIME_EPSILON);
+    this.removeExpiredWaves();
     const wavesAtStepStart=[...this.waves].reverse();
     for(const wave of wavesAtStepStart){
       const remainingLifetime=Math.max(0,wave.lifetime-wave.age);
@@ -537,8 +540,14 @@ export class World{
         }
       }
     }
-    this.waves=this.waves.filter(wave=>wave.age<wave.lifetime-LIFETIME_EPSILON);
+    this.removeExpiredWaves();
     this.settleCompletedRoots();
+
+    for(let index=this.waveFades.length-1;index>=0;index--){
+      const fade=this.waveFades[index];
+      fade.age+=dt;
+      if(fade.age>=fade.life)this.waveFades.splice(index,1);
+    }
 
     for(let index=this.particles.length-1;index>=0;index--){
       const particle=this.particles[index];
@@ -565,6 +574,19 @@ export class World{
       return{valid:false,intersections:trace.intersections,reason:'reflection-depth-mismatch'};
     }
     return trace;
+  }
+
+  removeExpiredWaves(){
+    const active=[];
+    for(const wave of this.waves){
+      if(wave.lifetime-wave.age<=LIFETIME_EPSILON){
+        this.waveFades.push({wave,age:0,life:WAVE_FADE_LIFETIME});
+      }else{
+        active.push(wave);
+      }
+    }
+    this.waves=active;
+    while(this.waveFades.length>24)this.waveFades.shift();
   }
 
   waveCanReach(wave,x,y){
