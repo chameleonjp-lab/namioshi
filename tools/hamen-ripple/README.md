@@ -24,6 +24,14 @@ python3 -m http.server 8080
 - カラーマップ: 深海 / 氷河 / 熱 / 墨 / 森 / 真珠
 - クリア: 高さ場をゼロにする
 
-## namioshi への対応関係
+## 再現用ファイル
 
-詳細は [`docs/HAMEN_RIPPLE_REFERENCE.md`](../../docs/HAMEN_RIPPLE_REFERENCE.md) を参照してください。
+| ファイル | 役割 |
+|---|---|
+| `ripple.js` / `app.js` / `index.html` | 実行デモ |
+| `constants.json` | 格子・減衰・入力・照明の定数 |
+| `source/engine.ts` | 型つき原典 |
+| `source/colormaps.ts` | LUT 原典 |
+| `source/ripple-stage.tsx` | 元 React ホスト（参考。実行には不要） |
+
+更新式と再実装チェックリストは [`docs/HAMEN_RIPPLE_ALGORITHM.md`](../../docs/HAMEN_RIPPLE_ALGORITHM.md) です。namioshi への対応関係は [`docs/HAMEN_RIPPLE_REFERENCE.md`](../../docs/HAMEN_RIPPLE_REFERENCE.md) です。
