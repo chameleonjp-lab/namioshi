@@ -10,7 +10,7 @@
 - [済] WebGLテクスチャとCanvas 2D透明ハイライトの両方で共有し、前景波を隠さない描画順を維持した。
 - [済] 高さ場がWorldの得点、反射経路、入力キュー、終了条件へ接続されていないことを静的試験で固定した。
 - [済] `node --test tests/*.test.mjs` 162件、`build`、`verify`、配置・戦略・SVG・容量検査をローカルで通過した。
-- [未確認] Draft headのG2 Node.js 18/20/22 Actions。
+- [済] Draft headのG2 Build Verification #174（Node.js 18/20/22、全ジョブ）。
 - [未確認] iPhone 17 Pro Safariの水面視認性、WebGL／Canvas切替、長時間動作、発熱。
 - [停止] マージ、公開判定、ランキング／Supabase再開、高さ場の判定利用。
 
