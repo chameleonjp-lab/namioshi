@@ -1,0 +1,111 @@
+{
+  "name": "HAMEN height-field ripple",
+  "date": "2026-08-20",
+  "notes": "Runnable constants for the tools/hamen-ripple demo. Not used by namioshi src/ or dist/.",
+  "timestep": {
+    "hz": 60,
+    "fixedMs": 16.6666666667,
+    "maxFrameDeltaMs": 100
+  },
+  "grid": {
+    "mobileCssWidthBelow": 600,
+    "cellPxMobile": 3.2,
+    "cellPxDesktop": 4.2,
+    "maxCellsMobile": 48000,
+    "maxCellsDesktop": 90000,
+    "minW": 64,
+    "maxW": 360,
+    "minH": 64,
+    "maxH": 520
+  },
+  "display": {
+    "maxDevicePixelRatio": 1.5
+  },
+  "damping": {
+    "formula": "0.996 - clamp(viscosity, 0, 100) / 100 * 0.11",
+    "viscosity0": 0.996,
+    "viscosity28Default": 0.96512,
+    "viscosity100": 0.886,
+    "engineConstructDefault": 0.985
+  },
+  "defaults": {
+    "viscosity": 28,
+    "strength": 64,
+    "colormap": "abyss"
+  },
+  "drop": {
+    "amp": "0.55 + t * 8.2",
+    "radius": "2.4 + t * 4.2",
+    "minRadius": 1.2,
+    "falloff": "(1 - d2 / r2) ** 2"
+  },
+  "dragSegment": {
+    "steps": "max(1, ceil(dist * 1.85))",
+    "amp": "(0.42 + t * 7.6) / steps ** 0.32",
+    "radius": "2.15 + t * 3.6 + min(dist * 0.12, 2.8)"
+  },
+  "seed": [
+    { "x": 0.5, "y": 0.46, "amp": 6.4, "radius": 6.2 },
+    { "x": 0.32, "y": 0.62, "amp": 4.2, "radius": 4.6 },
+    { "x": 0.7, "y": 0.34, "amp": 5.1, "radius": 5.2 },
+    { "x": 0.58, "y": 0.72, "amp": 3.2, "radius": 3.8 }
+  ],
+  "wave": {
+    "update": "next = ((L + R + U + D) * 0.5 - previous) * damping",
+    "c2Dt2OverDx2": 0.5,
+    "interiorOnly": true,
+    "boundary": "Dirichlet zero; edges are never written in step()"
+  },
+  "lighting": {
+    "light": { "x": -0.42, "y": -0.58, "z": 0.7 },
+    "gradientScale": 0.62,
+    "specularPower": 42,
+    "specularRgb": [235, 235, 240],
+    "shade": "0.28 + 0.72 * max(0, nDotL)",
+    "heightMap": "0.5 + 0.5 * tanh(z * 0.38 + min(1, hypot(dx, dy) * 1.4) * 0.22)"
+  },
+  "colormapStops": {
+    "abyss": [
+      [0, 4, 10, 16],
+      [0.28, 8, 38, 52],
+      [0.52, 18, 92, 108],
+      [0.74, 72, 186, 188],
+      [1, 226, 248, 244]
+    ],
+    "glacier": [
+      [0, 6, 12, 22],
+      [0.3, 18, 52, 88],
+      [0.58, 62, 148, 196],
+      [0.82, 168, 216, 236],
+      [1, 242, 250, 255]
+    ],
+    "thermal": [
+      [0, 8, 6, 10],
+      [0.28, 72, 18, 28],
+      [0.52, 188, 48, 32],
+      [0.76, 236, 148, 36],
+      [1, 255, 244, 214]
+    ],
+    "ink": [
+      [0, 8, 9, 11],
+      [0.35, 36, 42, 50],
+      [0.62, 92, 104, 116],
+      [0.84, 176, 184, 192],
+      [1, 236, 238, 240]
+    ],
+    "forest": [
+      [0, 6, 12, 8],
+      [0.3, 10, 48, 28],
+      [0.55, 36, 112, 56],
+      [0.78, 164, 196, 72],
+      [1, 236, 248, 214]
+    ],
+    "pearl": [
+      [0, 18, 16, 14],
+      [0.34, 62, 56, 50],
+      [0.62, 168, 152, 136],
+      [0.84, 228, 216, 204],
+      [1, 248, 244, 238]
+    ]
+  }
+}
