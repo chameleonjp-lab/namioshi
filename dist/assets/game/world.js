@@ -131,7 +131,7 @@ export class World{
   tap(x,y,{action='auto',reflectionTarget=null}={}){
     if(action!=='root'){
       const target=action==='reflection'&&reflectionTarget
-        ?this.findCapturedReflectionTapTarget(reflectionTarget,x,y)
+        ?this.findCapturedReflectionTapTarget(reflectionTarget)
         :this.findReflectionTapTarget(x,y);
       if(target)return this.registerReflectionTap(target,x,y);
       if(action==='reflection')return false;
@@ -211,7 +211,7 @@ export class World{
    * applied. The simulation can advance one or more fixed steps in between,
    * so searching only the new radius would make a tap on a visible ring miss.
    */
-  findCapturedReflectionTapTarget(snapshot,x,y){
+  findCapturedReflectionTapTarget(snapshot){
     if(!snapshot||typeof snapshot!=='object')return null;
     const wave=[
       ...this.waves,
@@ -230,9 +230,7 @@ export class World{
       radialError:snapshot.radialError,
       precision:Math.max(0,Math.min(1,snapshot.precision)),
       projectedX:snapshot.projectedX,
-      projectedY:snapshot.projectedY,
-      capturedX:Number.isFinite(x)?x:snapshot.projectedX,
-      capturedY:Number.isFinite(y)?y:snapshot.projectedY
+      projectedY:snapshot.projectedY
     };
   }
 
