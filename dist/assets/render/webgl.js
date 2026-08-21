@@ -1,6 +1,7 @@
 import {LOGICAL_HEIGHT,LOGICAL_WIDTH,QUALITY} from '../config.js';
 import {createViewport} from '../game/viewport.js';
 import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from './reflection-arcs.js';
+import {RippleSurface} from './ripple-surface.js';
 const MAX_BACKGROUND_WAVES=12;
 const MAX_PARTICLES=90;
 const MAX_DYNAMIC_FLOATS=2048;
@@ -127,7 +128,7 @@ function uniformLocation(gl,value,name){
 
 const vertex2d='attribute vec2 a;uniform vec2 uRes;void main(){vec2 p=a/uRes*2.0-1.0;gl_Position=vec4(p.x,-p.y,0,1);}';
 const backgroundVertex='attribute vec2 a;varying vec2 v;void main(){v=a*.5+.5;gl_Position=vec4(a,0,1);}';
-const backgroundFragment='precision mediump float;varying vec2 v;uniform float uTime;uniform vec2 uRes;uniform int uWaveCount;uniform vec4 uWaves[12];void main(){vec2 p=v*uRes;float w=0.0;for(int i=0;i<12;i++){if(i>=uWaveCount)break;vec4 a=uWaves[i];float d=distance(p,a.xy);w+=exp(-pow(abs(d-a.z)/(a.w+1.0),2.0))*.26;}float rippleA=sin(p.x*.045+uTime*1.35+sin(p.y*.018+uTime*.3))*.026;float rippleB=sin((p.x+p.y)*.031-uTime*.92)*.018+cos(p.y*.064+uTime*.72)*.012;float centerLight=exp(-distance(v,vec2(.5,.38))*2.4);float edge=smoothstep(.12,1.22,dot(v*2.0-1.0,v*2.0-1.0));float waterMix=clamp(.20+v.y*.42+rippleA+rippleB+w,0.0,1.0);vec3 deep=vec3(.004,.018,.045);vec3 surface=vec3(.018,.19,.28);vec3 col=mix(deep,surface,waterMix);col+=vec3(.035,.22,.32)*(centerLight*.7+w);col*=1.0-edge*.46;gl_FragColor=vec4(col,1.0);}';
+const backgroundFragment='precision mediump float;varying vec2 v;uniform float uTime;uniform vec2 uRes;uniform int uWaveCount;uniform vec4 uWaves[12];uniform sampler2D uRipple;uniform float uRippleEnabled;void main(){vec2 p=v*uRes;float w=0.0;for(int i=0;i<12;i++){if(i>=uWaveCount)break;vec4 a=uWaves[i];float d=distance(p,a.xy);w+=exp(-pow(abs(d-a.z)/(a.w+1.0),2.0))*.26;}float rippleA=sin(p.x*.045+uTime*1.35+sin(p.y*.018+uTime*.3))*.026;float rippleB=sin((p.x+p.y)*.031-uTime*.92)*.018+cos(p.y*.064+uTime*.72)*.012;float centerLight=exp(-distance(v,vec2(.5,.38))*2.4);float edge=smoothstep(.12,1.22,dot(v*2.0-1.0,v*2.0-1.0));float waterMix=clamp(.20+v.y*.42+rippleA+rippleB+w,0.0,1.0);vec3 deep=vec3(.004,.018,.045);vec3 surface=vec3(.018,.19,.28);vec3 col=mix(deep,surface,waterMix);col+=vec3(.035,.22,.32)*(centerLight*.7+w);if(uRippleEnabled>.5){vec4 surfaceRipple=texture2D(uRipple,vec2(v.x,1.0-v.y));col=mix(col,surfaceRipple.rgb,surfaceRipple.a);}col*=1.0-edge*.46;gl_FragColor=vec4(col,1.0);}';
 const colorFragment='precision mediump float;uniform vec4 uColor;void main(){gl_FragColor=uColor;}';
 const pointVertex='attribute vec2 a;uniform vec2 uRes;uniform float uSize;void main(){vec2 p=a/uRes*2.0-1.0;gl_Position=vec4(p.x,-p.y,0,1);gl_PointSize=uSize;}';
 
@@ -149,6 +150,8 @@ export class WebGLView{
   selfTestPoints=new Float32Array([0,0,1,0]);
   rgba=new Float32Array(4);
   backgroundBuffer=null;
+  rippleTexture=null;
+  rippleSurface=new RippleSurface();
   programInfo=null;
   activeProgram=null;
   activeBuffer=null;
@@ -179,13 +182,15 @@ export class WebGLView{
     const point=program(gl,pointVertex,colorFragment);
     const backgroundBuffer=gl.createBuffer();
     const dynamicBuffer=gl.createBuffer();
-    if(!backgroundBuffer||!dynamicBuffer)throw Error('WebGL buffer unavailable');
+    const rippleTexture=gl.createTexture();
+    if(!backgroundBuffer||!dynamicBuffer||!rippleTexture)throw Error('WebGL buffer unavailable');
     this.gl=gl;
     this.bg=background;
     this.color=color;
     this.point=point;
     this.buf=dynamicBuffer;
     this.backgroundBuffer=backgroundBuffer;
+    this.rippleTexture=rippleTexture;
     this.programInfo={
       bg:{
         program:background,
@@ -194,7 +199,9 @@ export class WebGLView{
           time:uniformLocation(gl,background,'uTime'),
           resolution:uniformLocation(gl,background,'uRes'),
           waveCount:uniformLocation(gl,background,'uWaveCount'),
-          waves:uniformLocation(gl,background,'uWaves[0]')
+          waves:uniformLocation(gl,background,'uWaves[0]'),
+          ripple:uniformLocation(gl,background,'uRipple'),
+          rippleEnabled:uniformLocation(gl,background,'uRippleEnabled')
         }
       },
       color:{
@@ -224,10 +231,18 @@ export class WebGLView{
     gl.bufferData(gl.ARRAY_BUFFER,this.quad,gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER,dynamicBuffer);
     gl.bufferData(gl.ARRAY_BUFFER,MAX_DYNAMIC_FLOATS*Float32Array.BYTES_PER_ELEMENT,gl.DYNAMIC_DRAW);
+    gl.bindTexture(gl.TEXTURE_2D,rippleTexture);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
     gl.useProgram(color);
     gl.uniform2f(this.programInfo.color.uniforms.resolution,LOGICAL_WIDTH,LOGICAL_HEIGHT);
     gl.useProgram(point);
     gl.uniform2f(this.programInfo.point.uniforms.resolution,LOGICAL_WIDTH,LOGICAL_HEIGHT);
+    gl.useProgram(background);
+    gl.uniform1i(this.programInfo.bg.uniforms.ripple,0);
+    gl.uniform1f(this.programInfo.bg.uniforms.rippleEnabled,0);
     this.selfTest();
   }
 
@@ -294,7 +309,7 @@ export class WebGLView{
     this.activate(info,this.buf);
   }
 
-  drawBackground(time,waves,quality,resolutionWidth,resolutionHeight){
+  drawBackground(time,waves,quality,resolutionWidth,resolutionHeight,rippleSurface=null){
     const gl=this.gl;
     const info=this.programInfo.bg;
     this.activate(info,this.backgroundBuffer);
@@ -312,6 +327,17 @@ export class WebGLView{
     }
     gl.uniform1i(info.uniforms.waveCount,visibleCount);
     gl.uniform4fv(info.uniforms.waves,this.waveData);
+    if(rippleSurface?.w&&rippleSurface?.h){
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D,this.rippleTexture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,rippleSurface.w,rippleSurface.h,0,gl.RGBA,gl.UNSIGNED_BYTE,rippleSurface.pixels);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+      gl.uniform1i(info.uniforms.ripple,0);
+      gl.uniform1f(info.uniforms.rippleEnabled,1);
+    }else{
+      gl.uniform1f(info.uniforms.rippleEnabled,0);
+    }
     gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   }
 
@@ -372,13 +398,17 @@ export class WebGLView{
 
   render(world,time,quality){
     const gl=this.gl;
+    this.rippleSurface.resize(world.w,world.h,quality);
+    this.rippleSurface.syncWorld(world);
+    this.rippleSurface.advance(time);
+    this.rippleSurface.paint();
     this.useFullViewport();
     gl.clearColor(.006,.025,.055,1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     this.drawBackground(time,[],quality,this.screenWidth,this.screenHeight);
 
     this.useGameViewport();
-    this.drawBackground(time,world.waves,quality,world.w,world.h);
+    this.drawBackground(time,world.waves,quality,world.w,world.h,this.rippleSurface);
 
     for(const glass of world.glass){
       this.tmp[0]=glass.x1;

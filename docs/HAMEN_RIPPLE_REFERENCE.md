@@ -2,9 +2,9 @@
 
 日付: 2026-08-20
 対象: `chameleonjp-lab/namioshi`
-置き場: `tools/hamen-ripple/`（開発用。本番ゲームには未接続）
+置き場: `tools/hamen-ripple/`（原典デモ・再現資料。ゲーム本体は`src/render/ripple-surface.js`へ表示専用で取り込み済み）
 
-この文書は、Grok Build で試作したインタラクティブ流体表面を namioshi の水面表現の参考として残すためのものです。ゲームコード、得点、物理寿命、入力上限、ランキング、Supabase は変更しません。
+この文書は、Grok Build で試作したインタラクティブ流体表面を namioshi の水面表現へ安全に取り込むための境界と原典を残すものです。ゲームの円環物理、得点、入力上限、ランキング、Supabaseは変更しません。
 
 アルゴリズムの更新式・定数・再実装手順の正本は [`docs/HAMEN_RIPPLE_ALGORITHM.md`](./HAMEN_RIPPLE_ALGORITHM.md) です。
 
@@ -22,6 +22,8 @@
 | `tools/hamen-ripple/source/settings.ts` | 既定値（粘度 28、強さ 64、深海） |
 | `tools/hamen-ripple/source/ripple-stage.tsx` | 元 React ホストのスナップショット |
 | `docs/HAMEN_RIPPLE_ALGORITHM.md` | 波動方程式、境界、入力、照明、再実装チェックリスト |
+| `src/render/ripple-surface.js` | namioshiへ取り込んだ表示専用2バッファ高さ場 |
+| `src/render/webgl.js` / `src/render/canvas.js` | 同じ高さ場を背景へ合成する描画バックエンド |
 
 元試作は React / Canvas 2D。namioshi は外部パッケージなしの ES Modules なので、同じアルゴリズムを vanilla JS に移植しています。TypeScript 原典は `source/` に置き、React / Tailwind / 認証は本番へ持ち込みません。
 
@@ -41,21 +43,21 @@ next = ((left + right + up + down) / 2 - previous) * damping
 
 幾何円環は namioshi の得点・反射・ビーコン判定に必要です。高さ場は見た目の厚みと干渉縞の参考であり、経路台帳の置換ではありません。
 
-## 取り込める論点（未実装・任意）
+## 取り込んだ論点と残す論点
 
-1. **タップ直後の局所くぼみ**  
+1. **タップ直後の局所くぼみ（取り込み済み）**
    根波発生時、円環の内側に短い高さインパルスを足すと着水感が増えます。半径・寿命・得点には触れない前提です。HAMEN の `drop` 式（amp = 0.55+t×8.2、radius = 2.4+t×4.2）が振幅の目安です。
 
-2. **背景水面の厚み**  
+2. **背景水面の厚み（取り込み済み）**
    現行背景は正弦波とリングの重ねです。高さ場の低解像度版、または法線ハイライトだけを背景クオリティ LOW/MID/HIGH に足す余地があります。前景の得点波は Phase 7A どおり隠さないこと。
 
-3. **減衰カーブ**  
+3. **減衰カーブ（取り込み済み・表示専用）**
    HAMEN の `damping` はエネルギー減衰です。namioshi の `fade = 1 - age/life` 線形フェードと比較して、消える直前の厚みを検討できます。物理寿命3秒は維持します。
 
-4. **軌跡補間**  
+4. **軌跡補間（アルゴリズムを保持、ゲーム入力へは未接続）**
    速いフリックで波が飛び飛びにならないよう、pointer の線分を `ceil(dist × 1.85)` で分割しています。namioshi の入力キューが画面座標を間引く場合の参考です。余白上の入力拒否と 360×640 変換は現行契約のままです。
 
-5. **クリア＝静止水面**  
+5. **クリア＝静止水面（次段階の候補）**
    RESULT の「静かな水面」SE に合わせ、高さ場をゼロにする操作があります。結果画面の背景を完全静止へ近づける検討用です。
 
 ## 取り込まない範囲
@@ -69,6 +71,6 @@ next = ((left + right + up + down) / 2 - previous) * damping
 
 - 参考デモは `tools/hamen-ripple/` で単体動作する
 - TypeScript 原典と定数表を `source/` `constants.json` に置いた
-- `src` と `dist` は未変更
-- 実ブラウザ・iPhone での本番組み込みは未実施
+- `src/render/ripple-surface.js`、`src/render/webgl.js`、`src/render/canvas.js`と対応する`dist`を変更した
+- Node自動試験、build、dist整合性は確認済み。実ブラウザ・iPhone 17 Proでの本番表示は未確認
 - 公開判定、ランキング、Supabase は停止のまま

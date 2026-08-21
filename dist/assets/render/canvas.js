@@ -1,6 +1,7 @@
 import {createViewport} from '../game/viewport.js';
 import {QUALITY} from '../config.js';
 import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from './reflection-arcs.js';
+import {RippleSurface} from './ripple-surface.js';
 export class CanvasView{
   constructor(canvas){
     this.canvas=canvas;
@@ -13,6 +14,10 @@ export class CanvasView{
     this.viewport=createViewport(1,1);
     this.arcPoints=new Float32Array(REFLECTION_ARC_SEGMENTS*4);
     this.quality='MID';
+    this.rippleSurface=new RippleSurface();
+    this.rippleCanvas=null;
+    this.rippleContext=null;
+    this.rippleImageData=null;
   }
 
   waveStroke(wave){
@@ -85,9 +90,34 @@ export class CanvasView{
     this.canvas.style.height=height+'px';
   }
 
+  drawRippleSurface(context,width,height){
+    const surface=this.rippleSurface;
+    if(!surface.w||!surface.h)return;
+    if(!this.rippleCanvas||this.rippleCanvas.width!==surface.w||this.rippleCanvas.height!==surface.h){
+      this.rippleCanvas=document.createElement('canvas');
+      this.rippleCanvas.width=surface.w;
+      this.rippleCanvas.height=surface.h;
+      this.rippleContext=this.rippleCanvas.getContext('2d');
+      this.rippleImageData=this.rippleContext?.createImageData(surface.w,surface.h)??null;
+    }
+    if(!this.rippleContext||!this.rippleImageData)return;
+    this.rippleImageData.data.set(surface.paint());
+    this.rippleContext.putImageData(this.rippleImageData,0,0);
+    context.save();
+    context.globalCompositeOperation='screen';
+    context.globalAlpha=.68;
+    context.imageSmoothingEnabled=true;
+    context.imageSmoothingQuality='high';
+    context.drawImage(this.rippleCanvas,0,0,width,height);
+    context.restore();
+  }
+
   render(world,time,quality=this.quality){
     const context=this.ctx;
     const viewport=this.viewport;
+    this.rippleSurface.resize(world.w,world.h,quality);
+    this.rippleSurface.syncWorld(world);
+    this.rippleSurface.advance(time);
     context.setTransform(this.dpr,0,0,this.dpr,0,0);
     const sky=context.createLinearGradient(0,0,0,this.screenHeight);
     sky.addColorStop(0,'#020813');
@@ -129,6 +159,7 @@ export class CanvasView{
     surface.addColorStop(1,'#020b18');
     context.fillStyle=surface;
     context.fillRect(0,0,width,height);
+    this.drawRippleSurface(context,width,height);
     context.strokeStyle='rgba(110,230,255,.10)';
     context.lineWidth=1;
     for(let y=20;y<height;y+=18){

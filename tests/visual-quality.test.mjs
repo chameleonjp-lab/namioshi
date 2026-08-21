@@ -36,6 +36,26 @@ test('water and beacon rendering keep two-layer surface cues and hit expansion',
   assert.match(canvas,/fillReflectionArcPoints/);
 });
 
+test('HAMEN surface is a render-only layer shared by both backends',()=>{
+  const ripple=source('src/render/ripple-surface.js');
+  const webgl=source('src/render/webgl.js');
+  const canvas=source('src/render/canvas.js');
+  assert.match(ripple,/current=new Float32Array/);
+  assert.match(ripple,/previous=new Float32Array/);
+  assert.match(ripple,/previous\[index\]=\(\(current\[index-1\]/);
+  assert.match(ripple,/Math\.ceil\(distance\*1\.85\)/);
+  assert.match(ripple,/this\.drop\(x,y,DEFAULT_STRENGTH\)/);
+  assert.match(ripple,/this\.seenImpulses\.has\(key\)/);
+  assert.match(webgl,/import \{RippleSurface\} from '\.\/ripple-surface\.js'/);
+  assert.match(webgl,/uRippleEnabled/);
+  assert.match(webgl,/this\.rippleSurface\.syncWorld\(world\)/);
+  assert.match(webgl,/this\.rippleSurface\.paint\(\)/);
+  assert.match(canvas,/import \{RippleSurface\} from '\.\/ripple-surface\.js'/);
+  assert.match(canvas,/this\.rippleSurface\.syncWorld\(world\)/);
+  assert.match(canvas,/drawRippleSurface\(context,width,height\)/);
+  assert.doesNotMatch(ripple,/\.\/game\//);
+});
+
 test('hit feedback distinguishes new, improved, and known routes without sound',()=>{
   const main=source('src/main.js');
   const styles=source('src/ui/styles.css');

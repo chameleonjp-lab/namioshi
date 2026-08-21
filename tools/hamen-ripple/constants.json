@@ -24,7 +24,7 @@
   "damping": {
     "formula": "0.996 - clamp(viscosity, 0, 100) / 100 * 0.11",
     "viscosity0": 0.996,
-    "viscosity28Default": 0.96512,
+    "viscosity28Default": 0.9652,
     "viscosity100": 0.886,
     "engineConstructDefault": 0.985
   },
