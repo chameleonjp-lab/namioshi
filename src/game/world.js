@@ -72,6 +72,7 @@ export class World{
   score=0;
   scoreBreakdown={direct:0,wall:0,glass:0,double:0};
   taps=0;
+  reflectionCount=0;
   time=PLAY_SECONDS;
   waves=[];
   waveFades=[];
@@ -84,6 +85,8 @@ export class World{
   reflectionTapAwards=new Map();
   finalizedRoots=new Set();
   waveSequence=1;
+  reflectionEffectSequence=1;
+  roundSequence=0;
   onHit=()=>{};
   onRoute=()=>{};
   onReflect=()=>{};
@@ -96,6 +99,7 @@ export class World{
   }
 
   reset({mode=GAME_MODE.OFFICIAL,random=this.practiceRandomSource}={}){
+    this.roundSequence++;
     this.w=LOGICAL_WIDTH;
     this.h=LOGICAL_HEIGHT;
     this.mode=normalizeGameMode(mode);
@@ -114,6 +118,7 @@ export class World{
     this.score=0;
     this.scoreBreakdown={direct:0,wall:0,glass:0,double:0};
     this.taps=0;
+    this.reflectionCount=0;
     this.time=PLAY_SECONDS;
     this.waves=[];
     this.waveFades=[];
@@ -124,6 +129,7 @@ export class World{
     this.reflectionTapAwards=new Map();
     this.finalizedRoots=new Set();
     this.waveSequence=1;
+    this.reflectionEffectSequence=1;
     this.beacons=layout.beacons;
     this.glass=layout.glass;
   }
@@ -142,6 +148,41 @@ export class World{
     if(!wave)return false;
     this.taps=tapNumber;
     return true;
+  }
+
+  /**
+   * Find the reflected water ripple shown by the renderers.  The geometric
+   * path remains the deterministic source of truth, while the renderers can
+   * present the same target as a neutral water ripple instead of a
+   * reflection-type colour.
+   */
+  findWaterRippleTapTarget(x,y){
+    if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+    let best=null;
+    for(const effect of this.reflectionEffects){
+      const wave=effect?.wave;
+      if(!wave||effect.rippleTapUsed||this.reflectionTapAwards.has(wave.rootTapId)||this.finalizedRoots.has(wave.rootTapId)||this.reflectionTapAwards.size>=MAX_TAPS)continue;
+      const progress=Math.max(0,Math.min(1,effect.age/effect.life));
+      const visibleRadius=4+progress*22;
+      const distance=Math.hypot(x-effect.x,y-effect.y);
+      const tapRange=Math.max(8,REFLECTION_TAP_RANGE*.55);
+      const radialError=Math.abs(distance-visibleRadius);
+      if(distance<=1e-7||radialError>tapRange)continue;
+      const precision=Math.max(0,Math.min(1,1-radialError/tapRange));
+      const candidate={
+        wave,
+        waveId:wave.id,
+        rootTapId:wave.rootTapId,
+        reflectionDepth:Math.max(1,wave.reflectionDepth??wave.reflections??1),
+        radialError,
+        precision,
+        projectedX:effect.x+(x-effect.x)*(visibleRadius/distance),
+        projectedY:effect.y+(y-effect.y)*(visibleRadius/distance),
+        rippleEffect:effect
+      };
+      if(!best||candidate.radialError<best.radialError)best=candidate;
+    }
+    return best??this.findReflectionTapTarget(x,y);
   }
 
   isReflectionTapAvailable(wave){
@@ -220,8 +261,25 @@ export class World{
       candidate?.id===snapshot.waveId&&
       candidate?.rootTapId===snapshot.rootTapId
     );
-    if(!wave||!this.isReflectionTapAvailable(wave))return null;
+    if(!wave)return null;
+    const rippleEffect=Number.isFinite(snapshot.rippleEffectId)
+      ?this.reflectionEffects.find(effect=>effect.id===snapshot.rippleEffectId)
+      :null;
+    if(Number.isFinite(snapshot.rippleEffectId)&&(
+      !rippleEffect||
+      rippleEffect.wave!==wave||
+      rippleEffect.rippleTapUsed||
+      this.reflectionTapAwards.has(snapshot.rootTapId)
+    ))return null;
     const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
+    if(rippleEffect&&(
+      depth<=0||
+      wave.reflectionTapUsed||
+      this.reflectionTapAwards.has(wave.rootTapId)||
+      this.finalizedRoots.has(wave.rootTapId)||
+      this.reflectionTapAwards.size>=MAX_TAPS
+    ))return null;
+    if(!rippleEffect&&!this.isReflectionTapAvailable(wave))return null;
     if(depth!==snapshot.reflectionDepth)return null;
     return{
       wave,
@@ -230,7 +288,8 @@ export class World{
       radialError:snapshot.radialError,
       precision:Math.max(0,Math.min(1,snapshot.precision)),
       projectedX:snapshot.projectedX,
-      projectedY:snapshot.projectedY
+      projectedY:snapshot.projectedY,
+      rippleEffect
     };
   }
 
@@ -241,8 +300,10 @@ export class World{
     const award={
       rootTapId:target.rootTapId,
       waveId:target.wave.id,
+      source:'water-ripple',
       reflections:target.reflectionDepth,
       reflectionDepth:target.reflectionDepth,
+      totalReflections:this.reflectionCount,
       precision:target.precision,
       judgement:judgementFromPrecision(target.precision),
       radialError:target.radialError,
@@ -253,6 +314,7 @@ export class World{
       routeStatus:'reflection-tap'
     };
     target.wave.reflectionTapUsed=true;
+    if(target.rippleEffect)target.rippleEffect.rippleTapUsed=true;
     this.reflectionTapAwards.set(target.rootTapId,award);
     this.burst(x,y);
     this.rebuildRouteScore();
@@ -735,11 +797,13 @@ export class World{
     // Feedback, however, must not announce a reflection that the finite
     // surfaces could not physically produce.
     if(this.waveCanReach(reflected,contactX,contactY)){
-      this.addReflectionEffect(contactX,contactY,normalX,normalY,kind);
+      this.reflectionCount++;
+      this.addReflectionEffect(contactX,contactY,normalX,normalY,kind,reflected);
       this.onReflect({
         kind,
         reflections:reflected.reflections,
         reflectionDepth:reflected.reflectionDepth,
+        totalReflections:this.reflectionCount,
         waveId:reflected.id,
         parentWaveId:wave.id,
         surfaceKey,
@@ -881,8 +945,19 @@ export class World{
     while(this.particles.length>90)this.particles.shift();
   }
 
-  addReflectionEffect(x,y,normalX,normalY,kind){
-    this.reflectionEffects.push({x,y,normalX,normalY,kind,age:0,life:.42});
+  addReflectionEffect(x,y,normalX,normalY,kind,wave=null){
+    this.reflectionEffects.push({
+      id:this.reflectionEffectSequence++,
+      x,
+      y,
+      normalX,
+      normalY,
+      kind,
+      wave,
+      rippleTapUsed:false,
+      age:0,
+      life:.42
+    });
     while(this.reflectionEffects.length>24)this.reflectionEffects.shift();
   }
 
@@ -897,6 +972,10 @@ export class World{
     let score=0;
     for(const award of this.reflectionTapAwards.values())score+=award.score;
     return score;
+  }
+
+  getReflectionCount(){
+    return this.reflectionCount;
   }
 
   getScoreLedgerSum(){

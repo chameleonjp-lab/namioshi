@@ -122,7 +122,7 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   assert.match(main,/id="playLegend" class="playLegend" role="note"/);
   assert.match(main,/id="playStatus" class="playStatus" role="status"/);
   assert.match(main,/id="reflectionTapPrompt" class="reflectionTapPrompt" role="status"[^>]*hidden/);
-  assert.match(main,/黄色い反射弧に重ねてタップ：技能ボーナス \+10〜40点/);
+  assert.match(main,/反射した水面波に重ねてタップ：技能ボーナス \+10〜40点/);
   assert.match(main,/目的：波をビーコンに重ねる/);
   assert.match(main,/反射板経由は高得点/);
   assert.match(main,/class="legendMark legendWave"/);
@@ -132,8 +132,8 @@ test('play legend makes waves, reflection boards, and beacons distinct',()=>{
   assert.match(main,/<b>波<\/b>：/);
   assert.match(main,/<b>反射板<\/b>：光る線/);
   assert.match(main,/<b>ビーコン<\/b>：白く光る点。波が重なると命中し、精算時に得点が確定します/);
-  assert.match(main,/<b>反射波タップ<\/b>：反射後の輪に重ねてタップすると、深度に応じて\+10〜40点/);
-  assert.match(main,/<b>波の寿命<\/b>：通常の波は約\$\{WAVE_LIFETIME\}秒、反射後の輪は最大\$\{REFLECTED_WAVE_LIFETIME\}秒表示され、技能ボーナスのタップ対象です。加点と反射処理は約\$\{WAVE_LIFETIME\}秒以内です。タップしても、出ている波は消えません/);
+  assert.match(main,/<b>水面波タップ<\/b>：反射したリアルな水面波に重ねてタップすると、反射回数に応じて\+10〜40点/);
+  assert.match(main,/<b>波の寿命<\/b>：通常の波は約\$\{WAVE_LIFETIME\}秒、反射した水面波は最大\$\{REFLECTED_WAVE_LIFETIME\}秒表示され、技能ボーナスのタップ対象です。加点と反射処理は約\$\{WAVE_LIFETIME\}秒以内です。タップしても、出ている波は消えません/);
   assert.doesNotMatch(main,/棒に波/);
   assert.match(styles,/\.legendLine\{/);
   assert.match(styles,/\.playLegendToggle\{/);
@@ -155,7 +155,7 @@ test('rules and practice entry explain scoring and the post-tap settlement',()=>
   assert.match(main,/\$\{MAX_TAPS\}回使い切った後は、入力と残っている波の精算を待ち、すべて終わると結果へ進む/);
   assert.match(main,/毎回変わる配置で反射経路を練習します/);
   assert.match(main,/ランキング外。練習結果は送信しません/);
-  assert.match(main,/反射した波の輪をタイミングよくタップすると、深度1は10〜20点、深度2は20〜40点/);
+  assert.match(main,/反射したリアルな水面波をタイミングよくタップすると、反射1回は10〜20点、反射2回は20〜40点/);
   assert.match(main,/id="scoreReflectionTap"/);
-  assert.match(main,/反射波タップ：\+\$\{tap\.points\}/);
+  assert.match(main,/水面波タップ：\+\$\{tap\.points\}/);
 });

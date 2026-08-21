@@ -14,26 +14,12 @@ for(let index=0;index<=SEGMENTS;index++){
   UNIT_CIRCLE_SIN[index]=Math.sin(angle);
 }
 
-const VISUAL_WAVE_WIDTH={
-  direct:.46,
-  wall:.64,
-  glass:.58,
-  double:.90
-};
-
 function waveRadius(wave){
   return Number.isFinite(wave.displayRadius)?wave.displayRadius:wave.radius;
 }
 
 function waveVisualWidth(wave){
-  const category=wave.reflections>=2
-    ?'double'
-    :wave.kind==='glass'
-      ?'glass'
-      :wave.kind==='wall'
-        ?'wall'
-        :'direct';
-  return Math.max(3,wave.width*VISUAL_WAVE_WIDTH[category]);
+  return Math.max(3,wave.width*.58);
 }
 
 function fillRingBandPoints(target,wave){
@@ -161,15 +147,13 @@ export class WebGLView{
   activeBuffer=null;
 
   waveColor(wave,fade){
-    if(wave.reflections>=2){
-      this.rgba[0]=1; this.rgba[1]=.78; this.rgba[2]=.25; this.rgba[3]=fade*.9;
-    }else if(wave.kind==='glass'){
-      this.rgba[0]=.76; this.rgba[1]=.52; this.rgba[2]=1; this.rgba[3]=fade*.86;
-    }else if(wave.kind==='wall'){
-      this.rgba[0]=.46; this.rgba[1]=.58; this.rgba[2]=1; this.rgba[3]=fade*.82;
-    }else{
-      this.rgba[0]=.35; this.rgba[1]=.92; this.rgba[2]=1; this.rgba[3]=fade*.82;
-    }
+    // Wave colour no longer encodes the reflection type. The water surface
+    // and the reflection count communicate the result without four competing
+    // ring colours.
+    this.rgba[0]=.62;
+    this.rgba[1]=.88;
+    this.rgba[2]=.91;
+    this.rgba[3]=fade*.84;
     return this.rgba;
   }
 
@@ -395,7 +379,7 @@ export class WebGLView{
     if(pointCount===0)return;
     const pulse=.18+.10*(.5+.5*Math.sin(time*.008+(wave.id??0)));
     const vertexCount=fillArcBandPoints(this.arcPoints,pointCount,this.arcBand,waveVisualWidth(wave)+8);
-    this.drawBand(this.arcBand,vertexCount,this.gl.TRIANGLES,1,.86,.32,pulse);
+    this.drawBand(this.arcBand,vertexCount,this.gl.TRIANGLES,.84,.97,1,pulse);
   }
 
   render(world,time,quality){

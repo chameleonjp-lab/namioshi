@@ -66,6 +66,39 @@ test('world synchronization consumes each root tap once and resets on a new roun
   assert.equal(surface.current.every(value=>value===0),true);
 });
 
+test('reflection impulses use unique effect ids and do not duplicate a ripple',()=>{
+  const surface=new RippleSurface();
+  surface.resize(360,640,'LOW');
+  const wave={id:2,rootTapId:'tap-1',reflectionDepth:1};
+  const world={
+    mode:'official',layoutId:'fixed',w:360,h:640,taps:1,
+    waves:[{id:1,rootTapId:'tap-1',reflectionDepth:0,originX:120,originY:200}],
+    reflectionEffects:[{id:17,x:120,y:200,kind:'wall',age:0,wave}]
+  };
+  surface.syncWorld(world);
+  const first=[...surface.current];
+  surface.syncWorld({...world,reflectionEffects:[{...world.reflectionEffects[0]}]});
+  assert.deepEqual([...surface.current],first);
+  surface.syncWorld({...world,reflectionEffects:[{...world.reflectionEffects[0],id:18,x:160}]});
+  assert.notDeepEqual([...surface.current],first);
+});
+
+test('a reset round clears prior impulses even when the previous round had no taps',()=>{
+  const surface=new RippleSurface();
+  surface.resize(360,640,'LOW');
+  const world={
+    mode:'official',layoutId:'fixed',roundSequence:1,w:360,h:640,taps:0,
+    waves:[{id:1,rootTapId:'tap-1',reflectionDepth:0,originX:120,originY:200}],
+    reflectionEffects:[]
+  };
+  surface.syncWorld(world);
+  const first=[...surface.current];
+  world.roundSequence=2;
+  surface.syncWorld({...world,waves:[{...world.waves[0],id:1,rootTapId:'tap-1'}]});
+  assert.deepEqual([...surface.current],first);
+  assert.ok(surface.seenImpulses.has('root:tap-1'));
+});
+
 test('painting produces transparent highlights without changing height buffers',()=>{
   const surface=new RippleSurface();
   surface.resize(360,640,'LOW');

@@ -209,7 +209,7 @@ export class RippleSurface{
    * energy on every render frame.
    */
   syncWorld(world){
-    const sceneKey=`${world?.mode??''}:${world?.layoutId??''}`;
+    const sceneKey=`${world?.mode??''}:${world?.layoutId??''}:${world?.roundSequence??''}`;
     const taps=Number.isFinite(world?.taps)?world.taps:0;
     if(this.lastTapCount>taps||this.lastSceneKey&&this.lastSceneKey!==sceneKey){
       this.clear();
@@ -228,7 +228,8 @@ export class RippleSurface{
     }
     for(const effect of world?.reflectionEffects??[]){
       if(!Number.isFinite(effect.age)||effect.age>.08)continue;
-      const key=`reflect:${effect.kind}:${Math.round(effect.x*10)}:${Math.round(effect.y*10)}`;
+      const effectKey=effect.id??`${effect.kind}:${Math.round(effect.x*10)}:${Math.round(effect.y*10)}`;
+      const key=`reflect:${effectKey}`;
       if(this.seenImpulses.has(key))continue;
       const[x,y]=this.logicalToGrid(effect.x,effect.y,logicalW,logicalH);
       this.drop(x,y,42);
