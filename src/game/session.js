@@ -82,6 +82,41 @@ export class TimedInputQueue{
     };
     if(input.action==='reflection')entry.action='reflection';
     else if(input.action==='root')entry.action='root';
+    // A reflection tap is identified against the wave that was visible when
+    // the pointer event occurred. Keep that small immutable snapshot with
+    // the queued input so a fixed-step delay cannot move the visible ring
+    // away from the tap that the player already made.
+    const reflectionTarget=input.reflectionTarget;
+    if(reflectionTarget&&typeof reflectionTarget==='object'){
+      const values=[
+        reflectionTarget.waveId,
+        reflectionTarget.rootTapId,
+        reflectionTarget.reflectionDepth,
+        reflectionTarget.radialError,
+        reflectionTarget.precision,
+        reflectionTarget.projectedX,
+        reflectionTarget.projectedY
+      ];
+      if(
+        (typeof values[0]==='string'||Number.isFinite(values[0]))&&
+        typeof values[1]==='string'&&
+        Number.isFinite(values[2])&&
+        Number.isFinite(values[3])&&
+        Number.isFinite(values[4])&&
+        Number.isFinite(values[5])&&
+        Number.isFinite(values[6])
+      ){
+        entry.reflectionTarget={
+          waveId:values[0],
+          rootTapId:values[1],
+          reflectionDepth:values[2],
+          radialError:values[3],
+          precision:values[4],
+          projectedX:values[5],
+          projectedY:values[6]
+        };
+      }
+    }
     this.entries.push(entry);
     this.entries.sort((left,right)=>left.timestamp-right.timestamp||left.order-right.order);
     return true;

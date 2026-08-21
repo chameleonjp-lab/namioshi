@@ -51,6 +51,87 @@ test('world reports judgement quality without changing hit scoring',()=>{
   assert.deepEqual(world.getScoreBreakdown(),{direct:24,wall:0,glass:0,double:0});
 });
 
+test('a reflection tap stays aligned with the ring visible at pointerdown',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const path=createReflectionPath({
+    surfaceKey:'wall:test',
+    surfaceKind:'wall',
+    x1:200,
+    y1:0,
+    x2:200,
+    y2:300,
+    parentOriginX:100,
+    parentOriginY:100,
+    childOriginX:300,
+    childOriginY:100
+  });
+  const wave=world.addWave(300,100,1,'wall',{
+    rootTapId:'tap-1',
+    reflectionPath:path,
+    radius:140,
+    displayRadius:140,
+    displayAge:1,
+    lifetime:10,
+    physicsLifetime:3
+  });
+  const visibleTarget=world.findReflectionTapTarget(160,100);
+  assert.ok(visibleTarget);
+  const snapshot={
+    waveId:visibleTarget.wave.id,
+    rootTapId:visibleTarget.rootTapId,
+    reflectionDepth:visibleTarget.reflectionDepth,
+    radialError:visibleTarget.radialError,
+    precision:visibleTarget.precision,
+    projectedX:visibleTarget.projectedX,
+    projectedY:visibleTarget.projectedY
+  };
+
+  // The ring advances before the fixed-step queue applies the input. A
+  // radius-only lookup would now miss the point that was visibly tapped.
+  wave.radius=160;
+  wave.displayRadius=160;
+  assert.equal(world.tap(160,100,{action:'reflection',reflectionTarget:snapshot}),true);
+  assert.equal(world.reflectionTapAwards.get('tap-1')?.precision,snapshot.precision);
+});
+
+test('a reflected ring remains tappable during its short visual fade',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const path=createReflectionPath({
+    surfaceKey:'wall:fade',
+    surfaceKind:'wall',
+    x1:200,
+    y1:0,
+    x2:200,
+    y2:300,
+    parentOriginX:100,
+    parentOriginY:100,
+    childOriginX:300,
+    childOriginY:100
+  });
+  const wave=world.addWave(300,100,1,'wall',{
+    rootTapId:'tap-fade',
+    reflectionPath:path,
+    radius:140,
+    displayRadius:140,
+    displayAge:10,
+    lifetime:10,
+    physicsLifetime:3
+  });
+  world.waveFades.push({wave,age:.08,life:.18});
+  const target=world.findReflectionTapTarget(160,100);
+  assert.equal(target?.wave,world.waveFades[0].wave);
+  assert.equal(world.tap(160,100,{action:'reflection'}),true);
+  assert.equal(world.reflectionTapAwards.get('tap-fade')?.points,20);
+});
+
 test('a hit keeps the closest fixed-step approach instead of the first band entry',()=>{
   const world=new World({random:()=>.5});
   world.reset();

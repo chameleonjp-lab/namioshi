@@ -1,10 +1,10 @@
-# CURRENT_TASK: PR #81マージ後・HAMEN表示専用水面の取り込み
+# CURRENT_TASK: PR #82マージ後・波の表示とタップ位置の整合
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 現行main: `2982d02`（Pull Request #81のマージコミット）
-- 対応ブランチ: `agent/namioshi-hamen-visual-surface-20260820`
+- 現行main: `3222f71`（Pull Request #82のマージコミット）
+- 対応ブランチ: `agent/namioshi-input-alignment-20260821`
 - 次のPull RequestはDraftのままにする
 - GitHubへのpush／Draft PR作成は行うが、マージ操作は行わない
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
@@ -23,9 +23,17 @@
 - HIGH/MID/LOWで高さ場格子を48,000/30,000/16,000セル以下へ制限し、表示用以外の処理へ高さ場を渡さない。
 - 自動テスト162件（今回7件追加）、build、dist検証、配置・戦略・SVG・容量検査を通過させ、G2 Build Verification #174のNode.js 18・20・22を成功させた。実ブラウザとiPhone 17 Pro Safariは未確認のまま残す。
 
+## 今回の修正対象
+
+- 固定stepの待ち時間で反射輪が移動しても、pointerdown時に見えていた反射波を同じ対象として処理できるよう、反射対象の小さなスナップショットを入力キューへ保持する。
+- 画面上で短くフェードしている反射輪も、見えている間は同じ判定対象として扱う。
+- Safariの画面回転やブラウザ表示領域の変化で描画用viewportが古くなった場合、入力前に描画と同じviewportへ更新する。
+- WebGLの高さ場テクスチャを二重反転しないようにし、Canvas 2Dと同じ上下方向で表示する。
+- 自動テスト166件、build、dist検証、差分検査を通過させる。実ブラウザとiPhone 17 Pro Safariは未確認のまま残す。
+
 ## 次の目的
 
-HAMENの視覚改善をDraft PRでレビュー可能にし、G2のNode.js 18・20・22検証を確認する。実機での水面の見え方、波・ビーコン・反射板の前後関係、長時間動作は別受入ゲートとして記録する。
+波の表示とタップ反応の位置をDraft PRでレビュー可能にし、実機での反射輪タップ、WebGL／Canvasの上下方向、長時間動作は別受入ゲートとして記録する。
 
 ## iPhone 17 Pro受入手順
 

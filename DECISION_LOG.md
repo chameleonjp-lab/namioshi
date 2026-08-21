@@ -1,5 +1,13 @@
 # DECISION_LOG: namioshi v3
 
+## 2026-08-21 PR #82後続候補: 表示波とタップ入力の整合
+
+- pointerdown時に見えていた反射輪と、固定step後に再検索した輪は、フレーム遅延や低い更新頻度で別位置になる可能性がある。反射対象の波ID、根波ID、深度、半径誤差、精度、投影点を入力キューへ保存し、同じ波へ反応させる。
+- `waveFades`へ移された短い表示フェード中の反射輪も、画面に残っている間は入力対象へ含める。
+- Safariの表示領域変更後に古いviewportで入力を変換しない。pointerdown前にcanvasの実寸と描画viewportを同期する。
+- `RippleSurface.pixels`の上から下の配列とWebGLの上下座標を一度だけ反転し、`UNPACK_FLIP_Y_WEBGL`との二重反転を行わない。
+- ゲームの円環波、反射経路、得点、10回上限、ランキング、Supabaseは変更しない。実ブラウザとiPhone 17 Pro Safariは未確認のまま扱う。
+
 ## 2026-08-20 PR #82 Draft候補: HAMEN表示統合
 
 - PR #80/#81のGrok/HAMEN資料を採用する。ただし、HAMENはスカラー高さ場による見た目の水面であり、namioshiの円環波・有限反射経路・得点台帳を置き換えない。

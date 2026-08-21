@@ -306,6 +306,38 @@ test('reflection actions remain queued without consuming a pending root-tap slot
   assert.equal(actions.at(-1),'reflection');
 });
 
+test('queued reflection inputs retain the visible target snapshot',()=>{
+  const queue=new TimedInputQueue();
+  queue.reset(0);
+  const reflectionTarget={
+    waveId:7,
+    rootTapId:'tap-7',
+    reflectionDepth:1,
+    radialError:2.5,
+    precision:.86,
+    projectedX:120,
+    projectedY:240
+  };
+  assert.equal(queue.enqueue({
+    x:121,
+    y:241,
+    timestamp:16,
+    action:'reflection',
+    reflectionTarget
+  }),true);
+  reflectionTarget.precision=0;
+  const [entry]=queue.pending;
+  assert.deepEqual(entry.reflectionTarget,{
+    waveId:7,
+    rootTapId:'tap-7',
+    reflectionDepth:1,
+    radialError:2.5,
+    precision:.86,
+    projectedX:120,
+    projectedY:240
+  });
+});
+
 test('an input exactly on a fixed boundary drains after that step',()=>{
   const queue=new TimedInputQueue();
   queue.reset(0);
