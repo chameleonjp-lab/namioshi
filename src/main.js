@@ -312,7 +312,10 @@ function updatePlayTime(timestamp){
 }
 
 function applyTimedInput(input){
-  world.tap(input.x,input.y,{action:input.action??'auto'});
+  world.tap(input.x,input.y,{
+    action:input.action??'auto',
+    reflectionTarget:input.reflectionTarget??null
+  });
 }
 
 function shouldFinishIdlePlay(){
@@ -399,6 +402,23 @@ function resize(){
   view?.resize(width,height,quality,viewport);
 }
 
+function inputViewport(target){
+  const rect=target.getBoundingClientRect();
+  const width=Math.max(1,rect.width||innerWidth||1);
+  const height=Math.max(1,rect.height||innerHeight||1);
+  // Safari can update the canvas box when its browser chrome or orientation
+  // changes before the resize event reaches the page. Refresh the same
+  // viewport used for drawing before converting this pointer event.
+  if(
+    Math.abs(width-viewport.viewWidth)>.5||
+    Math.abs(height-viewport.viewHeight)>.5
+  ){
+    viewport=createViewport(width,height);
+    view?.resize(width,height,quality,viewport);
+  }
+  return{rect,viewport};
+}
+
 function replaceGameCanvas(){
   const previous=canvas;
   const next=document.createElement('canvas');
@@ -426,13 +446,23 @@ function bindCanvasInput(){
       timedInputs.closeBefore(playDeadline);
       return;
     }
-    const point=clientToLogical(event.clientX,event.clientY,target.getBoundingClientRect(),viewport);
+    const inputLayout=inputViewport(target);
+    const point=clientToLogical(event.clientX,event.clientY,inputLayout.rect,inputLayout.viewport);
     const reflectionTarget=point&&world.findReflectionTapTarget(point.x,point.y);
     const input={
       x:point?.x,
       y:point?.y,
       timestamp:inputTimestamp,
-      action:reflectionTarget?'reflection':'root'
+      action:reflectionTarget?'reflection':'root',
+      reflectionTarget:reflectionTarget?{
+        waveId:reflectionTarget.wave.id,
+        rootTapId:reflectionTarget.rootTapId,
+        reflectionDepth:reflectionTarget.reflectionDepth,
+        radialError:reflectionTarget.radialError,
+        precision:reflectionTarget.precision,
+        projectedX:reflectionTarget.projectedX,
+        projectedY:reflectionTarget.projectedY
+      }:null
     };
     const pendingReflectionCount=timedInputs.pending.reduce((count,entry)=>
       count+(entry.action==='reflection'?1:0),0);

@@ -56,6 +56,20 @@ test('HAMEN surface is a render-only layer shared by both backends',()=>{
   assert.doesNotMatch(ripple,/\.\/game\//);
 });
 
+test('visible ripple texture and pointer coordinates use one vertical orientation',()=>{
+  const webgl=source('src/render/webgl.js');
+  const main=source('src/main.js');
+  const session=source('src/game/session.js');
+  const world=source('src/game/world.js');
+  assert.match(webgl,/texture2D\(uRipple,vec2\(v\.x,1\.0-v\.y\)\)/);
+  assert.doesNotMatch(webgl,/pixelStorei\([^)]*UNPACK_FLIP_Y_WEBGL/);
+  assert.match(main,/function inputViewport\(target\)/);
+  assert.match(main,/reflectionTarget:reflectionTarget\?\{/);
+  assert.match(session,/entry\.reflectionTarget=\{/);
+  assert.match(world,/findCapturedReflectionTapTarget\(snapshot\)/);
+  assert.match(world,/\.\.\.this\.waveFades\.map\(fade=>fade\.wave\)/);
+});
+
 test('hit feedback distinguishes new, improved, and known routes without sound',()=>{
   const main=source('src/main.js');
   const styles=source('src/ui/styles.css');

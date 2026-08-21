@@ -128,9 +128,11 @@ export class World{
     this.glass=layout.glass;
   }
 
-  tap(x,y,{action='auto'}={}){
+  tap(x,y,{action='auto',reflectionTarget=null}={}){
     if(action!=='root'){
-      const target=this.findReflectionTapTarget(x,y);
+      const target=action==='reflection'&&reflectionTarget
+        ?this.findCapturedReflectionTapTarget(reflectionTarget,x,y)
+        :this.findReflectionTapTarget(x,y);
       if(target)return this.registerReflectionTap(target,x,y);
       if(action==='reflection')return false;
     }
@@ -163,7 +165,11 @@ export class World{
   findReflectionTapTarget(x,y){
     if(!Number.isFinite(x)||!Number.isFinite(y))return null;
     let best=null;
-    for(const wave of this.waves){
+    const candidates=[
+      ...this.waves,
+      ...this.waveFades.map(fade=>fade.wave)
+    ];
+    for(const wave of candidates){
       const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
       const rootTapId=wave.rootTapId;
       if(
@@ -198,6 +204,36 @@ export class World{
       )best=candidate;
     }
     return best;
+  }
+
+  /**
+   * Preserve the target selected at pointerdown until the queued input is
+   * applied. The simulation can advance one or more fixed steps in between,
+   * so searching only the new radius would make a tap on a visible ring miss.
+   */
+  findCapturedReflectionTapTarget(snapshot,x,y){
+    if(!snapshot||typeof snapshot!=='object')return null;
+    const wave=[
+      ...this.waves,
+      ...this.waveFades.map(fade=>fade.wave)
+    ].find(candidate=>
+      candidate?.id===snapshot.waveId&&
+      candidate?.rootTapId===snapshot.rootTapId
+    );
+    if(!wave||!this.isReflectionTapAvailable(wave))return null;
+    const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
+    if(depth!==snapshot.reflectionDepth)return null;
+    return{
+      wave,
+      rootTapId:wave.rootTapId,
+      reflectionDepth:depth,
+      radialError:snapshot.radialError,
+      precision:Math.max(0,Math.min(1,snapshot.precision)),
+      projectedX:snapshot.projectedX,
+      projectedY:snapshot.projectedY,
+      capturedX:Number.isFinite(x)?x:snapshot.projectedX,
+      capturedY:Number.isFinite(y)?y:snapshot.projectedY
+    };
   }
 
   registerReflectionTap(target,x,y){
