@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const world=readFileSync(new URL('../src/game/world.js',import.meta.url),'utf8');
 
 test('main exposes every required screen and updates visibility from one state value',()=>{
   for(const state of ['HOME','RULES','COUNTDOWN','RESULT','ERROR']){
@@ -18,7 +19,9 @@ test('main exposes every required screen and updates visibility from one state v
 test('countdown and play entry points reject duplicate starts',()=>{
   assert.match(main,/function start\(mode\)\{[\s\S]*?if\(state==='COUNTDOWN'\|\|state==='PLAYING'\)return;/);
   assert.match(main,/function beginCountdown\(\)\{[\s\S]*?if\(state==='COUNTDOWN'\)return;/);
-  assert.match(main,/const sequence=\[\['3',600\],\['2',600\],\['1',600\],\['START',400\]\]/);
+  assert.match(main,/countdownWaitingForTap=true/);
+  assert.match(main,/function startCountdownSequence\(\)[\s\S]*?const sequence=\[\['3',600\],\['2',600\],\['1',600\],\['START',400\]\]/);
+  assert.match(main,/document\.addEventListener\('pointerdown',[\s\S]*?startCountdownSequence\(\)/);
 });
 
 test('first guide requires a confirmed glass reflection before starting the round',()=>{
@@ -62,7 +65,7 @@ test('input and renderer fallback contracts remain connected to the UI flow',()=
 
 test('play status explains the objective and the ten-tap wait state',()=>{
   assert.match(main,/function playStatusText\(\)\{[\s\S]*?world\.taps>=MAX_TAPS[\s\S]*?world\.waves\.length>0/);
-  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。入力と波の精算を待っています。通常の波は約\$\{WAVE_LIFETIME\}秒、反射後の輪は最大\$\{REFLECTED_WAVE_LIFETIME\}秒表示されます（加点と反射処理は約\$\{WAVE_LIFETIME\}秒以内）/);
+  assert.match(main,/\$\{MAX_TAPS\}回使い切りました。入力と波の精算を待っています。通常の波は約\$\{WAVE_LIFETIME\}秒、反射した水面波は最大\$\{REFLECTED_WAVE_LIFETIME\}秒表示されます（加点と反射処理は約\$\{WAVE_LIFETIME\}秒以内）/);
   assert.match(main,/\$\{MAX_TAPS\}回使い切り、入力と波の精算が終わりました。結果を表示します/);
   assert.match(main,/function updatePlayStatus\(force=false\)/);
   assert.match(main,/updatePlayStatus\(\);/);
@@ -71,7 +74,7 @@ test('play status explains the objective and the ten-tap wait state',()=>{
 test('explanation stays visible during countdown and is optional during play',()=>{
   assert.match(main,/id="playLegendToggle"[^>]*aria-controls="playLegend"/);
   assert.match(main,/let playLegendOpen=false/);
-  assert.match(main,/function updatePlayLegend\(\)[\s\S]*?countdownVisible=state==='COUNTDOWN'[\s\S]*?open=state==='PLAYING'&&!tutorialMode&&playLegendOpen/);
+  assert.match(main,/function updatePlayLegend\(\)[\s\S]*?countdownVisible=state==='COUNTDOWN'&&countdownExplanationVisible[\s\S]*?open=state==='PLAYING'&&!tutorialMode&&playLegendOpen/);
   assert.match(main,/playLegendToggle'\)\.onclick=\(\)=>\{[\s\S]*?playLegendOpen=!playLegendOpen/);
   assert.match(main,/if\(nextState!=='PLAYING'\)playLegendOpen=false/);
 });
@@ -82,6 +85,16 @@ test('reflection tap timing prompt follows the shared availability predicate',()
   assert.match(main,/prompt\.hidden=!available/);
   assert.match(main,/setState\(nextState\)[\s\S]*?updateReflectionTapPrompt\(\);/);
   assert.match(main,/updatePlayStatus\(force\);[\s\S]*?updateReflectionTapPrompt\(\);/);
+});
+
+test('water ripple taps carry a stable target and the reflection count into the HUD/result',()=>{
+  assert.match(main,/world\.findWaterRippleTapTarget\(point\.x,point\.y\)/);
+  assert.match(main,/rippleEffectId:reflectionTarget\.rippleEffect\?\.id/);
+  assert.match(main,/id="rf"/);
+  assert.match(main,/\$\('rf'\)\.textContent=String\(world\.getReflectionCount\(\)\)/);
+  assert.match(main,/id="resultReflectionCount"/);
+  assert.match(main,/world\.getReflectionCount\(\)/);
+  assert.match(world,/source:'water-ripple'/);
 });
 
 test('play feedback labels contact confirmation separately from score settlement',()=>{

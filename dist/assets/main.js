@@ -18,17 +18,18 @@ app.innerHTML=`
   <div class="pill">スコア <span id="s">0</span></div>
   <div class="pill">残り <span id="tm">30.0</span></div>
   <div class="pill">タップ <span id="tp">0</span>/${MAX_TAPS}</div>
+  <div class="pill">反射 <span id="rf">0</span>回</div>
 </div>
 <div id="hitFeedback" class="hitFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
 <button id="playLegendToggle" class="playLegendToggle secondary" type="button" aria-controls="playLegend" aria-expanded="false">説明を表示</button>
 <div id="playLegend" class="playLegend" role="note" aria-label="プレイ中の目的と見方">
-  <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。</div>
-  <div id="reflectionTapPrompt" class="reflectionTapPrompt" role="status" aria-live="polite" aria-atomic="true" hidden>黄色い反射弧に重ねてタップ：技能ボーナス +10〜40点（根波ごとに1回）</div>
+  <div id="playStatus" class="playStatus" role="status" aria-live="polite" aria-atomic="true">目的：波をビーコンに重ねる。反射板経由は高得点、反射した水面波のタップは技能ボーナスです。</div>
+  <div id="reflectionTapPrompt" class="reflectionTapPrompt" role="status" aria-live="polite" aria-atomic="true" hidden>反射した水面波に重ねてタップ：技能ボーナス +10〜40点（反射回数で増加・根波ごとに1回）</div>
   <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波</b>：タップ位置から広がり、ビーコンに重ねます</span></div>
   <div class="legendLine"><span class="legendMark legendBoard" aria-hidden="true"></span><span><b>反射板</b>：光る線に当てると波の向きが変わります</span></div>
   <div class="legendLine"><span class="legendMark legendBeacon" aria-hidden="true"></span><span><b>ビーコン</b>：白く光る点。波が重なると命中し、精算時に得点が確定します</span></div>
-  <div class="legendLine"><span class="legendMark legendTap" aria-hidden="true"></span><span><b>反射波タップ</b>：反射後の輪に重ねてタップすると、深度に応じて+10〜40点（根波ごとに1回）</span></div>
-  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波の寿命</b>：通常の波は約${WAVE_LIFETIME}秒、反射後の輪は最大${REFLECTED_WAVE_LIFETIME}秒表示され、技能ボーナスのタップ対象です。加点と反射処理は約${WAVE_LIFETIME}秒以内です。タップしても、出ている波は消えません</span></div>
+  <div class="legendLine"><span class="legendMark legendTap" aria-hidden="true"></span><span><b>水面波タップ</b>：反射したリアルな水面波に重ねてタップすると、反射回数に応じて+10〜40点（根波ごとに1回）</span></div>
+  <div class="legendLine"><span class="legendMark legendWave" aria-hidden="true"></span><span><b>波の寿命</b>：通常の波は約${WAVE_LIFETIME}秒、反射した水面波は最大${REFLECTED_WAVE_LIFETIME}秒表示され、技能ボーナスのタップ対象です。加点と反射処理は約${WAVE_LIFETIME}秒以内です。タップしても、出ている波は消えません</span></div>
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
@@ -42,7 +43,7 @@ app.innerHTML=`
 <section id="HOME" class="screen freshStart show" aria-labelledby="homeTitle" aria-hidden="false">
   <div class="panel">
     <h1 id="homeTitle">namioshi</h1>
-    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探すゲームです。最大${PLAY_SECONDS}秒、${MAX_TAPS}回を使い切り、入力と波の精算が終わると結果へ進みます。反射後の波の輪をタップすると技能ボーナス、同じ経路は最高点だけが残ります。</p>
+    <p>${MAX_TAPS}回のタップで波を押し出し、壁や反射板を使って3つのビーコンへの異なる経路を探すゲームです。最大${PLAY_SECONDS}秒、${MAX_TAPS}回を使い切り、入力と波の精算が終わると結果へ進みます。反射した水面波をタップすると技能ボーナス、同じ経路は最高点だけが残ります。</p>
     <label class="srOnly" for="name">名前</label>
     <input id="name" class="input" maxlength="20" placeholder="名前" autocomplete="nickname" aria-describedby="nameHint">
     <p id="nameHint" class="srOnly">公式結果と練習結果の表示に使います。</p>
@@ -82,7 +83,7 @@ app.innerHTML=`
       <li>ビーコンに波が重なると命中。反射板に当てるだけでは得点にならない</li>
       <li>直接より、壁・反射板・2回反射の順に高得点</li>
       <li>基準点は直接20点、壁100点、反射板180点、2回反射300点。命中精度で変動する</li>
-      <li>反射した波の輪をタイミングよくタップすると、深度1は10〜20点、深度2は20〜40点。1つの根波につき1回まで</li>
+      <li>反射したリアルな水面波をタイミングよくタップすると、反射1回は10〜20点、反射2回は20〜40点。1つの根波につき1回まで</li>
       <li>1回のタップでは、各ビーコンへの一番高い経路だけを判定</li>
       <li>同じビーコンへ同じ順番で通った経路を繰り返しても、点は増えない</li>
       <li>命中確認は接触時、得点は波の精算時に「得点確定」として表示する</li>
@@ -98,6 +99,7 @@ app.innerHTML=`
   <div>
     <p id="countdownMode" class="countdownMode">公式モード</p>
     <div id="countdownText" role="status" aria-live="assertive" aria-atomic="true" tabindex="-1">3</div>
+    <p id="countdownHint" class="countdownHint" role="status" aria-live="polite">説明を確認したら画面をタップして開始</p>
   </div>
 </section>
 <section id="RESULT" class="screen" aria-labelledby="resultTitle" aria-hidden="true">
@@ -112,8 +114,9 @@ app.innerHTML=`
       <p>壁反射 <b id="scoreWall">0</b>点</p>
       <p>反射板 <b id="scoreGlass">0</b>点</p>
       <p>2回反射 <b id="scoreDouble">0</b>点</p>
-      <p>反射波タップ <b id="scoreReflectionTap">0</b>点</p>
+      <p>水面波タップ <b id="scoreReflectionTap">0</b>点</p>
     </div>
+    <p id="resultReflectionCount" class="resultStatus">波の反射回数：<b>0</b>回</p>
     <p id="resultRouteStatus" class="resultStatus">今回の有効ルート：<b id="routeCount">0</b>件</p>
     <p id="resultBestRoute" class="resultStatus resultHighlight" role="status" aria-live="polite"></p>
     <p id="resultNextGoal" class="resultStatus resultGoal" role="status" aria-live="polite"></p>
@@ -157,6 +160,8 @@ let lastHudTime=-1;
 let lastPlayStatus='';
 let countdownTimer=0;
 let countdownId=0;
+let countdownWaitingForTap=false;
+let countdownExplanationVisible=false;
 let tutorialMode=false;
 let playLegendOpen=false;
 let guideCompletedInMemory=false;
@@ -176,6 +181,7 @@ const GUIDE_STORAGE_KEY=`namioshi.guide.completed.${OFFICIAL_RULE_VERSION}`;
 const STATE_FOCUS_TARGETS=Object.freeze({
   HOME:'name',
   RULES:'closeRules',
+  COUNTDOWN:'countdownHint',
   RESULT:'share',
   ERROR:'errorTitle'
 });
@@ -243,7 +249,7 @@ function setState(nextState){
 }
 
 function updatePlayLegend(){
-  const countdownVisible=state==='COUNTDOWN';
+  const countdownVisible=state==='COUNTDOWN'&&countdownExplanationVisible;
   const guideVisible=state==='PLAYING'&&tutorialMode;
   const open=state==='PLAYING'&&!tutorialMode&&playLegendOpen;
   const visible=countdownVisible||guideVisible||open;
@@ -260,10 +266,10 @@ function playStatusText(){
   }
   if(world.taps>=MAX_TAPS){
     return world.waves.length>0
-      ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。通常の波は約${WAVE_LIFETIME}秒、反射後の輪は最大${REFLECTED_WAVE_LIFETIME}秒表示されます（加点と反射処理は約${WAVE_LIFETIME}秒以内）。`
+      ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。通常の波は約${WAVE_LIFETIME}秒、反射した水面波は最大${REFLECTED_WAVE_LIFETIME}秒表示されます（加点と反射処理は約${WAVE_LIFETIME}秒以内）。`
       :`${MAX_TAPS}回使い切り、入力と波の精算が終わりました。結果を表示します。`;
   }
-  return'目的：波をビーコンに重ねる。反射板経由は高得点、反射後の輪のタップは技能ボーナスです。';
+  return`目的：波をビーコンに重ねる。反射した水面波をタップすると、反射回数に応じた技能ボーナスが入ります（現在${world.getReflectionCount()}回反射）。`;
 }
 
 function updatePlayStatus(force=false){
@@ -284,6 +290,8 @@ function updateReflectionTapPrompt(){
 
 function clearCountdown(){
   countdownId++;
+  countdownWaitingForTap=false;
+  countdownExplanationVisible=false;
   if(countdownTimer){
     clearTimeout(countdownTimer);
     countdownTimer=0;
@@ -448,7 +456,7 @@ function bindCanvasInput(){
     }
     const inputLayout=inputViewport(target);
     const point=clientToLogical(event.clientX,event.clientY,inputLayout.rect,inputLayout.viewport);
-    const reflectionTarget=point&&world.findReflectionTapTarget(point.x,point.y);
+    const reflectionTarget=point&&world.findWaterRippleTapTarget(point.x,point.y);
     const input={
       x:point?.x,
       y:point?.y,
@@ -461,7 +469,8 @@ function bindCanvasInput(){
         radialError:reflectionTarget.radialError,
         precision:reflectionTarget.precision,
         projectedX:reflectionTarget.projectedX,
-        projectedY:reflectionTarget.projectedY
+        projectedY:reflectionTarget.projectedY,
+        rippleEffectId:reflectionTarget.rippleEffect?.id
       }:null
     };
     const pendingReflectionCount=timedInputs.pending.reduce((count,entry)=>
@@ -610,12 +619,28 @@ function beginCountdown(){
   if(state==='COUNTDOWN')return;
   clearCountdown();
   fixedSteps.suspend();
+  countdownWaitingForTap=true;
+  countdownExplanationVisible=true;
+  const presentation=modePresentation(selectedMode);
+  $('countdownMode').textContent=presentation.label+'モード';
+  $('countdownText').textContent='タップで開始';
+  $('countdownHint').textContent='説明を確認したら画面をタップして開始';
+  setState('COUNTDOWN');
+  // The first tap only dismisses the explanation. It is never sent to World,
+  // so starting a round cannot create an extra wave.
+  focusStateTarget('COUNTDOWN');
+}
+
+function startCountdownSequence(){
+  if(state!=='COUNTDOWN'||!countdownWaitingForTap)return;
+  clearCountdown();
+  countdownExplanationVisible=false;
+  fixedSteps.suspend();
   const id=++countdownId;
   const sequence=[['3',600],['2',600],['1',600],['START',400]];
   let index=0;
-  const presentation=modePresentation(selectedMode);
-  $('countdownMode').textContent=presentation.label+'モード';
-  setState('COUNTDOWN');
+  $('countdownHint').textContent='ゲーム開始までお待ちください';
+  updatePlayLegend();
   const tick=()=>{
     if(id!==countdownId)return;
     const item=sequence[index];
@@ -721,7 +746,7 @@ function resultNextGoal(breakdown,routeCount){
   if(routeCount===0)return'次の目標：まずビーコンに1回波を重ねる';
   if(breakdown.glass<=0)return'次の目標：反射板を使う経路を1回成功させる';
   if(breakdown.double<=0)return'次の目標：2回反射を1回成功させる';
-  if((breakdown.reflectionTap??0)<=0)return'次の目標：反射した波の輪を1回タップしてボーナスを得る';
+  if((breakdown.reflectionTap??0)<=0)return'次の目標：反射した水面波を1回タップしてボーナスを得る';
   return'次の目標：別の経路を探して最高経路を更新する';
 }
 
@@ -755,6 +780,7 @@ function finish(){
   $('scoreGlass').textContent=String(breakdown.glass);
   $('scoreDouble').textContent=String(breakdown.double);
   $('scoreReflectionTap').textContent=String(breakdown.reflectionTap??0);
+  $('resultReflectionCount').innerHTML=`波の反射回数：<b>${world.getReflectionCount()}</b>回`;
   const routeCount=world.getDiscoveredRouteCount();
   $('routeCount').textContent=String(routeCount);
   $('resultBestRoute').textContent=formatBestRoute(world.getBestRoute());
@@ -783,6 +809,7 @@ function hud(force=false){
     $('tp').textContent=String(world.taps);
     lastHudTaps=world.taps;
   }
+  $('rf').textContent=String(world.getReflectionCount());
   if(force||time!==lastHudTime&&(time===Infinity||Math.abs(time-lastHudTime)>=.1)){
     $('tm').textContent=time===Infinity?'∞':time.toFixed(1);
     lastHudTime=time;
@@ -1010,8 +1037,8 @@ world.onReflectionTap=tap=>{
   playCue(tap?.judgement??'GOOD');
   playCue('WATER_RIPPLE');
   playHitHaptic(tap);
-  const depth=tap?.reflections>=2?'2回反射':'反射';
-  presentFeedback(`反射波タップ：+${tap.points}（${tap.judgement}・${depth}）`,{
+  const reflections=Math.max(1,Number(tap?.reflections)||1);
+  presentFeedback(`水面波タップ：+${tap.points}（${tap.judgement}・${reflections}回反射）`,{
     status:'reflection-tap',
     duration:1200
   });
@@ -1046,6 +1073,12 @@ $('guideContinue').onclick=()=>leaveGuide(true);
 $('guideHome').onclick=()=>leaveGuide(false);
 $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
 $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
+document.addEventListener('pointerdown',event=>{
+  if(state!=='COUNTDOWN'||!countdownWaitingForTap)return;
+  event.preventDefault();
+  event.stopPropagation();
+  startCountdownSequence();
+},{capture:true,passive:false});
 document.addEventListener('gesturestart',event=>event.preventDefault());
 document.addEventListener('visibilitychange',syncAudioVisibility);
 addEventListener('pagehide',()=>{

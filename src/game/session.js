@@ -115,6 +115,9 @@ export class TimedInputQueue{
           projectedX:values[5],
           projectedY:values[6]
         };
+        if(Number.isFinite(reflectionTarget.rippleEffectId)){
+          entry.reflectionTarget.rippleEffectId=reflectionTarget.rippleEffectId;
+        }
       }
     }
     this.entries.push(entry);

@@ -784,6 +784,44 @@ test('a well-timed reflected-wave tap awards one bounded bonus without a root wa
   assert.equal(wave.reflectionTapUsed,true);
 });
 
+test('a visible real water ripple is the reflected tap target and reports its count',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const root=world.addWave(10,200,0,'direct',{rootTapId:'water-root'});
+  root.radius=11;
+  world.reflect(root);
+
+  const effect=world.reflectionEffects[0];
+  assert.ok(effect?.wave);
+  assert.equal(world.getReflectionCount(),1);
+  effect.age=.21;
+  const visibleRadius=4+effect.age/effect.life*22;
+  const target=world.findWaterRippleTapTarget(effect.x+visibleRadius,effect.y);
+  assert.equal(target?.rippleEffect,effect);
+
+  const snapshot={
+    waveId:target.wave.id,
+    rootTapId:target.rootTapId,
+    reflectionDepth:target.reflectionDepth,
+    radialError:target.radialError,
+    precision:target.precision,
+    projectedX:target.projectedX,
+    projectedY:target.projectedY,
+    rippleEffectId:effect.id
+  };
+  assert.equal(world.tap(effect.x+visibleRadius,effect.y,{action:'reflection',reflectionTarget:snapshot}),true);
+  assert.equal(world.taps,0);
+  assert.equal(world.getReflectionTapScore(),20);
+  assert.equal(world.reflectionTapAwards.get('water-root')?.source,'water-ripple');
+  assert.equal(world.reflectionTapAwards.get('water-root')?.reflections,1);
+  assert.equal(world.reflectionTapAwards.get('water-root')?.totalReflections,1);
+  assert.equal(effect.rippleTapUsed,true);
+  assert.equal(world.tap(effect.x+visibleRadius,effect.y,{action:'reflection',reflectionTarget:snapshot}),false);
+});
+
 test('reflection tap availability follows the one-award and finalized-root limits',()=>{
   const world=new World({random:()=>.5});
   world.reset();

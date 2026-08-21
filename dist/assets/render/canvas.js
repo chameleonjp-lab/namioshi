@@ -21,17 +21,14 @@ export class CanvasView{
   }
 
   waveStroke(wave){
-    if(wave.reflections>=2)return[255,198,64];
-    if(wave.kind==='glass')return[194,126,255];
-    if(wave.kind==='wall')return[116,148,255];
-    return[90,235,255];
+    // Wave colour no longer encodes the reflection type. The water surface
+    // and the reflection count communicate the result without four competing
+    // ring colours.
+    return[158,225,232];
   }
 
   waveVisualWidth(wave){
-    if(wave.reflections>=2)return Math.max(6,wave.width*.90);
-    if(wave.kind==='glass')return Math.max(4,wave.width*.58);
-    if(wave.kind==='wall')return Math.max(4,wave.width*.64);
-    return Math.max(3,wave.width*.46);
+    return Math.max(3,wave.width*.58);
   }
 
   waveRadius(wave){
@@ -55,11 +52,11 @@ export class CanvasView{
     const pulse=.18+.10*(.5+.5*Math.sin(time*.008+(wave.id??0)));
     context.save();
     this.wavePath(context,wave);
-    context.strokeStyle=`rgba(255,226,123,${pulse})`;
+    context.strokeStyle=`rgba(216,250,255,${pulse})`;
     context.lineWidth=this.waveVisualWidth(wave)+8;
     context.stroke();
     this.wavePath(context,wave);
-    context.strokeStyle=`rgba(255,238,165,${.46+pulse})`;
+    context.strokeStyle=`rgba(239,255,255,${.46+pulse})`;
     context.lineWidth=2;
     context.setLineDash([4,6]);
     context.stroke();
