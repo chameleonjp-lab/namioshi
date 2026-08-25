@@ -83,6 +83,19 @@ test('reflection impulses use unique effect ids and do not duplicate a ripple',(
   assert.notDeepEqual([...surface.current],first);
 });
 
+test('a live reflection effect is injected even when the first frame is delayed',()=>{
+  const surface=new RippleSurface();
+  surface.resize(360,640,'LOW');
+  const world={
+    mode:'official',layoutId:'fixed',w:360,h:640,taps:1,
+    waves:[],
+    reflectionEffects:[{id:42,x:180,y:320,kind:'wall',age:.16,life:.42}]
+  };
+  surface.syncWorld(world);
+  assert.ok(surface.current.some(value=>value>0));
+  assert.equal(surface.seenImpulses.has('reflect:42'),true);
+});
+
 test('a reset round clears prior impulses even when the previous round had no taps',()=>{
   const surface=new RippleSurface();
   surface.resize(360,640,'LOW');
