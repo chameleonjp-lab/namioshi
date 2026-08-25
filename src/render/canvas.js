@@ -48,21 +48,6 @@ export class CanvasView{
     }
   }
 
-  reflectionTapHint(context,wave,time){
-    const pulse=.18+.10*(.5+.5*Math.sin(time*.008+(wave.id??0)));
-    context.save();
-    this.wavePath(context,wave);
-    context.strokeStyle=`rgba(216,250,255,${pulse})`;
-    context.lineWidth=this.waveVisualWidth(wave)+8;
-    context.stroke();
-    this.wavePath(context,wave);
-    context.strokeStyle=`rgba(239,255,255,${.46+pulse})`;
-    context.lineWidth=2;
-    context.setLineDash([4,6]);
-    context.stroke();
-    context.restore();
-  }
-
   strokeWaveBand(context,wave,red,green,blue,alpha,width){
     this.wavePath(context,wave);
     context.strokeStyle='rgba('+red+','+green+','+blue+','+Math.min(1,alpha+.20)+')';
@@ -202,12 +187,12 @@ export class CanvasView{
     for(const effect of world.reflectionEffects){
       const progress=Math.min(1,effect.age/effect.life);
       const alpha=(1-progress)*.72;
-      context.strokeStyle=effect.kind==='glass'?`rgba(214,152,255,${alpha})`:`rgba(127,171,255,${alpha})`;
+      context.strokeStyle=`rgba(176,235,242,${alpha})`;
       context.lineWidth=2;
       context.beginPath();
       context.arc(effect.x,effect.y,4+progress*22,0,Math.PI*2);
       context.stroke();
-      context.strokeStyle=`rgba(255,224,117,${alpha})`;
+      context.strokeStyle=`rgba(232,252,255,${alpha})`;
       context.beginPath();
       context.moveTo(effect.x,effect.y);
       context.lineTo(effect.x+effect.normalX*(12+progress*18),effect.y+effect.normalY*(12+progress*18));
@@ -217,7 +202,6 @@ export class CanvasView{
       const [red,green,blue]=this.waveStroke(wave);
       const age=Number.isFinite(wave.displayAge)?wave.displayAge:wave.age;
       const alpha=Math.max(0,1-age/wave.life)*.78;
-      if(world.isReflectionTapAvailable(wave))this.reflectionTapHint(context,wave,time);
       this.strokeWaveBand(context,wave,red,green,blue,alpha,this.waveVisualWidth(wave));
     }
     for(const fade of world.waveFades??[]){

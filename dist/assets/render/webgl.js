@@ -372,16 +372,6 @@ export class WebGLView{
     this.drawBand(this.ringBand,vertexCount,gl.TRIANGLE_STRIP,color[0],color[1],color[2],color[3]);
   }
 
-  drawReflectionTapHint(wave,time){
-    const depth=wave.reflectionDepth??wave.reflections??0;
-    if(depth<=0)return;
-    const pointCount=fillReflectionArcPoints(wave,this.arcPoints,REFLECTION_ARC_SEGMENTS);
-    if(pointCount===0)return;
-    const pulse=.18+.10*(.5+.5*Math.sin(time*.008+(wave.id??0)));
-    const vertexCount=fillArcBandPoints(this.arcPoints,pointCount,this.arcBand,waveVisualWidth(wave)+8);
-    this.drawBand(this.arcBand,vertexCount,this.gl.TRIANGLES,.84,.97,1,pulse);
-  }
-
   render(world,time,quality){
     const gl=this.gl;
     this.rippleSurface.resize(world.w,world.h,quality);
@@ -433,18 +423,16 @@ export class WebGLView{
         this.circle[offset+1]=effect.y+UNIT_CIRCLE_SIN[i]*radius;
       }
       const alpha=(1-progress)*.72;
-      if(effect.kind==='glass')this.drawLine(this.circle,SEGMENTS+2,gl.LINE_STRIP,2,.84,.56,1,alpha);
-      else this.drawLine(this.circle,SEGMENTS+2,gl.LINE_STRIP,2,.5,.7,1,alpha);
+      this.drawLine(this.circle,SEGMENTS+2,gl.LINE_STRIP,2,.69,.92,.95,alpha);
       this.tmp[0]=effect.x;
       this.tmp[1]=effect.y;
       this.tmp[2]=effect.x+effect.normalX*(12+progress*18);
       this.tmp[3]=effect.y+effect.normalY*(12+progress*18);
-      this.drawLine(this.tmp,2,gl.LINES,2,1,.86,.4,alpha);
+      this.drawLine(this.tmp,2,gl.LINES,2,.91,.98,1,alpha);
     }
     for(const wave of world.waves){
       const age=Number.isFinite(wave.displayAge)?wave.displayAge:wave.age;
       const fade=Math.max(0,1-age/wave.life);
-      if(world.isReflectionTapAvailable(wave))this.drawReflectionTapHint(wave,time);
       this.drawWave(wave,fade);
     }
     for(const fade of world.waveFades??[]){

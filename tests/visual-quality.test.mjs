@@ -15,8 +15,8 @@ test('WebGL renders wave thickness as reusable triangle bands',()=>{
   assert.match(webgl,/arcBand=new Float32Array/);
   assert.match(drawWave,/TRIANGLE_STRIP/);
   assert.match(drawWave,/TRIANGLES/);
-  assert.match(webgl,/drawReflectionTapHint/);
-  assert.match(webgl,/world\.isReflectionTapAvailable\(wave\)/);
+  assert.doesNotMatch(webgl,/drawReflectionTapHint/);
+  assert.doesNotMatch(webgl,/world\.isReflectionTapAvailable\(wave\)/);
   assert.doesNotMatch(drawWave,/lineWidth/);
 });
 
@@ -30,8 +30,8 @@ test('water and beacon rendering keep two-layer surface cues and hit expansion',
   assert.match(webgl,/const pulse=\.5\+\.5\*Math\.sin/);
   assert.match(canvas,/createRadialGradient/);
   assert.match(canvas,/strokeWaveBand/);
-  assert.match(canvas,/reflectionTapHint/);
-  assert.match(canvas,/world\.isReflectionTapAvailable\(wave\)/);
+  assert.doesNotMatch(canvas,/reflectionTapHint/);
+  assert.doesNotMatch(canvas,/world\.isReflectionTapAvailable\(wave\)/);
   assert.match(canvas,/const pulse=\.5\+\.5\*Math\.sin/);
   assert.match(canvas,/fillReflectionArcPoints/);
 });
@@ -68,6 +68,8 @@ test('visible ripple texture and pointer coordinates use one vertical orientatio
   assert.match(session,/entry\.reflectionTarget=\{/);
   assert.match(world,/findCapturedReflectionTapTarget\(snapshot\)/);
   assert.match(world,/\.\.\.this\.waveFades\.map\(fade=>fade\.wave\)/);
+  assert.match(world,/findWaterRippleTapTarget\(x,y\)/);
+  assert.doesNotMatch(world,/findReflectionTapTarget/);
 });
 
 test('hit feedback distinguishes new, improved, and known routes without sound',()=>{

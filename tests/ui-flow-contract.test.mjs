@@ -24,15 +24,16 @@ test('countdown and play entry points reject duplicate starts',()=>{
   assert.match(main,/document\.addEventListener\('pointerdown',[\s\S]*?startCountdownSequence\(\)/);
 });
 
-test('first guide requires a confirmed glass reflection before starting the round',()=>{
+test('first guide can continue without a glass-reflection exception',()=>{
   assert.match(main,/id="guideStatus"[^>]*role="status"/);
-  assert.match(main,/id="guideContinue"[^>]*disabled/);
-  assert.match(main,/function resetGuideProgress\(\)/);
-  assert.match(main,/function markGuideReflectionSuccess\(\)/);
+  assert.match(main,/id="guideContinue" class="btn" type="button">案内を終えて本番へ/);
+  assert.doesNotMatch(main,/guideReflectionConfirmed/);
+  assert.doesNotMatch(main,/function resetGuideProgress\(\)/);
+  assert.doesNotMatch(main,/function markGuideReflectionSuccess\(\)/);
   const leaveGuide=main.match(/function leaveGuide\(startGame\)\{[\s\S]*?\n\}/)?.[0]??'';
-  assert.match(leaveGuide,/if\(startGame&&!guideReflectionConfirmed\)/);
+  assert.doesNotMatch(leaveGuide,/guideReflectionConfirmed/);
   assert.match(leaveGuide,/if\(startGame\)markGuideCompleted\(\)/);
-  assert.match(main,/world\.onReflect=reflection=>\{[\s\S]*?if\(reflection\.kind==='glass'\)markGuideReflectionSuccess\(\)/);
+  assert.doesNotMatch(main,/markGuideReflectionSuccess/);
 });
 
 test('result flow keeps share, replay, mode selection, and exit paths available',()=>{
@@ -81,7 +82,7 @@ test('explanation stays visible during countdown and is optional during play',()
 
 test('reflection tap timing prompt follows the shared availability predicate',()=>{
   assert.match(main,/id="reflectionTapPrompt" class="reflectionTapPrompt"/);
-  assert.match(main,/function updateReflectionTapPrompt\(\)\{[\s\S]*?state==='PLAYING'&&!tutorialMode[\s\S]*?world\.waves\.some\(wave=>world\.isReflectionTapAvailable\(wave\)\)/);
+  assert.match(main,/function updateReflectionTapPrompt\(\)\{[\s\S]*?state==='PLAYING'&&!tutorialMode[\s\S]*?world\.hasAvailableWaterRipple\(\)/);
   assert.match(main,/prompt\.hidden=!available/);
   assert.match(main,/setState\(nextState\)[\s\S]*?updateReflectionTapPrompt\(\);/);
   assert.match(main,/updatePlayStatus\(force\);[\s\S]*?updateReflectionTapPrompt\(\);/);
@@ -95,6 +96,8 @@ test('water ripple taps carry a stable target and the reflection count into the 
   assert.match(main,/id="resultReflectionCount"/);
   assert.match(main,/world\.getReflectionCount\(\)/);
   assert.match(world,/source:'water-ripple'/);
+  assert.doesNotMatch(world,/findReflectionTapTarget/);
+  assert.doesNotMatch(world,/hasVisibleReflectionArc/);
 });
 
 test('play feedback labels contact confirmation separately from score settlement',()=>{
