@@ -106,3 +106,8 @@ test('play feedback labels contact confirmation separately from score settlement
   assert.match(main,/発見済み（得点なし）/);
   assert.match(main,/命中確認は接触時、得点は波の精算時/);
 });
+test('renderer deadline settlement resumes the suspended clock before advancing',()=>{
+  assert.match(main,/function settleSuspendedDeadline\(now\)[\s\S]*?fixedSteps\.resume\(playDeadline,\{shiftTimeline:false\}\);[\s\S]*?advanceSimulation\(playDeadline\)/);
+  assert.match(main,/const settlingDeadline=Boolean\([\s\S]*?deadlineSettlementActive/);
+  assert.match(main,/fixedSteps\.resume\(resumeAt,\{shiftTimeline:!settlingDeadline\}\)/);
+});
