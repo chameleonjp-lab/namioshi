@@ -4,6 +4,7 @@ import {MAX_TAPS,MAX_WAVES,REFLECTED_WAVE_LIFETIME,WAVE_LIFETIME} from '../src/c
 import {HIT_JUDGEMENT,judgementFromPrecision} from '../src/game/judgement.js';
 import {createReflectionPath} from '../src/game/reflection-path.js';
 import {scoreRouteKey} from '../src/game/scoring.js';
+import {RippleSurface} from '../src/render/ripple-surface.js';
 import {World} from '../src/game/world.js';
 
 test('hit precision has four stable judgement levels',()=>{
@@ -860,8 +861,47 @@ test('water ripple availability follows the local ripple lifetime, not the old a
   world.addReflectionEffect(100,100,1,0,'wall',wave);
   assert.equal(world.hasAvailableWaterRipple(),true);
   const effect=world.reflectionEffects[0];
+  effect.age=effect.life;
+  assert.equal(world.hasAvailableWaterRipple(),false);
+  assert.equal(world.findWaterRippleTapTarget(effect.x+26,effect.y),null);
   effect.age=effect.life+.01;
   assert.equal(world.hasAvailableWaterRipple(),false);
+});
+
+test('a ripple at its exact lifetime boundary is not injected or retained',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  world.beacons=[];
+  world.glass=[];
+  world.waves=[];
+  const wave=world.addWave(10,200,0,'direct',{rootTapId:'boundary-root'});
+  wave.radius=11;
+  world.reflect(wave);
+  const effect=world.reflectionEffects[0];
+  effect.age=effect.life-.01;
+  const visibleTarget=world.findWaterRippleTapTarget(effect.x+4+effect.age/effect.life*22,effect.y);
+  assert.ok(visibleTarget);
+  const snapshot={
+    waveId:visibleTarget.wave.id,
+    rootTapId:visibleTarget.rootTapId,
+    reflectionDepth:visibleTarget.reflectionDepth,
+    radialError:visibleTarget.radialError,
+    precision:visibleTarget.precision,
+    projectedX:visibleTarget.projectedX,
+    projectedY:visibleTarget.projectedY,
+    rippleEffectId:effect.id
+  };
+  effect.age=effect.life;
+
+  assert.equal(world.isWaterRippleTapAvailable(effect.wave),false);
+  assert.equal(world.tap(effect.x+26,effect.y,{action:'reflection'}),false);
+  assert.equal(world.tap(effect.x+26,effect.y,{action:'reflection',reflectionTarget:snapshot}),false);
+  const surface=new RippleSurface();
+  surface.resize(360,640,'LOW');
+  surface.syncWorld(world);
+  assert.equal(surface.seenImpulses.has(`reflect:${effect.id}`),false);
+  world.step(0);
+  assert.equal(world.reflectionEffects.length,0);
 });
 
 test('a double-reflection tap reaches at most forty points and remains available after root taps end',()=>{
