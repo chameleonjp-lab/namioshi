@@ -1,25 +1,24 @@
-# CURRENT_TASK: PR #90マージ後・反射水面波の寿命境界整合
+# CURRENT_TASK: PR #91マージ後・実機受入と正本同期
 
 ## 最新追補（2026-08-26）
 
-- PR #90「fix: wait for visible wave fades before result」はmainへマージ済みで、マージコミットは`78ad5cfc4c5bf2b47c7c9d01b897bcf848566c3d`である。
-- マージ後の固定step検証で、反射水面波エフェクトがちょうど`life=0.42`秒に達したとき、描画の透明境界にもかかわらず入力判定だけが有効な1フレームを再現した。
-- 次のDraftでは、反射水面波の表示、タップ対象、HAMENへの表示インパルス、Worldからの削除をすべて`0 <= age < life`へ統一する。反射回数、得点、物理寿命、根波10回、結果待機条件は変更しない。
-- 対応ブランチは`agent/namioshi-ripple-lifetime-boundary-20260826`、次のPull RequestはDraftのままとする。GitHubへのpush／Draft PR作成は行うが、マージ操作は行わない。
-- PR #90後のG2 Build Verification #194はNode.js 18・20・22の全ジョブ成功済みである。今回の修正後もローカル自動検査とDraft CIを確認する。
-- 実ブラウザ／iPhone 17 Pro Safariの表示・操作は未確認のまま残し、ランキング、Supabase、Ready化、公開判定は再開しない。
+- PR #91「fix: align reflection ripple lifetime boundary」はmainへマージ済みで、マージコミットは`c810a2a33259066093d207fa2f585490bf94beef`である。
+- PR #91では、反射水面波エフェクトの表示、タップ対象、HAMENへの表示インパルス、Worldからの削除をすべて半開区間`0 <= age < life`へそろえ、`age === life`で見えない波が入力や表示同期だけに残る境界不整合を修正した。
+- PR #91のローカル検証は`node --test tests/*.test.mjs` 174/174、build、dist検証、容量、配置、SVG、戦略分析、差分検査を通過した。DraftのG2 Build Verification #32887232574もNode.js 18・20・22の全ジョブが成功した。
+- PR #91統合後の静的再点検では、寿命境界の新しい再現可能なゲームコード不具合は確認できなかった。自動検証の成功を実ブラウザ・実機の合格とは扱わない。
+- 次の受入では、iPhone 17 Pro Safariの縦画面で、反射したリアル水面波の表示・タップ加点・反射回数・10回後の表示中波精算・RESULT遷移を確認する。長いフレームや表示領域変更後の水面波、音・振動、初回案内の任意タップ、狭い画面の読みやすさも対象にする。
+- 実機で確認していない項目は未確認のまま残し、ランキング、Supabase、公式記録、Ready化、公開判定は再開しない。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 現行main: `78ad5cfc4c5bf2b47c7c9d01b897bcf848566c3d`（Pull Request #90マージ後）
-- 対応ブランチ: `agent/namioshi-ripple-lifetime-boundary-20260826`
+- 現行main: `c810a2a33259066093d207fa2f585490bf94beef`（PR #91マージ後）
+- 対応ブランチ: `agent/namioshi-post91-acceptance-sync-20260826`
 - 次のPull RequestはDraftのままにする
 - GitHubへのpush／Draft PR作成は行うが、マージ操作は行わない
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
-- PR #86の遅延描画同期、PR #87/#88の受入記録同期、PR #89の初回案内タップゲートはmainへ統合済みである。今回、表示フェード中の波を含めて終了判定を待つ修正を加える。実ブラウザ／iPhone 17 Pro Safariは未確認のまま受入ゲートへ進める。
 
-## 現在の状態
+## PR #91以前の実装経緯（履歴）
 
 - PR #85で、反射タップを表示中のリアル水面波だけへ限定し、旧有限反射弧へのフォールバックを削除した。初回ガイドのガラス反射必須条件も撤廃済みである。
 - PR #86はmainへマージ済みであり、描画側が一時停止、ブラウザの表示領域変更、長いフレームの後で反射エフェクトを初めて観測した場合でも、エフェクトがまだ寿命内ならHAMENへ一度だけ投入する。
