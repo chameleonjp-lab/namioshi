@@ -413,7 +413,7 @@ export class WebGLView{
       this.drawCircleOutline(glass.x2,glass.y2,5,.82,.74,1,.66);
     }
     for(const effect of world.reflectionEffects){
-      if(!Number.isFinite(effect.age)||!Number.isFinite(effect.life)||effect.age<0||effect.age>=effect.life)continue;
+      if(effect.age<0||effect.age>=effect.life)continue;
       const progress=Math.min(1,effect.age/effect.life);
       const radius=4+progress*22;
       this.circle[0]=effect.x;
