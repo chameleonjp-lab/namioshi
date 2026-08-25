@@ -248,8 +248,9 @@ function playStatusText(){
   if(tutorialMode){
     return'案内：反射板に当てて波の向きを変え、白いビーコンへ重ねてみましょう。';
   }
+  const pendingDisplayWaves=world.waves.length+(world.waveFades?.length??0);
   if(world.taps>=MAX_TAPS){
-    return world.waves.length>0
+    return pendingDisplayWaves>0
       ?`${MAX_TAPS}回使い切りました。入力と波の精算を待っています。通常の波は約${WAVE_LIFETIME}秒、反射した水面波は最大${REFLECTED_WAVE_LIFETIME}秒表示されます（加点と反射処理は約${WAVE_LIFETIME}秒以内）。`
       :`${MAX_TAPS}回使い切り、入力と波の精算が終わりました。結果を表示します。`;
   }
@@ -315,7 +316,7 @@ function shouldFinishIdlePlay(){
   return shouldFinishWhenIdle({
     taps:world.taps,
     maximumTaps:MAX_TAPS,
-    activeWaves:world.waves.length,
+    activeWaves:world.waves.length+(world.waveFades?.length??0),
     pendingInputs:timedInputs.length,
     tutorial:tutorialMode
   });
