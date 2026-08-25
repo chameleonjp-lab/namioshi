@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `c0a61efddd1db638bd7efb2a338534ffafc3e216`（Pull Request #88マージ後のmain）
+- 進捗反映基準: `c810a2a33259066093d207fa2f585490bf94beef`（Pull Request #91マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: GitHub Pages の `https://chameleonjp-lab.github.io/namioshi/`（公開判定未確認）
 - 正式表示名: `namioshi`
@@ -16,6 +16,15 @@
 現行ゲーム仕様の唯一の正本は`docs/SPEC_v3.md`である。`DECISION_LOG.md`は変更理由と履歴、この文書は工程と状態、`CURRENT_TASK.md`は現在のPull Request、`docs/REQUIREMENTS_v3.md`と`docs/IMPLEMENTATION_PLAN_v3.md`は初期背景・過去計画として扱う。背景資料や過去計画がSPECと衝突する場合は、現行判断へ使わない。
 
 仕様を変える必要が生じた場合は、実装を先に変えず、`docs/SPEC_v3.md`を更新し、変更理由を`DECISION_LOG.md`とPull Requestへ記録する。
+
+## 2026-08-26 PR #91統合後・次期受入ゲート
+
+- 現行mainは`c810a2a33259066093d207fa2f585490bf94beef`（PR #91マージ後）である。
+- PR #91で、反射水面波エフェクトの表示、タップ対象、HAMEN表示インパルス、Worldからの削除を`0 <= age < life`へ統一した。透明境界での見えない入力や表示同期を許可しない。
+- 自動検証は174/174テスト、build、dist検証、容量、配置、SVG、戦略分析、差分検査を通過し、G2 Build Verification #32887232574もNode.js 18・20・22で成功した。
+- 静的再点検では新しい再現可能なゲームコード不具合は確認できなかった。実ブラウザ・iPhone 17 Pro Safariの合格へ自動検証を置き換えない。
+- 次の受入対象は、縦画面の水面波表示・タップ加点・反射回数・10回後の表示中波精算・RESULT、長いフレームや表示領域変更後の表示、音・振動、初回案内タップ、狭い画面の視認性である。
+- ランキング、Supabase、公式記録、Ready化、公開判定は、実機受入とユーザー判断が完了するまで停止する。
 
 ## 2026-08-26 PR #88マージ後・初回案内タップゲート
 
