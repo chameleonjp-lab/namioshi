@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `3ce27afe3d230f5793d2b442680d827c54553d6b`（Pull Request #87マージ後のmain）
+- 進捗反映基準: `c0a61efddd1db638bd7efb2a338534ffafc3e216`（Pull Request #88マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: GitHub Pages の `https://chameleonjp-lab.github.io/namioshi/`（公開判定未確認）
 - 正式表示名: `namioshi`
@@ -16,6 +16,13 @@
 現行ゲーム仕様の唯一の正本は`docs/SPEC_v3.md`である。`DECISION_LOG.md`は変更理由と履歴、この文書は工程と状態、`CURRENT_TASK.md`は現在のPull Request、`docs/REQUIREMENTS_v3.md`と`docs/IMPLEMENTATION_PLAN_v3.md`は初期背景・過去計画として扱う。背景資料や過去計画がSPECと衝突する場合は、現行判断へ使わない。
 
 仕様を変える必要が生じた場合は、実装を先に変えず、`docs/SPEC_v3.md`を更新し、変更理由を`DECISION_LOG.md`とPull Requestへ記録する。
+
+## 2026-08-26 PR #88マージ後・初回案内タップゲート
+
+- 現行mainは`c0a61efddd1db638bd7efb2a338534ffafc3e216`（PR #88マージ後）である。
+- 初回案内は、画面の任意タップで閉じてカウントダウンへ進む。案内を閉じるタップは`World`へ渡さない。
+- 「案内を終えて本番へ」と「ホームへ戻る」のボタンは残す。得点、物理、入力上限、反射タップ対象は変更しない。
+- 自動検査172件を通過させ、実ブラウザ／iPhone 17 Pro Safariでは未確認のまま受入対象を管理する。ランキング、Supabase、Ready化、公開判定は停止する。
 
 ## 2026-08-26 PR #87マージ後・敵対的受入ゲート
 

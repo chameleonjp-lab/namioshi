@@ -204,3 +204,11 @@ test('the play contract gives the player time and decisions to plan reflections'
   assert.match(main,/id="scoreGlass"/);
   assert.match(main,/id="guideOverlay"/);
 });
+
+test('the first guide can be dismissed by a screen tap before countdown',()=>{
+  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+  assert.ok(main.includes("if(state==='PLAYING'&&tutorialMode)"));
+  assert.ok(main.includes("target?.closest?.('#guideHome,#guideContinue')"));
+  assert.ok(main.includes('leaveGuide(true);'));
+  assert.match(main,/画面のどこかをタップしてカウントダウンへ進みます/);
+});

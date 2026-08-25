@@ -33,8 +33,8 @@ app.innerHTML=`
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。白いビーコン（点）へ波を重ねると得点です。反射したリアルな水面波をタップすると、小さな技能ボーナスを得られます。説明を確認したら本番へ進めます。</p>
-  <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">説明を確認したら「案内を終えて本番へ」を押してください。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。白いビーコン（点）へ波を重ねると得点です。反射したリアルな水面波をタップすると、小さな技能ボーナスを得られます。説明を確認したら、画面のどこかをタップしてカウントダウンへ進みます。</p>
+  <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">説明を確認したら画面をタップしてください。下のボタンから進むこともできます。</p>
   <div class="guideButtons">
     <button id="guideContinue" class="btn" type="button">案内を終えて本番へ</button>
     <button id="guideHome" class="btn secondary" type="button">ホームへ戻る</button>
@@ -1051,6 +1051,14 @@ $('guideHome').onclick=()=>leaveGuide(false);
 $('share').onclick=()=>doShare(world.score,'resultShareStatus','shareText');
 $('homeShare').onclick=()=>doShare(0,'homeShareStatus','homeShareText');
 document.addEventListener('pointerdown',event=>{
+  if(state==='PLAYING'&&tutorialMode){
+    const target=event.target;
+    if(target?.closest?.('#guideHome,#guideContinue'))return;
+    event.preventDefault();
+    event.stopPropagation();
+    leaveGuide(true);
+    return;
+  }
   if(state!=='COUNTDOWN'||!countdownWaitingForTap)return;
   event.preventDefault();
   event.stopPropagation();
