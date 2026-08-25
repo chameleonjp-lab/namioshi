@@ -95,6 +95,37 @@ test('reflected waves remain available for up to ten seconds',()=>{
   assert.ok(retained.displayAge>WAVE_LIFETIME);
 });
 
+test('idle finish waits for the short visual fade after display waves expire',()=>{
+  const world=new World();
+  world.reset({mode:GAME_MODE.OFFICIAL});
+  for(let index=0;index<MAX_TAPS;index++){
+    assert.equal(world.tap(24+index*30,120+index*35,{action:'root'}),true);
+  }
+  for(let frame=0;frame<Math.ceil(REFLECTED_WAVE_LIFETIME*60);frame++){
+    world.step(1/60,{countTime:false});
+  }
+  assert.equal(world.waves.length,0);
+  assert.ok(world.waveFades.length>0);
+  assert.equal(shouldFinishWhenIdle({
+    taps:world.taps,
+    maximumTaps:MAX_TAPS,
+    activeWaves:world.waves.length+world.waveFades.length,
+    pendingInputs:0,
+    tutorial:false
+  }),false);
+  while(world.waveFades.length>0)world.step(1/60,{countTime:false});
+  assert.equal(shouldFinishWhenIdle({
+    taps:world.taps,
+    maximumTaps:MAX_TAPS,
+    activeWaves:world.waves.length+world.waveFades.length,
+    pendingInputs:0,
+    tutorial:false
+  }),true);
+  const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+  assert.match(main,/const pendingDisplayWaves=world\.waves\.length\+\(world\.waveFades\?\.length\?\?0\)/);
+  assert.match(main,/activeWaves:world\.waves\.length\+\(world\.waveFades\?\.length\?\?0\)/);
+});
+
 test('an empty play still finalizes after a long deadline frame',()=>{
   const runner=new FixedStepRunner();
   runner.reset(0);
