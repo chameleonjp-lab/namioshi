@@ -1,10 +1,19 @@
-# CURRENT_TASK: PR #89マージ後・表示フェード終了ゲート
+# CURRENT_TASK: PR #90マージ後・反射水面波の寿命境界整合
+
+## 最新追補（2026-08-26）
+
+- PR #90「fix: wait for visible wave fades before result」はmainへマージ済みで、マージコミットは`78ad5cfc4c5bf2b47c7c9d01b897bcf848566c3d`である。
+- マージ後の固定step検証で、反射水面波エフェクトがちょうど`life=0.42`秒に達したとき、描画の透明境界にもかかわらず入力判定だけが有効な1フレームを再現した。
+- 次のDraftでは、反射水面波の表示、タップ対象、HAMENへの表示インパルス、Worldからの削除をすべて`0 <= age < life`へ統一する。反射回数、得点、物理寿命、根波10回、結果待機条件は変更しない。
+- 対応ブランチは`agent/namioshi-ripple-lifetime-boundary-20260826`、次のPull RequestはDraftのままとする。GitHubへのpush／Draft PR作成は行うが、マージ操作は行わない。
+- PR #90後のG2 Build Verification #194はNode.js 18・20・22の全ジョブ成功済みである。今回の修正後もローカル自動検査とDraft CIを確認する。
+- 実ブラウザ／iPhone 17 Pro Safariの表示・操作は未確認のまま残し、ランキング、Supabase、Ready化、公開判定は再開しない。
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 現行main: `99505fe0c213acb68257bee74da14255f2f5f236`（Pull Request #89マージ後）
-- 対応ブランチ: `agent/namioshi-wave-fade-gate-20260826`
+- 現行main: `78ad5cfc4c5bf2b47c7c9d01b897bcf848566c3d`（Pull Request #90マージ後）
+- 対応ブランチ: `agent/namioshi-ripple-lifetime-boundary-20260826`
 - 次のPull RequestはDraftのままにする
 - GitHubへのpush／Draft PR作成は行うが、マージ操作は行わない
 - `RANKING_SERVICE_STATE.enabled=false`を維持する

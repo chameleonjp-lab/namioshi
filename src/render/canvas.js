@@ -185,6 +185,7 @@ export class CanvasView{
       }
     }
     for(const effect of world.reflectionEffects){
+      if(effect.age<0||effect.age>=effect.life)continue;
       const progress=Math.min(1,effect.age/effect.life);
       const alpha=(1-progress)*.72;
       context.strokeStyle=`rgba(176,235,242,${alpha})`;

@@ -1,5 +1,13 @@
 # DECISION_LOG: namioshi v3
 
+## 2026-08-26 PR #90マージ後・反射水面波の寿命境界
+
+- PR #90のマージコミットは`78ad5cfc4c5bf2b47c7c9d01b897bcf848566c3d`である。10回後の結果遷移は、物理波だけでなく短い表示フェードも待つ状態へmainへ統合された。
+- 固定stepで`reflectionEffect.age === reflectionEffect.life`を検証したところ、Canvas／WebGLの表示アルファは0なのに、Worldのタップ対象とHAMENの初回インパルス判定が寿命内として扱う境界不整合を確認した。
+- 次のDraftでは、反射水面波の描画対象、`findWaterRippleTapTarget`、固定step入力スナップショット、`RippleSurface.syncWorld`、エフェクト削除を共通の半開区間`0 <= age < life`へそろえる。
+- 変更は境界条件と回帰テストに限定し、反射回数、技能ボーナス、経路台帳、物理寿命、表示波10秒、根波10回、終了待機、ランキング、Supabaseは変更しない。
+- 実ブラウザ／iPhone 17 Pro Safariの境界フレーム視認性は未確認のまま扱う。Draftはマージしない。
+
 ## 2026-08-26 PR #89マージ後・表示フェード終了待機
 
 - PR #89のマージコミットは`99505fe0c213acb68257bee74da14255f2f5f236`である。初回案内は画面の任意タップで閉じ、カウントダウンへ進む状態をmainへ統合した。

@@ -161,7 +161,7 @@ export class World{
     let best=null;
     for(const effect of this.reflectionEffects){
       const wave=effect?.wave;
-      if(!wave||effect.rippleTapUsed||!this.isWaterRippleTapAvailable(wave)||effect.age<0||effect.age>effect.life)continue;
+      if(!wave||effect.rippleTapUsed||!this.isWaterRippleTapAvailable(wave)||effect.age<0||effect.age>=effect.life)continue;
       const progress=Math.max(0,Math.min(1,effect.age/effect.life));
       const visibleRadius=4+progress*22;
       const distance=Math.hypot(x-effect.x,y-effect.y);
@@ -198,7 +198,7 @@ export class World{
         Number.isFinite(effect.age)&&
         Number.isFinite(effect.life)&&
         effect.age>=0&&
-        effect.age<=effect.life
+        effect.age<effect.life
       )
     );
   }
@@ -229,7 +229,7 @@ export class World{
       rippleEffect.wave!==wave||
       rippleEffect.rippleTapUsed||
       rippleEffect.age<0||
-      rippleEffect.age>rippleEffect.life||
+      rippleEffect.age>=rippleEffect.life||
       this.reflectionTapAwards.has(snapshot.rootTapId)
     )return null;
     const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
@@ -642,7 +642,7 @@ export class World{
     for(let index=this.reflectionEffects.length-1;index>=0;index--){
       const effect=this.reflectionEffects[index];
       effect.age+=dt;
-      if(effect.age>effect.life)this.reflectionEffects.splice(index,1);
+      if(effect.age>=effect.life)this.reflectionEffects.splice(index,1);
     }
   }
 
