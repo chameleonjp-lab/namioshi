@@ -846,3 +846,46 @@ test('main uses fixed updates, a monotonic deadline, and visibility suspension r
   );
   assert.doesNotMatch(visibilityHandler,/advanceSimulation\(/);
 });
+test('renderer-loss deadline settlement preserves the fixed timeline origin',()=>{
+  const runner=new FixedStepRunner();
+  const queue=new TimedInputQueue();
+  runner.reset(0);
+  queue.reset(0);
+  let steps=0;
+  const boundaries=[];
+  const update=(step,{boundaryTimestamp})=>{
+    steps++;
+    boundaries.push(boundaryTimestamp);
+  };
+
+  const first=advancePlayFrame({
+    timestamp:1000,
+    deadline:30000,
+    runner,
+    inputQueue:queue,
+    update
+  });
+  assert.equal(first.steps,3);
+  assert.equal(runner.boundaryOriginTimestamp,0);
+  assert.equal(runner.lastTimestamp,1000);
+  assert.equal(runner.hasPendingSteps(),true);
+
+  runner.suspend(1000);
+  assert.equal(runner.lastTimestamp,null);
+  runner.resume(30000,{shiftTimeline:false});
+  const settled=advancePlayFrame({
+    timestamp:30000,
+    deadline:30000,
+    runner,
+    inputQueue:queue,
+    update
+  });
+
+  assert.equal(settled.deadlineExpired,true);
+  assert.equal(settled.shouldFinish,false);
+  assert.equal(settled.steps,3);
+  assert.equal(steps,6);
+  assert.equal(runner.boundaryOriginTimestamp,0);
+  assert.equal(boundaries.at(-1),100);
+  assert.ok(boundaries.every(boundary=>boundary<30000));
+});
