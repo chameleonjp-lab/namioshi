@@ -20,7 +20,6 @@ import {
 import {judgementFromPrecision} from './judgement.js';
 import {createOfficialLayout,createPracticeLayout} from './layouts.js';
 import {GAME_MODE,isOfficialMode,normalizeGameMode} from './modes.js';
-import {hasVisibleReflectionArc} from './reflection-arc-visibility.js';
 import {createReflectionPath,traceReflectionPath} from './reflection-path.js';
 import {candidateScore,reflectionTapScore,scoreCategory,scoreRouteKey} from './scoring.js';
 
@@ -138,7 +137,7 @@ export class World{
     if(action!=='root'){
       const target=action==='reflection'&&reflectionTarget
         ?this.findCapturedReflectionTapTarget(reflectionTarget)
-        :this.findReflectionTapTarget(x,y);
+        :this.findWaterRippleTapTarget(x,y);
       if(target)return this.registerReflectionTap(target,x,y);
       if(action==='reflection')return false;
     }
@@ -154,14 +153,15 @@ export class World{
    * Find the reflected water ripple shown by the renderers.  The geometric
    * path remains the deterministic source of truth, while the renderers can
    * present the same target as a neutral water ripple instead of a
-   * reflection-type colour.
+   * reflection-type colour.  A finite reflection arc is intentionally not a
+   * fallback: only this short-lived, real water ripple can receive the bonus.
    */
   findWaterRippleTapTarget(x,y){
     if(!Number.isFinite(x)||!Number.isFinite(y))return null;
     let best=null;
     for(const effect of this.reflectionEffects){
       const wave=effect?.wave;
-      if(!wave||effect.rippleTapUsed||this.reflectionTapAwards.has(wave.rootTapId)||this.finalizedRoots.has(wave.rootTapId)||this.reflectionTapAwards.size>=MAX_TAPS)continue;
+      if(!wave||effect.rippleTapUsed||!this.isWaterRippleTapAvailable(wave)||effect.age<0||effect.age>effect.life)continue;
       const progress=Math.max(0,Math.min(1,effect.age/effect.life));
       const visibleRadius=4+progress*22;
       const distance=Math.hypot(x-effect.x,y-effect.y);
@@ -182,69 +182,29 @@ export class World{
       };
       if(!best||candidate.radialError<best.radialError)best=candidate;
     }
-    return best??this.findReflectionTapTarget(x,y);
+    return best;
   }
 
-  isReflectionTapAvailable(wave){
-    const depth=Math.max(0,wave?.reflectionDepth??wave?.reflections??0);
+  isWaterRippleTapAvailable(wave){
     return Boolean(
       wave&&
-      depth>0&&
       !wave.reflectionTapUsed&&
       !this.reflectionTapAwards.has(wave.rootTapId)&&
       !this.finalizedRoots.has(wave.rootTapId)&&
       this.reflectionTapAwards.size<MAX_TAPS&&
-      hasVisibleReflectionArc(wave)
+      this.reflectionEffects.some(effect=>
+        effect?.wave===wave&&
+        !effect.rippleTapUsed&&
+        Number.isFinite(effect.age)&&
+        Number.isFinite(effect.life)&&
+        effect.age>=0&&
+        effect.age<=effect.life
+      )
     );
   }
 
-  /**
-   * Find the closest visible reflected-wave ring beneath a tap. The tap may
-   * be slightly inside or outside the ring to account for pointer accuracy,
-   * but the projected point must still be on the finite reflected path.
-   */
-  findReflectionTapTarget(x,y){
-    if(!Number.isFinite(x)||!Number.isFinite(y))return null;
-    let best=null;
-    const candidates=[
-      ...this.waves,
-      ...this.waveFades.map(fade=>fade.wave)
-    ];
-    for(const wave of candidates){
-      const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
-      const rootTapId=wave.rootTapId;
-      if(
-        !this.isReflectionTapAvailable(wave)
-      )continue;
-      const visibleRadius=Number.isFinite(wave.displayRadius)?wave.displayRadius:wave.radius;
-      if(!Number.isFinite(visibleRadius)||visibleRadius<=0)continue;
-      const distance=Math.hypot(x-wave.originX,y-wave.originY);
-      if(distance<=1e-7)continue;
-      const radialError=Math.abs(distance-visibleRadius);
-      const tapRange=Math.max(REFLECTION_TAP_RANGE,wave.width*1.5);
-      if(radialError>tapRange)continue;
-      const projectionScale=visibleRadius/distance;
-      const projectedX=wave.originX+(x-wave.originX)*projectionScale;
-      const projectedY=wave.originY+(y-wave.originY)*projectionScale;
-      if(!this.traceWavePath(wave,projectedX,projectedY).valid)continue;
-      const precision=Math.max(0,Math.min(1,1-radialError/tapRange));
-      const candidate={
-        wave,
-        rootTapId,
-        reflectionDepth:depth,
-        radialError,
-        precision,
-        projectedX,
-        projectedY
-      };
-      if(
-        !best||
-        candidate.radialError<best.radialError-1e-9||
-        candidate.radialError<=best.radialError+1e-9&&candidate.reflectionDepth>best.reflectionDepth||
-        candidate.radialError<=best.radialError+1e-9&&candidate.reflectionDepth===best.reflectionDepth&&wave.id<best.wave.id
-      )best=candidate;
-    }
-    return best;
+  hasAvailableWaterRipple(){
+    return this.reflectionEffects.some(effect=>this.isWaterRippleTapAvailable(effect?.wave));
   }
 
   /**
@@ -254,6 +214,7 @@ export class World{
    */
   findCapturedReflectionTapTarget(snapshot){
     if(!snapshot||typeof snapshot!=='object')return null;
+    if(!Number.isFinite(snapshot.rippleEffectId))return null;
     const wave=[
       ...this.waves,
       ...this.waveFades.map(fade=>fade.wave)
@@ -262,24 +223,24 @@ export class World{
       candidate?.rootTapId===snapshot.rootTapId
     );
     if(!wave)return null;
-    const rippleEffect=Number.isFinite(snapshot.rippleEffectId)
-      ?this.reflectionEffects.find(effect=>effect.id===snapshot.rippleEffectId)
-      :null;
-    if(Number.isFinite(snapshot.rippleEffectId)&&(
+    const rippleEffect=this.reflectionEffects.find(effect=>effect.id===snapshot.rippleEffectId);
+    if(
       !rippleEffect||
       rippleEffect.wave!==wave||
       rippleEffect.rippleTapUsed||
+      rippleEffect.age<0||
+      rippleEffect.age>rippleEffect.life||
       this.reflectionTapAwards.has(snapshot.rootTapId)
-    ))return null;
+    )return null;
     const depth=Math.max(0,wave.reflectionDepth??wave.reflections??0);
-    if(rippleEffect&&(
+    if(
       depth<=0||
       wave.reflectionTapUsed||
       this.reflectionTapAwards.has(wave.rootTapId)||
       this.finalizedRoots.has(wave.rootTapId)||
-      this.reflectionTapAwards.size>=MAX_TAPS
-    ))return null;
-    if(!rippleEffect&&!this.isReflectionTapAvailable(wave))return null;
+      this.reflectionTapAwards.size>=MAX_TAPS||
+      !this.isWaterRippleTapAvailable(wave)
+    )return null;
     if(depth!==snapshot.reflectionDepth)return null;
     return{
       wave,

@@ -4,7 +4,6 @@ import {MAX_TAPS,MAX_WAVES,REFLECTED_WAVE_LIFETIME,WAVE_LIFETIME} from '../src/c
 import {HIT_JUDGEMENT,judgementFromPrecision} from '../src/game/judgement.js';
 import {createReflectionPath} from '../src/game/reflection-path.js';
 import {scoreRouteKey} from '../src/game/scoring.js';
-import {fillReflectionArcPoints,REFLECTION_ARC_SEGMENTS} from '../src/render/reflection-arcs.js';
 import {World} from '../src/game/world.js';
 
 test('hit precision has four stable judgement levels',()=>{
@@ -57,28 +56,13 @@ test('a reflection tap stays aligned with the ring visible at pointerdown',()=>{
   world.beacons=[];
   world.glass=[];
   world.waves=[];
-  const path=createReflectionPath({
-    surfaceKey:'wall:test',
-    surfaceKind:'wall',
-    x1:200,
-    y1:0,
-    x2:200,
-    y2:300,
-    parentOriginX:100,
-    parentOriginY:100,
-    childOriginX:300,
-    childOriginY:100
-  });
-  const wave=world.addWave(300,100,1,'wall',{
-    rootTapId:'tap-1',
-    reflectionPath:path,
-    radius:140,
-    displayRadius:140,
-    displayAge:1,
-    lifetime:10,
-    physicsLifetime:3
-  });
-  const visibleTarget=world.findReflectionTapTarget(160,100);
+  const root=world.addWave(10,200,0,'direct',{rootTapId:'tap-1'});
+  root.radius=11;
+  world.reflect(root);
+  const effect=world.reflectionEffects[0];
+  effect.age=.21;
+  const visibleRadius=4+effect.age/effect.life*22;
+  const visibleTarget=world.findWaterRippleTapTarget(effect.x+visibleRadius,effect.y);
   assert.ok(visibleTarget);
   const snapshot={
     waveId:visibleTarget.wave.id,
@@ -87,18 +71,18 @@ test('a reflection tap stays aligned with the ring visible at pointerdown',()=>{
     radialError:visibleTarget.radialError,
     precision:visibleTarget.precision,
     projectedX:visibleTarget.projectedX,
-    projectedY:visibleTarget.projectedY
+    projectedY:visibleTarget.projectedY,
+    rippleEffectId:visibleTarget.rippleEffect.id
   };
 
-  // The ring advances before the fixed-step queue applies the input. A
-  // radius-only lookup would now miss the point that was visibly tapped.
-  wave.radius=160;
-  wave.displayRadius=160;
-  assert.equal(world.tap(160,100,{action:'reflection',reflectionTarget:snapshot}),true);
+  // The water ripple advances before the fixed-step queue applies the input.
+  // A new-radius-only lookup would now miss the point that was visibly tapped.
+  effect.age=.24;
+  assert.equal(world.tap(effect.x+visibleRadius,effect.y,{action:'reflection',reflectionTarget:snapshot}),true);
   assert.equal(world.reflectionTapAwards.get('tap-1')?.precision,snapshot.precision);
 });
 
-test('a reflected ring remains tappable during its short visual fade',()=>{
+test('an old finite reflection arc is not a tap target without its water ripple',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   world.beacons=[];
@@ -126,10 +110,9 @@ test('a reflected ring remains tappable during its short visual fade',()=>{
     physicsLifetime:3
   });
   world.waveFades.push({wave,age:.08,life:.18});
-  const target=world.findReflectionTapTarget(160,100);
-  assert.equal(target?.wave,world.waveFades[0].wave);
-  assert.equal(world.tap(160,100,{action:'reflection'}),true);
-  assert.equal(world.reflectionTapAwards.get('tap-fade')?.points,20);
+  assert.equal(world.findWaterRippleTapTarget(160,100),null);
+  assert.equal(world.tap(160,100,{action:'reflection'}),false);
+  assert.equal(world.reflectionTapAwards.size,0);
 });
 
 test('a hit keeps the closest fixed-step approach instead of the first band entry',()=>{
@@ -765,10 +748,14 @@ test('a well-timed reflected-wave tap awards one bounded bonus without a root wa
     radius:100,
     speed:0
   });
+  world.addReflectionEffect(100,100,1,0,'wall',wave);
+  const effect=world.reflectionEffects.at(-1);
+  effect.age=.21;
+  const visibleRadius=4+effect.age/effect.life*22;
   const awards=[];
   world.onReflectionTap=award=>awards.push(award);
 
-  assert.equal(world.tap(100,100),true);
+  assert.equal(world.tap(effect.x+visibleRadius,effect.y),true);
   assert.equal(world.taps,0);
   assert.equal(world.waves.length,1);
   assert.equal(world.score,20);
@@ -822,13 +809,36 @@ test('a visible real water ripple is the reflected tap target and reports its co
   assert.equal(world.tap(effect.x+visibleRadius,effect.y,{action:'reflection',reflectionTarget:snapshot}),false);
 });
 
-test('reflection tap availability follows the one-award and finalized-root limits',()=>{
+test('water ripple availability follows the one-award and finalized-root limits',()=>{
   const world=new World({random:()=>.5});
   world.reset();
   world.beacons=[];
   world.glass=[];
   world.waves=[];
-  const reflectionPath=createReflectionPath({
+  const wave=world.addWave(0,100,1,'wall',{
+    rootTapId:'hint-root',
+    radius:100,
+    speed:0
+  });
+  world.addReflectionEffect(100,100,1,0,'wall',wave);
+  assert.equal(world.isWaterRippleTapAvailable(wave),true);
+  assert.equal(world.hasAvailableWaterRipple(),true);
+  world.finalizedRoots.add(wave.rootTapId);
+  assert.equal(world.isWaterRippleTapAvailable(wave),false);
+  world.finalizedRoots.delete(wave.rootTapId);
+  wave.reflectionTapUsed=true;
+  assert.equal(world.isWaterRippleTapAvailable(wave),false);
+  wave.reflectionTapUsed=false;
+  for(let index=0;index<MAX_TAPS;index++){
+    world.reflectionTapAwards.set(`filled-${index}`,{score:10});
+  }
+  assert.equal(world.isWaterRippleTapAvailable(wave),false);
+});
+
+test('water ripple availability follows the local ripple lifetime, not the old arc',()=>{
+  const world=new World({random:()=>.5});
+  world.reset();
+  const path=createReflectionPath({
     surfaceKey:'wall:hint',
     surfaceKind:'wall',
     x1:50,
@@ -842,48 +852,16 @@ test('reflection tap availability follows the one-award and finalized-root limit
   });
   const wave=world.addWave(0,100,1,'wall',{
     rootTapId:'hint-root',
-    reflectionPath,
+    reflectionPath:path,
     radius:100,
     speed:0
   });
-  assert.equal(world.isReflectionTapAvailable(wave),true);
-  world.finalizedRoots.add(wave.rootTapId);
-  assert.equal(world.isReflectionTapAvailable(wave),false);
-  world.finalizedRoots.delete(wave.rootTapId);
-  wave.reflectionTapUsed=true;
-  assert.equal(world.isReflectionTapAvailable(wave),false);
-  wave.reflectionTapUsed=false;
-  for(let index=0;index<MAX_TAPS;index++){
-    world.reflectionTapAwards.set(`filled-${index}`,{score:10});
-  }
-  assert.equal(world.isReflectionTapAvailable(wave),false);
-});
-
-test('reflection tap availability matches the finite arc drawn by the renderers',()=>{
-  const world=new World({random:()=>.5});
-  world.reset();
-  assert.equal(world.tap(140,520,{action:'root'}),true);
-  const points=new Float32Array(REFLECTION_ARC_SEGMENTS*4);
-  let noArcFrames=0;
-  let visibleFrames=0;
-  for(let frame=0;frame<60;frame++){
-    world.step(1/60);
-    const reflected=world.waves.filter(wave=>wave.reflectionDepth>0);
-    if(!reflected.length)continue;
-    const visible=reflected.some(wave=>
-      fillReflectionArcPoints(wave,points,REFLECTION_ARC_SEGMENTS)>0
-    );
-    const available=reflected.some(wave=>world.isReflectionTapAvailable(wave));
-    if(visible){
-      visibleFrames++;
-      assert.equal(available,true);
-    }else{
-      noArcFrames++;
-      assert.equal(available,false);
-    }
-  }
-  assert.ok(noArcFrames>=40);
-  assert.ok(visibleFrames>0);
+  assert.equal(world.findWaterRippleTapTarget(100,100),null);
+  world.addReflectionEffect(100,100,1,0,'wall',wave);
+  assert.equal(world.hasAvailableWaterRipple(),true);
+  const effect=world.reflectionEffects[0];
+  effect.age=effect.life+.01;
+  assert.equal(world.hasAvailableWaterRipple(),false);
 });
 
 test('a double-reflection tap reaches at most forty points and remains available after root taps end',()=>{
@@ -918,13 +896,17 @@ test('a double-reflection tap reaches at most forty points and remains available
     childOriginX:200,
     childOriginY:100
   });
-  world.addWave(200,100,2,'glass',{
+  const wave=world.addWave(200,100,2,'glass',{
     rootTapId:'skill-double-root',
     reflectionPath:second,
     radius:200,
     speed:0
   });
-  assert.equal(world.tap(0,100),true);
+  world.addReflectionEffect(0,100,1,0,'glass',wave);
+  const effect=world.reflectionEffects.at(-1);
+  effect.age=.21;
+  const visibleRadius=4+effect.age/effect.life*22;
+  assert.equal(world.tap(effect.x+visibleRadius,effect.y),true);
   assert.equal(world.taps,10);
   assert.equal(world.score,40);
   assert.equal(world.getScoreBreakdown().reflectionTap,40);

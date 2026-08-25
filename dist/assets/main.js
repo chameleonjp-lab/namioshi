@@ -33,10 +33,10 @@ app.innerHTML=`
 </div>
 <div id="guideOverlay" class="guideOverlay" role="dialog" aria-modal="true" aria-labelledby="guideTitle" aria-describedby="guideText" aria-hidden="true">
   <h2 id="guideTitle">初回案内</h2>
-  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。白いビーコン（点）へ波を重ねると得点です。反射後の波の輪をタップすると、小さな技能ボーナスを得られます。まず反射板への命中を1回確認してから案内を終えます。</p>
-  <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">反射板に波を当てると、ここで成功を確認できます。</p>
+  <p id="guideText">今は時間制限がありません。画面をタップして波を出し、光る反射板（線）へ当てて波の向きを変えてみてください。白いビーコン（点）へ波を重ねると得点です。反射したリアルな水面波をタップすると、小さな技能ボーナスを得られます。説明を確認したら本番へ進めます。</p>
+  <p id="guideStatus" class="guideStatus" role="status" aria-live="polite">説明を確認したら「案内を終えて本番へ」を押してください。</p>
   <div class="guideButtons">
-    <button id="guideContinue" class="btn" type="button" disabled>反射板に当てて本番へ</button>
+    <button id="guideContinue" class="btn" type="button">案内を終えて本番へ</button>
     <button id="guideHome" class="btn secondary" type="button">ホームへ戻る</button>
   </div>
 </div>
@@ -165,7 +165,6 @@ let countdownExplanationVisible=false;
 let tutorialMode=false;
 let playLegendOpen=false;
 let guideCompletedInMemory=false;
-let guideReflectionConfirmed=false;
 const fixedSteps=new FixedStepRunner();
 const timedInputs=new TimedInputQueue();
 let playDeadline=null;
@@ -194,21 +193,6 @@ function hasCompletedGuide(){
 function markGuideCompleted(){
   guideCompletedInMemory=true;
   try{localStorage.setItem(GUIDE_STORAGE_KEY,'yes')}catch{}
-}
-
-function resetGuideProgress(){
-  guideReflectionConfirmed=false;
-  $('guideContinue').disabled=true;
-  $('guideContinue').textContent='反射板に当てて本番へ';
-  $('guideStatus').textContent='反射板に波を当てると、ここで成功を確認できます。';
-}
-
-function markGuideReflectionSuccess(){
-  if(!tutorialMode||guideReflectionConfirmed)return;
-  guideReflectionConfirmed=true;
-  $('guideContinue').disabled=false;
-  $('guideContinue').textContent='案内を終えて本番へ';
-  $('guideStatus').textContent='反射板への命中を確認しました。案内を終えて本番を始められます。';
 }
 
 function focusStateTarget(nextState){
@@ -284,7 +268,7 @@ function updatePlayStatus(force=false){
 function updateReflectionTapPrompt(){
   const prompt=$('reflectionTapPrompt');
   if(!prompt)return;
-  const available=state==='PLAYING'&&!tutorialMode&&world.waves.some(wave=>world.isReflectionTapAvailable(wave));
+  const available=state==='PLAYING'&&!tutorialMode&&world.hasAvailableWaterRipple();
   prompt.hidden=!available;
 }
 
@@ -660,7 +644,6 @@ function startCountdownSequence(){
 function startGuide(){
   clearCountdown();
   tutorialMode=true;
-  resetGuideProgress();
   world.reset({mode:selectedMode});
   resetPlayClock();
   const presentation=modePresentation(world.mode);
@@ -675,11 +658,6 @@ function startGuide(){
 
 function leaveGuide(startGame){
   if(state!=='PLAYING'||!tutorialMode)return;
-  if(startGame&&!guideReflectionConfirmed){
-    $('guideStatus').textContent='先に反射板へ波を当てて、成功を確認してください。';
-    $('guideContinue').focus({preventScroll:true});
-    return;
-  }
   if(startGame)markGuideCompleted();
   tutorialMode=false;
   fixedSteps.suspend();
@@ -1020,7 +998,6 @@ function showRouteFeedback(summary){
 }
 
 world.onReflect=reflection=>{
-  if(reflection.kind==='glass')markGuideReflectionSuccess();
   const cue=reflection.kind==='glass'?'GLASS_REFLECT':'WALL_REFLECT';
   const waterCue=reflection.kind==='glass'?'WATER_GLASS':'WATER_WALL';
   playCue(cue);
