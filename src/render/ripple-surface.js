@@ -227,7 +227,11 @@ export class RippleSurface{
       this.seenImpulses.add(key);
     }
     for(const effect of world?.reflectionEffects??[]){
-      if(!Number.isFinite(effect.age)||effect.age>.08)continue;
+      // The renderer may observe an effect after a long frame or a Safari
+      // browser-chrome resize.  The effect id is the once-only guard, so a
+      // live effect must still be injected when it is first observed after
+      // the short event window has elapsed.
+      if(!Number.isFinite(effect.age)||effect.age<0||effect.age>effect.life)continue;
       const effectKey=effect.id??`${effect.kind}:${Math.round(effect.x*10)}:${Math.round(effect.y*10)}`;
       const key=`reflect:${effectKey}`;
       if(this.seenImpulses.has(key))continue;

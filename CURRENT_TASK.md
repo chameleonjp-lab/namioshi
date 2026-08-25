@@ -1,14 +1,50 @@
-# CURRENT_TASK: PR #84マージ後・水面波タップ限定と初回ガイド整理
+# CURRENT_TASK: PR #85マージ後・遅延描画時の水面波同期
 
 ## 基準
 
 - 対象: `chameleonjp-lab/namioshi`
-- 現行main: `a2991a04d61e8cc49cfdc009210755267a1d6e80`（Pull Request #84のマージコミット）
-- 対応ブランチ: `agent/namioshi-ripple-only-20260825`
+- 現行main: `4cea23ea7257d0618ba1a8be184d8f9997e90a8a`（Pull Request #85のマージコミット）
+- 対応ブランチ: `agent/namioshi-ripple-sync-20260826`
 - 次のPull RequestはDraftのままにする
 - GitHubへのpush／Draft PR作成は行うが、マージ操作は行わない
 - `RANKING_SERVICE_STATE.enabled=false`を維持する
-- ローカル自動検査は既存170件を基準に更新する。build、dist検証、配置・戦略・SVG・容量・差分検査を通し、G2と実ブラウザ／iPhone 17 Pro SafariはDraft公開後に確認する。
+- ローカル自動検査は既存170件に回帰1件を追加する。build、dist検証、配置・戦略・SVG・容量・差分検査を通し、G2と実ブラウザ／iPhone 17 Pro SafariはDraft公開後に確認する。
+
+## 今回の対応
+
+- PR #85で、反射タップを表示中のリアル水面波だけへ限定し、旧有限反射弧へのフォールバックを削除した。初回ガイドのガラス反射必須条件も撤廃済みである。
+- 描画側が一時停止、ブラウザの表示領域変更、長いフレームの後で反射エフェクトを初めて観測した場合でも、エフェクトがまだ寿命内ならHAMENへ一度だけ投入する。
+- エフェクトの固有IDを重複防止キーとして使い、同じ反射を複数フレームで水面へ重ねない。
+- ゲームの物理、得点、タップ回数、反射弧の視覚表示、ランキング、Supabaseは変更しない。
+
+## 敵対的検証で固定する不具合
+
+`RippleSurface.syncWorld`が反射エフェクトの発生後80msを過ぎると、そのエフェクトを初めて見ても捨てていた。この条件では、iPhone Safariの一時的な描画遅延時に、実際には反射したのにリアル水面波だけが表示されない可能性がある。現在のエフェクトが寿命内であれば年齢に関係なく一度だけ投入し、寿命切れのエフェクトは投入しない。
+
+## 検証手順
+
+```bash
+node --test tests/*.test.mjs
+node tools/analyze-strategy.mjs --check
+node tools/analyze-layouts.mjs --check
+node tools/render-layout-previews.mjs --check
+node scripts/build.mjs
+node scripts/verify-dist.mjs
+node scripts/report-size.mjs
+git diff --check
+```
+
+自動検証の成功は、iPhone 17 ProのSafariでの合格へ置き換えない。
+
+## 次の受入ゲート
+
+- 実ブラウザとiPhone 17 Pro Safariで、長いフレームの後にも反射したリアル水面波が表示されることを確認する。
+- 水面波タップの加点、反射回数、10回後のRESULT、音・振動、縦画面の視認性を同じ公開候補で確認する。
+- 実施していない項目は未確認のまま残し、ランキング、Supabase、Ready化、公開判定は再開しない。
+
+---
+
+# 過去CURRENT_TASK記録（PR #85実装）
 
 ## 今回の対応範囲
 
