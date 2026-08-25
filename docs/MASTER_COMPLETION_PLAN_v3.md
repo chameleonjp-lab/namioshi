@@ -5,7 +5,7 @@
 - 基準リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 初版基準コミット: `8bdd6f3b79c7b1c72637c3f81b1b67cb8d978d5f`
-- 進捗反映基準: `2982d02`（Pull Request #81マージ後のmain）
+- 進捗反映基準: `b329fb1ebcb1c19af3a12e436de9ec6855a03f52`（Pull Request #86マージ後のmain）
 - 目標リリース: `namioshi v3.0.0`
 - 公開先候補: GitHub Pages の `https://chameleonjp-lab.github.io/namioshi/`（公開判定未確認）
 - 正式表示名: `namioshi`
@@ -16,6 +16,14 @@
 現行ゲーム仕様の唯一の正本は`docs/SPEC_v3.md`である。`DECISION_LOG.md`は変更理由と履歴、この文書は工程と状態、`CURRENT_TASK.md`は現在のPull Request、`docs/REQUIREMENTS_v3.md`と`docs/IMPLEMENTATION_PLAN_v3.md`は初期背景・過去計画として扱う。背景資料や過去計画がSPECと衝突する場合は、現行判断へ使わない。
 
 仕様を変える必要が生じた場合は、実装を先に変えず、`docs/SPEC_v3.md`を更新し、変更理由を`DECISION_LOG.md`とPull Requestへ記録する。
+
+## 2026-08-26 PR #86マージ後・実機受入ゲート
+
+- 現行mainは`b329fb1ebcb1c19af3a12e436de9ec6855a03f52`（PR #86マージ後）である。
+- PR #86で、描画が遅れて初めて観測した寿命内の反射エフェクトを固有IDで一度だけHAMENへ投入する同期修正をmainへ統合した。
+- 次のDraftは、現在の実装、171件の自動検査、未確認の実機範囲を文書へ同期する。再現可能な不具合がない限り、ゲームコード、得点、物理、入力、描画、音、保存、ランキング、Supabaseは変更しない。
+- iPhone 17 Pro Safariで、長いフレーム・表示領域変更後の水面波、リアル水面波タップ、反射回数、10回後のRESULT、表示中波の精算、音・振動、説明トグル、縦画面の視認性を確認する。
+- 自動検査を実機合格へ置き換えず、ランキング、Supabase、Ready化、公開判定は実機受入とユーザー判断まで停止する。
 
 ## 2026-08-26 PR #85マージ後・次期表示同期
 

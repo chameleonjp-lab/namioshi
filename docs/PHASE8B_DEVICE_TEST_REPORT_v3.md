@@ -4,6 +4,14 @@
 
 Phase 8AのNode.js標準テストで代替できない、ブラウザ表示、スマートフォン操作、描画方式の切替、音・振動、休止復帰、継続動作を確認する。自動試験の成功を、実ブラウザや実機の合格へ置き換えない。
 
+## 2026-08-26 PR #86マージ後・次回検収対象
+
+- 対象main: `b329fb1ebcb1c19af3a12e436de9ec6855a03f52`
+- PR #86はmainへマージ済みで、描画が遅れて初めて観測した寿命内の反射エフェクトを水面へ一度だけ投入する同期修正を含む。
+- iPhone 17 Pro Safariで、長いフレーム・表示領域変更後の水面波、リアル水面波タップ、反射回数、10回後のRESULT、表示中波の精算、音・振動、説明トグル、縦画面の視認性を確認する。
+- 実機を操作していない項目は未確認のまま維持し、自動検査やActions成功を実機合格へ置き換えない。
+- ランキング、Supabase、本番記録、Ready化、公開判定は停止する。
+
 ## 2026-08-26 PR #85マージ後・次回検収対象
 
 - 対象main: `4cea23ea7257d0618ba1a8be184d8f9997e90a8a`
@@ -15,8 +23,8 @@ Phase 8AのNode.js標準テストで代替できない、ブラウザ表示、�
 ## 検収対象コミット
 
 - 対象: `chameleonjp-lab/namioshi`
-- 現行main: `a0d3f3c2f8a6d90579b71b62e1df813a56886057`（PR #78マージ後）
-- 後続候補: `agent/namioshi-phase8b-iphone17-acceptance-20260817`
+- 現行main: `b329fb1ebcb1c19af3a12e436de9ec6855a03f52`（PR #86マージ後。下記の過去記録は履歴）
+- 後続候補: `agent/namioshi-post86-acceptance-20260826`
 - ランキング: `RANKING_SERVICE_STATE.enabled=false`
 - Supabase: SQL適用、本番疎通、ランキング再開を行わない
 
