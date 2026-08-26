@@ -486,11 +486,19 @@ function resumeRendererPause(now){
   if(!rendererSuspended)return;
   rendererSuspended=false;
   if(state!=='PLAYING')return;
+  const settlingDeadline=Boolean(
+    !tutorialMode&&
+    playDeadline!==null&&
+    deadlineSettlementActive
+  );
   const resumeAt=!tutorialMode&&playDeadline!==null&&now>=playDeadline
     ?playDeadline
     :now;
-  const pausedDuration=fixedSteps.resume(resumeAt);
-  if(pausedDuration>0){
+  // Once deadline settlement has started, the fixed-step origin already
+  // belongs to the visible timeline. Do not shift it by the renderer-loss
+  // duration when the context comes back.
+  const pausedDuration=fixedSteps.resume(resumeAt,{shiftTimeline:!settlingDeadline});
+  if(pausedDuration>0&&!settlingDeadline){
     timedInputs.shiftPendingTimestamps(pausedDuration,{
       before:tutorialMode?Number.POSITIVE_INFINITY:playDeadline
     });
@@ -820,6 +828,12 @@ function renderCurrentFrame(now){
 
 function settleSuspendedDeadline(now){
   if(state!=='PLAYING'||tutorialMode||playDeadline===null||now<playDeadline)return;
+  // Renderer loss suspends the runner by clearing lastTimestamp. Resume at
+  // the deadline without shifting the fixed timeline, then drain the
+  // accumulated visible backlog against its original boundaries.
+  if(fixedSteps.lastTimestamp===null){
+    fixedSteps.resume(playDeadline,{shiftTimeline:false});
+  }
   updatePlayTime(now);
   const playFrame=rememberPlayFrame(advanceSimulation(playDeadline));
   updatePlayTime(now);
