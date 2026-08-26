@@ -122,8 +122,8 @@ test('idle finish waits for the short visual fade after display waves expire',()
     tutorial:false
   }),true);
   const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
-  assert.match(main,/const pendingDisplayWaves=\s*world\.waves\.length\+\s*\(world\.waveFades\?\.length\?\.\?0\)\+\s*\(world\.reflectionEffects\?\.length\?\.\?0\)/);
-  assert.match(main,/activeWaves:world\.waves\.length\+\(world\.waveFades\?\.length\?\.\?0\)/);
+  assert.match(main,/const pendingDisplayWaves=\s*world\.waves\.length\+\s*\(world\.waveFades\?\.length\?\?0\)\+\s*\(world\.reflectionEffects\?\.length\?\?0\)/);
+  assert.match(main,/activeWaves:world\.waves\.length\+\(world\.waveFades\?\.length\?\?0\)/);
   assert.match(main,/activeEffects:world\.reflectionEffects\?\.length\?\.\?0/);
 });
 
