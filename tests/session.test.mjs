@@ -122,8 +122,9 @@ test('idle finish waits for the short visual fade after display waves expire',()
     tutorial:false
   }),true);
   const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
-  assert.match(main,/const pendingDisplayWaves=world\.waves\.length\+\(world\.waveFades\?\.length\?\?0\)/);
+  assert.match(main,/const pendingDisplayWaves=\s*world\.waves\.length\+\s*\(world\.waveFades\?\.length\?\?0\)\+\s*\(world\.reflectionEffects\?\.length\?\?0\)/);
   assert.match(main,/activeWaves:world\.waves\.length\+\(world\.waveFades\?\.length\?\?0\)/);
+  assert.match(main,/activeEffects:world\.reflectionEffects\?\.length\?\?0/);
 });
 
 test('an empty play still finalizes after a long deadline frame',()=>{
@@ -888,4 +889,24 @@ test('renderer-loss deadline settlement preserves the fixed timeline origin',()=
   assert.equal(runner.boundaryOriginTimestamp,0);
   assert.equal(boundaries.at(-1),100);
   assert.ok(boundaries.every(boundary=>boundary<30000));
+});
+
+
+test('idle finish waits for visible reflection water ripples',()=>{
+  assert.equal(shouldFinishWhenIdle({
+    taps:MAX_TAPS,
+    maximumTaps:MAX_TAPS,
+    activeWaves:0,
+    activeEffects:1,
+    pendingInputs:0,
+    tutorial:false
+  }),false);
+  assert.equal(shouldFinishWhenIdle({
+    taps:MAX_TAPS,
+    maximumTaps:MAX_TAPS,
+    activeWaves:0,
+    activeEffects:0,
+    pendingInputs:0,
+    tutorial:false
+  }),true);
 });
