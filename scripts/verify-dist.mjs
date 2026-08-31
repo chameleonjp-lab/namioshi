@@ -83,7 +83,7 @@ function checkPublishedFile(path) {
   if (!textFilePattern.test(path)) return;
 
   const text = readFileSync(path, 'utf8');
-  if (/https?:\/\/(?!(?:chameleonjp\.codeberg\.page|chameleonjp-lab\.codeberg\.page)(?:[\/'"]|$)|chameleonjp\.supabase\.co|mlpnjgezrnhdxsxolyzj\.supabase\.co(?:[\/'"]|$))/.test(text)) {
+  if (/https?:\/\/(?!(?:chameleonjp\.codeberg\.page|chameleonjp-lab\.codeberg\.page|chameleonjp-lab\.github\.io/chameleonjp_lab)(?:[\/'"]|$)|chameleonjp\.supabase\.co|mlpnjgezrnhdxsxolyzj\.supabase\.co(?:[\/'"]|$))/.test(text)) {
     bad.push(`external CDN/url: ${path}`);
   }
   if (/service_role/i.test(text)) bad.push(`service_role string: ${path}`);
