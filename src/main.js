@@ -69,7 +69,7 @@ app.innerHTML=`
     <button id="homeShare" class="btn secondary" type="button">シェア</button>
     <p id="homeShareStatus" class="small" role="status" aria-live="polite"></p>
     <textarea id="homeShareText" class="shareText" aria-label="ホーム画面のシェア文" readonly></textarea>
-    <a class="link" href="https://chameleonjp.codeberg.page/" target="_blank" rel="noreferrer">実験場リンク</a>
+    <a class="link" href="https://chameleonjp-lab.github.io/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">カメレオンJPの実験場へ</a>
     <p id="msg" class="small warn" role="status" aria-live="polite"></p>
   </div>
 </section>
@@ -126,7 +126,7 @@ app.innerHTML=`
     <button id="changeMode" class="btn secondary" type="button">モードを選び直す</button>
     <button id="rankingDetails" class="btn secondary" type="button" disabled aria-disabled="true">詳細ランキング（準備中）</button>
     <button id="endGame" class="btn secondary" type="button">ゲーム終了</button>
-    <a class="btn secondary btnLink" href="https://chameleonjp.codeberg.page/" target="_blank" rel="noreferrer">実験場へ戻る</a>
+    <a class="btn secondary btnLink" href="https://chameleonjp-lab.github.io/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">カメレオンJPの実験場へ</a>
     <p id="resultStorageStatus" class="small" role="status" aria-live="polite"></p>
     <p id="resultShareStatus" class="small" role="status" aria-live="polite"></p>
     <p id="resultExitStatus" class="small" role="status" aria-live="polite"></p>
