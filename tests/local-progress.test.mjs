@@ -83,7 +83,8 @@ test('result screen exposes persistence status and non-ranking exit paths',()=>{
   assert.match(main,/id="resultStorageStatus"/);
   assert.match(main,/id="rankingDetails"[^>]*disabled/);
   assert.match(main,/id="endGame"/);
-  assert.match(main,/実験場へ戻る/);
+  assert.match(main,/カメレオンJPの実験場へ/);
+  assert.match(main,/https:\/\/chameleonjp-lab\.github\.io\/chameleonjp_lab\//);
   assert.match(main,/recordPlayResult\(\{/);
   assert.match(main,/saveDisplayName\(player\)/);
   assert.match(main,/結果を端末に保存しました/);
