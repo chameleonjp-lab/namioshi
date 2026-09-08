@@ -1,6 +1,15 @@
-# CURRENT_TASK: PR #91マージ後・実機受入と正本同期
+# CURRENT_TASK: PR #95マージ後・公開版スモークと実機受入
 
-## 最新追補（2026-08-26）
+## 最新追補（2026-09-08）
+
+- PR #95はmainへマージ済みで、マージコミットは`c1830938fe0fd2d4f59397881b04b254f83ee0f8`である。PR #95で公開ページの公式導線を`https://chameleonjp-lab.github.io/chameleonjp_lab/`へそろえた。
+- PR #95マージ後のG2 Build Verification #214（Run ID `33374104782`）とGitHub Pages build and deployment #64（Run ID `33374103972`）は、いずれも成功した。
+- 2026-09-08に公開版`https://chameleonjp-lab.github.io/namioshi/`をCloud Chromeでスモーク確認した。HOME表示、名前未入力時の公式モード開始阻止、公式モード開始後の初回案内、案内中の盤面任意タップ、3のカウントダウン、PLAYINGのHUD、10回入力後のRESULT遷移を確認した。
+- 同スモークの結果画面では、得点内訳、反射回数、公式プレイ回数、端末ベスト保存、公式導線を確認した。検証ランでは671点・反射56回が表示された。ページのコンソール警告・エラーは0件だった。
+- これは公開版Cloud Chromeのフロー確認であり、iPhone 17 Pro Safariの合格を意味しない。水面波タップ加点、長いフレーム・表示領域変更後の表示、音・振動、縦画面の視認性、初見操作は未確認のまま残す。
+- ランキング、Supabase、本番記録、Ready化、公開判定は再開しない。次のDraftは今回の受入記録と未確認範囲の同期に限定し、実機確認なしにゲームコードを変更しない。
+
+## 2026-08-26追補（PR #91時点）
 
 - PR #91「fix: align reflection ripple lifetime boundary」はmainへマージ済みで、マージコミットは`c810a2a33259066093d207fa2f585490bf94beef`である。
 - PR #91では、反射水面波エフェクトの表示、タップ対象、HAMENへの表示インパルス、Worldからの削除をすべて半開区間`0 <= age < life`へそろえ、`age === life`で見えない波が入力や表示同期だけに残る境界不整合を修正した。
