@@ -1,5 +1,13 @@
 # namioshi v3 G2 開発構成検証報告
 
+## 2026-09-08 PR #95マージ後・CIと公開反映の再確認
+
+- PR #95のマージコミットは`c1830938fe0fd2d4f59397881b04b254f83ee0f8`である。
+- G2 Build Verification #214（Run ID `33374104782`）は成功した。
+- GitHub Pages build and deployment #64（Run ID `33374103972`）は成功した。
+- 公開版Cloud Chromeのスモークで基本フローとRESULT遷移を確認した。これはG2・Pagesの成功と合わせても、iPhone 17 Pro Safari、WebGL／Canvasの見た目、音・振動、性能、Supabase実通信の証拠ではない。
+- ランキング、Supabase、本番記録、Ready化、公開判定は未再開である。
+
 - 対象リポジトリ: `chameleonjp-lab/namioshi`
 - 基準ブランチ: `main`
 - 基準コミット: `cf37cb040c5f1570ff489819b921b337843262fb`
