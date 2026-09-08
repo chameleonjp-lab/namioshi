@@ -1,5 +1,13 @@
 # DECISION_LOG: namioshi v3
 
+## 2026-09-08 PR #95マージ後・公開版スモーク受入
+
+- PR #95のマージコミットは`c1830938fe0fd2d4f59397881b04b254f83ee0f8`である。公開ページの公式導線は`https://chameleonjp-lab.github.io/chameleonjp_lab/`へ統一された。
+- PR #95後のG2 Build Verification #214（Run ID `33374104782`）とGitHub Pages build and deployment #64（Run ID `33374103972`）は成功した。
+- Cloud Chromeの公開版スモークでは、HOME、名前必須ゲート、初回案内の任意タップ、カウントダウン、PLAYINGの10回入力、RESULT遷移、結果内訳、反射回数、端末ベスト保存を確認した。コンソールのwarning/errorは0件だった。
+- Cloud Chromeで確認できた公開版フローを、iPhone 17 Pro Safariの実機合格へ置き換えない。実機の水面波表示・タップ加点、長いフレーム・表示領域変更、音・振動、縦画面の視認性、初見操作は未確認として維持する。
+- ランキング、Supabase、本番記録、Ready化、公開判定は実機受入とユーザー判断がそろうまで停止する。
+
 ## 2026-08-26 PR #91統合後・実機受入ゲート
 
 - PR #91のマージコミットは`c810a2a33259066093d207fa2f585490bf94beef`である。
